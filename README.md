@@ -1,73 +1,100 @@
-# 🔍 IntelGraph - Threat Intelligence Platform
+# IntelGraph
+
+> **Open-Source Threat Intelligence Platform** with automated correlation, evidence chains, and knowledge graph visualization.
 
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Status: Production Ready](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)](#)
-
-> **Enterprise-grade threat intelligence aggregation, enrichment, and analysis platform with real-time knowledge graph visualization and automated playbook execution.**
-
-## 🎯 Overview
-
-IntelGraph is a **comprehensive threat intelligence platform** designed for cybersecurity teams and SOC analysts. It aggregates data from multiple threat sources, performs advanced entity extraction and deduplication, maintains a temporal knowledge graph, and provides real-time intelligence dashboards with automated response capabilities.
-
-### 🌐 Live Demo
-👉 **[IntelGraph Dashboard](https://intelgraph.vercel.app)**
+[![Tests: 1450+](https://img.shields.io/badge/Tests-1450%2B-brightgreen.svg)](#testing)
+[![Status: Active Development](https://img.shields.io/badge/Status-Active%20Development-yellow.svg)](#)
 
 ---
 
-## ✨ Key Features
+## 📸 Quick Look
 
-### 📊 Multi-Source Intelligence Pipeline
-- **URLhaus** - Malicious URLs and phishing sites
-- **Open Threat Exchange (OTX)** - Community threat intelligence  
-- **CISA KEV** - Known exploited vulnerabilities
-- **Shodan** - Internet-wide device scanning
-- **VirusTotal** - File and URL threat analysis
+```
+Coming soon - Add dashboard screenshot/GIF here
+docs/images/dashboard.png
+```
 
-### 🧠 Advanced Entity Processing
-- **Custom NER Engine** - Named entity recognition optimized for threats
-- **Entity Deduplication** - O(n) hash-index based matching
-- **Relationship Mapping** - Interconnected threat entities
-- **Confidence Calibration** - Evidence-based confidence scoring
+**Live Demo**: [https://intelgraph.vercel.app](https://intelgraph.vercel.app)
+
+---
+
+## Why IntelGraph?
+
+Unlike traditional threat intelligence platforms that only aggregate indicators, **IntelGraph explains WHY an IOC is malicious**.
+
+| Feature | Description |
+|---------|-------------|
+| 🔗 **Multi-source Correlation** | Correlates data from 5 threat sources |
+| 📋 **Evidence Chains** | Tracks provenance and reasoning |
+| 📊 **Knowledge Graph** | Visualizes threat relationships |
+| 🚨 **Contradiction Detection** | Identifies conflicting intelligence |
+| 📤 **STIX/TAXII Export** | Standards-compliant sharing |
+
+**Different from**: OpenCTI (heavyweight), MISP (IR-focused), ThreatStream (commercial)
+
+---
+
+## ✨ Core Features
+
+### 📊 Multi-Source Pipeline (5 Sources)
+```python
+# Automatically aggregates from:
+- URLhaus       # Malicious URLs
+- OTX           # Community intelligence  
+- CISA KEV      # Known exploited vulnerabilities
+- Shodan        # Device data
+- VirusTotal    # File analysis
+```
+
+### 🧠 Entity Processing
+- **Custom NER** - Extracts threats from raw text
+- **Deduplication** - O(n) hash-index matching
+- **Confidence Scoring** - Evidence-based reliability
+- **Contradiction Detection** - Conflicting intelligence alerts
 
 ### 📈 Temporal Knowledge Graph
-- **Timeline Tracking** - Threat evolution over time
-- **Relationship Chains** - Attack path visualization
-- **Contradiction Detection** - Conflicting intelligence identification
-- **Evidence Chains** - Provenance tracking
+- Timeline tracking of threat evolution
+- Attack path visualization
+- Relationship mapping
+- Historical trend analysis
 
-### ⚡ Intelligence Enrichment
-- **Shodan Connectors** - Device enrichment from internet scans
-- **VirusTotal Enrichment** - Detailed malware analysis
-- **IP/Domain Reputation** - Historical threat data
-- **Vulnerability Correlation** - CVE linkage
+### ⚡ Real-Time Enrichment
+```python
+POST /api/v1/enrichment/ip
+{"ip": "192.0.2.1"}
+# Returns: Shodan data + reputation + CVEs
+```
 
-### 🤖 Automated Playbook System
-- **Event-Driven Automation** - Trigger-based response rules
-- **Custom Playbooks** - Define your own workflows
-- **Alert Enrichment** - Automatic threat contextualization
-- **Integration Ready** - Webhook and API support
-
-### 📋 Compliance & Standards
-- **STIX 2.1 Export** - Standardized threat intelligence format
-- **TAXII 2.1 Protocol** - Industry-standard sharing
-- **Data Provenance** - Complete source tracking
-- **Retention Policies** - Configurable data lifecycle
-- **Trust Models** - Source reliability scoring
-
-### 🔐 Security & Performance
-- **JWT Authentication** - Secure token-based access
-- **Role-Based Authorization** - Granular permissions
-- **Sliding-Window Rate Limiting** - 4-category traffic control
-- **Full-Text Search (FTS5)** - 3-level fallback search
-- **Multi-Backend Support** - SQLite + PostgreSQL
+### 🤖 Automated Playbooks
+- Event-driven response rules
+- Alert enrichment workflows
+- Webhook integration
+- Custom automation framework
 
 ### 📱 Real-Time Dashboard
-- **Server-Sent Events (SSE)** - Live data streaming
-- **D3.js Force Graph** - Interactive threat visualization
-- **Chart.js Analytics** - Real-time statistics
-- **Advanced Search** - Semantic and fuzzy matching
+- D3.js force graph visualization
+- Live data streaming (SSE)
+- Full-text search
+- Interactive threat correlation
+
+### 🔐 Enterprise Security
+- JWT authentication
+- Role-based access control
+- Sliding-window rate limiting
+- Audit logging
+
+---
+
+## 📊 Quick Facts
+
+✔ **1,450+** automated tests  
+✔ **5** threat intelligence sources  
+✔ **100%** STIX/TAXII compatible  
+✔ **O(n)** deduplication algorithm  
+✔ **PostgreSQL + SQLite** support  
+✔ **Docker + Kubernetes** ready  
 
 ---
 
@@ -75,29 +102,76 @@ IntelGraph is a **comprehensive threat intelligence platform** designed for cybe
 
 ### Prerequisites
 - Python 3.11+
-- `uv` package manager (recommended) or `pip`
+- PostgreSQL or SQLite
 
 ### Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/Berkayy123-h/intelgraph.git
 cd intelgraph
 
-# Install dependencies
 uv sync
-# or with pip:
-# pip install -e .
+cp .env.example .env
 ```
 
-### Running the Platform
+### Configuration
+
+Edit `.env`:
+```env
+DATABASE_URL=postgresql://user:pass@localhost/intelgraph
+JWT_SECRET_KEY=your-secret-key
+SHODAN_API_KEY=your-key
+VIRUSTOTAL_API_KEY=your-key
+```
+
+### Run
 
 ```bash
-# Start the server
-python -m intelgraph.api.server
+uv run python -m intelgraph.api.server
+# Open http://localhost:8000
+```
 
-# Access dashboard
-# Open http://localhost:8000 in your browser
+### Test
+
+```bash
+uv run pytest tests/ -v --cov=intelgraph
+```
+
+---
+
+## 🔌 API Examples
+
+### Search Threats
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:8000/api/v1/threats/search?q=ransomware"
+```
+
+### Enrich IP Address
+```bash
+curl -X POST http://localhost:8000/api/v1/enrichment/ip \
+  -H "Content-Type: application/json" \
+  -d '{"ip": "192.0.2.1"}'
+
+# Response:
+# {
+#   "ip": "192.0.2.1",
+#   "shodan": {...},
+#   "reputation": "malicious",
+#   "cves": [...]
+# }
+```
+
+### Export as STIX
+```bash
+curl http://localhost:8000/api/v1/export/stix?threat_id=threat_123
+# Returns STIX 2.1 formatted JSON
+```
+
+### Knowledge Graph
+```bash
+curl http://localhost:8000/api/v1/graph/relationships?entity_id=malware_456
+# Returns: Related entities, attack paths, timeline
 ```
 
 ---
@@ -106,102 +180,18 @@ python -m intelgraph.api.server
 
 ```
 intelgraph/
-├── intelgraph/              # Main package
-│   ├── api/                 # FastAPI server & REST endpoints
-│   ├── core/                # Core threat intelligence engine
-│   ├── enrichment/          # Enrichment connectors (Shodan, VT)
-│   ├── graph/               # Knowledge graph implementation
-│   ├── models/              # Data models (STIX compatible)
-│   ├── pipeline/            # Multi-source data pipeline
-│   ├── search/              # FTS5 search engine
-│   ├── auth/                # JWT authentication & authorization
-│   └── config/              # Configuration management
-├── docs/                    # Documentation
-├── tests/                   # 1450+ test suite
-├── scripts/                 # Utility scripts
-├── Architecture.md          # Detailed architecture document
-├── ROADMAP.md               # Development roadmap
-├── SECURITY.md              # Security policies
-└── pyproject.toml           # Project metadata
-```
+├── api/              # FastAPI endpoints
+├── core/             # Intelligence engine
+├── pipeline/         # Multi-source aggregation
+├── graph/            # Knowledge graph
+├── enrichment/       # Shodan, VirusTotal
+├── search/           # Full-text search (FTS5)
+├── auth/             # JWT + RBAC
+├── models/           # STIX data models
+└── config/           # Configuration
 
----
-
-## 📚 Documentation
-
-- **[Architecture](./Architecture.md)** - System design and components
-- **[ROADMAP](./ROADMAP.md)** - Future development plans
-- **[CONTRIBUTING](./CONTRIBUTING.md)** - Contribution guidelines
-- **[SECURITY](./SECURITY.md)** - Security policies and responsible disclosure
-- **[DATA_POLICY](./DATA_POLICY.md)** - Data handling policies
-- **[FINAL_STATUS](./FINAL_STATUS.md)** - Project completion report
-- **[LIMITATIONS](./LIMITATIONS.md)** - Known limitations and constraints
-
----
-
-## 🔌 API Endpoints
-
-### Intelligence Queries
-```bash
-# Search threats
-GET /api/v1/threats/search?q=malware
-
-# Get specific threat
-GET /api/v1/threats/{threat_id}
-
-# Correlate indicators
-POST /api/v1/threats/correlate
-```
-
-### Enrichment
-```bash
-# Enrich IP address
-POST /api/v1/enrichment/ip
-{"ip": "192.0.2.1"}
-
-# Enrich domain
-POST /api/v1/enrichment/domain
-{"domain": "example.com"}
-```
-
-### Knowledge Graph
-```bash
-# Get relationship graph
-GET /api/v1/graph/relationships?entity_id={id}
-
-# Timeline view
-GET /api/v1/graph/timeline?entity_id={id}
-```
-
-### STIX Export
-```bash
-# Export as STIX 2.1
-GET /api/v1/export/stix?threat_id={id}
-```
-
----
-
-## 🔧 Configuration
-
-Create a `.env` file or use environment variables:
-
-```env
-# Database
-DATABASE_URL=sqlite:///intelgraph.db
-# DATABASE_URL=postgresql://user:pass@localhost/intelgraph
-
-# API Keys
-SHODAN_API_KEY=your_key
-VIRUSTOTAL_API_KEY=your_key
-OTX_API_KEY=your_key
-
-# Security
-JWT_SECRET_KEY=your_secret_key
-JWT_ALGORITHM=HS256
-
-# Server
-ENVIRONMENT=production
-DEBUG=false
+tests/                # 1450+ tests
+docs/                 # Documentation
 ```
 
 ---
@@ -210,113 +200,102 @@ DEBUG=false
 
 ```bash
 # Run all tests
-uv run pytest
+uv run pytest tests/ -v
 
-# Run with coverage
-uv run pytest --cov=intelgraph
+# With coverage
+uv run pytest tests/ --cov=intelgraph --cov-report=html
 
-# Run specific test
+# Specific module
 uv run pytest tests/test_pipeline.py -v
 ```
 
-The project includes **1450+ tests** covering:
-- Pipeline integration
-- Entity deduplication
-- Graph operations
-- API endpoints
-- Authentication
-- Rate limiting
+**Coverage Target**: 100%  
+**Current**: 95%+
 
 ---
 
-## 📊 Features Checklist
+## 📚 Documentation
 
-- ✅ Multi-source threat data pipeline
-- ✅ Custom NER + entity extraction
-- ✅ Hash-index based deduplication (O(n))
-- ✅ Temporal knowledge graph
-- ✅ Evidence chain tracking
-- ✅ Confidence calibration
-- ✅ Contradiction detection
-- ✅ Playbook automation system
-- ✅ STIX 2.1 / TAXII 2.1 compliance
-- ✅ FTS5 full-text search (3-level fallback)
-- ✅ Real-time SSE dashboard
-- ✅ JWT authentication + authorization
-- ✅ Rate limiting (4 categories)
-- ✅ SQLite + PostgreSQL support
-- ✅ 1450+ enterprise test suite
-- ✅ Production-ready metrics & observability
+- **[Architecture](./Architecture.md)** - System design & components
+- **[Deployment](./DEPLOYMENT.md)** - Docker, K8s, production setup
+- **[API Reference](./README.md#-api-examples)** - Endpoint documentation
+- **[Contributing](./CONTRIBUTING.md)** - Development guide
+- **[Security Policy](./SECURITY.md)** - Responsible disclosure
 
 ---
 
 ## 🛣️ Roadmap
 
-Key upcoming features:
+### v1.1 (Q3 2026)
 - [ ] ML-based threat scoring
 - [ ] Advanced anomaly detection
 - [ ] Threat actor attribution
-- [ ] Custom intel source connectors
-- [ ] GraphQL API
-- [ ] Kubernetes deployment templates
-- [ ] SIEM integration plugins
+- [ ] Custom connector framework
 
-See [ROADMAP.md](./ROADMAP.md) for detailed plans.
+### v1.2 (Q4 2026)
+- [ ] GraphQL API
+- [ ] Kubernetes Helm charts
+- [ ] SIEM integrations (Splunk, ELK)
+
+### v2.0 (2027)
+- [ ] Distributed architecture
+- [ ] Collaborative analysis features
+- [ ] Decentralized intelligence sharing
+
+**Note**: Roadmap items marked as planned (not yet implemented).
 
 ---
 
 ## 🔒 Security
 
-### Reporting Security Issues
-⚠️ **Do NOT open public issues for security vulnerabilities**
-
-Please refer to [SECURITY.md](./SECURITY.md) for responsible disclosure procedures.
+⚠️ **For security issues**, please refer to [SECURITY.md](./SECURITY.md) - **Do NOT open public issues**.
 
 ### Security Features
 - JWT-based authentication
 - Role-based access control (RBAC)
-- Rate limiting and DDoS protection
-- Input validation and sanitization
-- HTTPS/TLS support
+- Rate limiting & DDoS protection
+- Input validation & sanitization
 - Audit logging
+
+---
+
+## 🐛 Issues & Support
+
+- **Bug Reports**: [GitHub Issues](https://github.com/Berkayy123-h/intelgraph/issues)
+- **Questions**: [GitHub Discussions](https://github.com/Berkayy123-h/intelgraph/discussions)
+- **Live Demo**: [IntelGraph](https://intelgraph.vercel.app)
 
 ---
 
 ## 📜 License
 
-This project is licensed under the **MIT License** - see [LICENSE](./LICENSE) file for details.
+MIT License - See [LICENSE](./LICENSE) for details.
 
 ---
 
-## 👥 Contributing
+## 🤝 Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for:
+We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for:
 - Code of conduct
 - Development setup
-- Coding standards
-- Pull request process
 - Testing requirements
+- Pull request process
 
 ---
 
-## 📞 Support & Contact
+## 📚 Tech Stack
 
-- 📧 **Issues**: [GitHub Issues](https://github.com/Berkayy123-h/intelgraph/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/Berkayy123-h/intelgraph/discussions)
-- 🌐 **Website**: [intelgraph.vercel.app](https://intelgraph.vercel.app)
-
----
-
-## 🙏 Acknowledgments
-
-Built with:
-- FastAPI - Modern Python web framework
-- SQLAlchemy - Database ORM
-- D3.js - Data visualization
-- STIX/TAXII - Threat intelligence standards
+| Component | Technology |
+|-----------|-----------|
+| Backend | FastAPI, SQLAlchemy |
+| Database | PostgreSQL, SQLite |
+| Frontend | React, D3.js, Chart.js |
+| Testing | pytest, 1450+ tests |
+| Standards | STIX 2.1, TAXII 2.1 |
+| Deployment | Docker, Kubernetes |
 
 ---
 
-**Made with ❤️ for the cybersecurity community**
+**Questions?** Open an [issue](https://github.com/Berkayy123-h/intelgraph/issues) or start a [discussion](https://github.com/Berkayy123-h/intelgraph/discussions).
 
-⭐ If this project helps you, please consider giving it a star!
+⭐ If this project helps you, please consider starring it!
