@@ -230,16 +230,6 @@ curl http://localhost:8000/api/v1/graph/relationships?entity_id=malware_456
 
 ---
 
-## 📸 Screenshots
-
-Coming soon. The dashboard provides:
-- Knowledge graph visualization with D3.js
-- Threat relationship mapping and timelines
-- Real-time enrichment monitoring
-- Interactive IOC correlation interface
-
----
-
 ## 🧪 Testing
 
 ```bash
