@@ -9,14 +9,13 @@
 
 ---
 
-## 📸 Quick Look
+## Built With
 
-```
-Coming soon - Add dashboard screenshot/GIF here
-docs/images/dashboard.png
-```
-
-**Live Demo**: [https://intelgraph.vercel.app](https://intelgraph.vercel.app)
+✔ **1,450+** automated tests  
+✔ **5** CTI sources (URLhaus, OTX, CISA KEV, Shodan, VirusTotal)  
+✔ **STIX 2.1** export compatible  
+✔ **Knowledge Graph** engine with temporal tracking  
+✔ **Real-time** enrichment & correlation  
 
 ---
 
@@ -30,9 +29,21 @@ Unlike traditional threat intelligence platforms that only aggregate indicators,
 | 📋 **Evidence Chains** | Tracks provenance and reasoning |
 | 📊 **Knowledge Graph** | Visualizes threat relationships |
 | 🚨 **Contradiction Detection** | Identifies conflicting intelligence |
-| 📤 **STIX/TAXII Export** | Standards-compliant sharing |
+| 📤 **STIX Export** | Standards-compliant sharing |
 
-**Different from**: OpenCTI (heavyweight), MISP (IR-focused), ThreatStream (commercial)
+### Positioning
+
+IntelGraph complements existing CTI platforms by focusing on:
+
+- **Explainable intelligence** - See why an indicator is malicious
+- **Evidence-driven correlation** - Track the reasoning chain
+- **Knowledge graph analysis** - Visualize threat relationships
+- **Automated enrichment workflows** - Real-time data integration
+
+**Compared with:**
+- **OpenCTI** - Extensive CTI management platform
+- **MISP** - Collaborative IOC sharing platform  
+- **Commercial TIPs** - Enterprise intelligence suites
 
 ---
 
@@ -79,22 +90,11 @@ POST /api/v1/enrichment/ip
 - Full-text search
 - Interactive threat correlation
 
-### 🔐 Enterprise Security
+### 🔐 Security Features
 - JWT authentication
 - Role-based access control
 - Sliding-window rate limiting
 - Audit logging
-
----
-
-## 📊 Quick Facts
-
-✔ **1,450+** automated tests  
-✔ **5** threat intelligence sources  
-✔ **100%** STIX/TAXII compatible  
-✔ **O(n)** deduplication algorithm  
-✔ **PostgreSQL + SQLite** support  
-✔ **Docker + Kubernetes** ready  
 
 ---
 
@@ -139,6 +139,60 @@ uv run pytest tests/ -v --cov=intelgraph
 
 ---
 
+## 📊 Architecture
+
+IntelGraph follows a modular pipeline architecture:
+
+```
+Threat Sources (5)
+  │
+  ├─ URLhaus
+  ├─ OTX
+  ├─ CISA KEV
+  ├─ Shodan
+  └─ VirusTotal
+  │
+  ▼
+Collectors & Normalizers
+  │
+  ▼
+Entity Extraction (NER)
+  │
+  ▼
+Deduplication Engine (O(n))
+  │
+  ▼
+Knowledge Graph
+  │
+  ├─ Relationship Mapping
+  ├─ Contradiction Detection
+  └─ Confidence Calibration
+  │
+  ├──────────────────────┬───────────────┬──────────────┐
+  │                      │               │              │
+  ▼                      ▼               ▼              ▼
+Dashboard (D3.js)    REST API      STIX 2.1 Export  Playbooks
+```
+
+**Project Structure:**
+```
+intelgraph/
+├── api/              # FastAPI endpoints
+├── core/             # Intelligence engine
+├── pipeline/         # Multi-source aggregation
+├── graph/            # Knowledge graph
+├── enrichment/       # Shodan, VirusTotal
+├── search/           # Full-text search (FTS5)
+├── auth/             # JWT + RBAC
+├── models/           # STIX data models
+└── config/           # Configuration
+
+tests/                # 1450+ tests
+docs/                 # Documentation
+```
+
+---
+
 ## 🔌 API Examples
 
 ### Search Threats
@@ -176,23 +230,13 @@ curl http://localhost:8000/api/v1/graph/relationships?entity_id=malware_456
 
 ---
 
-## 📁 Project Structure
+## 📸 Screenshots
 
-```
-intelgraph/
-├── api/              # FastAPI endpoints
-├── core/             # Intelligence engine
-├── pipeline/         # Multi-source aggregation
-├── graph/            # Knowledge graph
-├── enrichment/       # Shodan, VirusTotal
-├── search/           # Full-text search (FTS5)
-├── auth/             # JWT + RBAC
-├── models/           # STIX data models
-└── config/           # Configuration
-
-tests/                # 1450+ tests
-docs/                 # Documentation
-```
+Coming soon. The dashboard provides:
+- Knowledge graph visualization with D3.js
+- Threat relationship mapping and timelines
+- Real-time enrichment monitoring
+- Interactive IOC correlation interface
 
 ---
 
@@ -210,7 +254,8 @@ uv run pytest tests/test_pipeline.py -v
 ```
 
 **Coverage Target**: 100%  
-**Current**: 95%+
+**Current**: 95%+  
+**Total Tests**: 1,450+
 
 ---
 
@@ -291,7 +336,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for:
 | Database | PostgreSQL, SQLite |
 | Frontend | React, D3.js, Chart.js |
 | Testing | pytest, 1450+ tests |
-| Standards | STIX 2.1, TAXII 2.1 |
+| Standards | STIX 2.1 |
 | Deployment | Docker, Kubernetes |
 
 ---
