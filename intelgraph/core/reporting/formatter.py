@@ -78,7 +78,8 @@ def format_html(report_type: str, data: dict[str, Any]) -> str:
     for line in md.split("\n"):
         if line.startswith("```"):
             if in_code:
-                lines.append(f"<pre>{_code_escape('\n'.join(code_buf))}</pre>")
+                joined = '\n'.join(code_buf)
+                lines.append(f"<pre>{_code_escape(joined)}</pre>")
                 code_buf = []
                 in_code = False
             else:
