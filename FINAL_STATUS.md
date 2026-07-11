@@ -1,6 +1,9 @@
-# FINAL_STATUS.md — intelgraph Proje Durum Raporu
+# FINAL_STATUS.md (Historical)
+
+> **Note:** This status report was captured during Phase 14 development. The project has advanced significantly since then. See [README.md](./README.md) for the current state and [CHANGELOG](./docs/changelog.md) for updates.
+
 **Tarih**: 29 Haziran 2026
-**Durum**: Faz 14 tamamlandı. Tüm 13 faz doğrulandı, pytest yeşil, 3 kaynaklı gerçek veri pipeline'ı çalışıyor.
+**Durum**: Faz 14 tamamlandı.
 
 Bu dosya, sonraki oturumda sıfırdan başlamak yerine buradan devam etmek için referans olacaktır.
 

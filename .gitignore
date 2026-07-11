@@ -5,6 +5,9 @@ __pycache__/
 venv/
 .env
 *.db
+*.db-shm
+*.db-wal
+*.db-journal
 *.sqlite
 /tmp/
 .pytest_cache/

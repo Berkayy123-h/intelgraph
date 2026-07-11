@@ -1,3 +1,7 @@
+# SUMMARY.md (Historical)
+
+> **Note:** This summary covers the earliest development phases (1–13). The project has evolved significantly since then. See [README.md](./README.md) for the current feature set.
+
 # SUMMARY.md — intelgraph جلسه ساختاری (Faz 1–13)
 Tek oturumdaki ilerlemenin kronolojik özeti. Ayrıntılı sağlık kontrolü için `FINAL_STATUS.md`, bilinen sınırlar için `LIMITATIONS.md`.
 

@@ -1,6 +1,8 @@
-# IntelGraph — ROADMAP
+# IntelGraph — ROADMAP (Historical)
 
-## Phase Overview
+> **Note:** This roadmap was drafted during the initial planning phase and does not reflect the current implementation state. See [README.md](./README.md) for the actual feature set.
+
+## Original Phase Overview
 
 | Phase | Name | Status | Dependencies |
 |-------|------|--------|--------------|
