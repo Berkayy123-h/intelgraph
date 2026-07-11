@@ -100,7 +100,8 @@ def format_html(report_type: str, data: dict[str, Any]) -> str:
             lines.append(f"<p>{_code_escape(line)}</p>")
 
     if code_buf:
-        lines.append(f"<pre>{_code_escape('\n'.join(code_buf))}</pre>")
+        joined = '\n'.join(code_buf)
+        lines.append(f"<pre>{_code_escape(joined)}</pre>")
 
     lines.append("</body>")
     lines.append("</html>")
