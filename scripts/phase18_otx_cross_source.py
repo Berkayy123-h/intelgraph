@@ -50,7 +50,7 @@ urlhaus_all = set()
 for t, items in urlhaus_iocs.items():
     for it in items:
         urlhaus_all.add(it["indicator"].strip().lower())
-print(f"  {len(urlhaus_all)} unique IOC ({time.time()-t0:.1f}s)")
+print(f"  {len(urlhaus_all)} unique IOC ({time.time() - t0:.1f}s)")
 for t, items in sorted(urlhaus_iocs.items()):
     print(f"    {t}: {len(items)}")
 
@@ -59,7 +59,7 @@ print("\n[3] CISA KEV tam veri seti yukleniyor...")
 t0 = time.time()
 kev_data = json.loads(Path(KEV_PATH).read_text())
 kev_entries = kev_data["vulnerabilities"]
-kev_cves = set(v["cveID"].strip().lower() for v in kev_entries)
+kev_cves = {v["cveID"].strip().lower() for v in kev_entries}
 # Also collect IPs and domains mentioned in KEV descriptions
 kev_ips = set()
 kev_domains = set()
@@ -76,7 +76,7 @@ for v in kev_entries:
         if not d.startswith("http") and d.count(".") >= 1:
             kev_domains.add(d)
 print(
-    f"  {len(kev_cves)} CVE, {len(kev_ips)} IP, {len(kev_domains)} domain ({time.time()-t0:.1f}s)"
+    f"  {len(kev_cves)} CVE, {len(kev_ips)} IP, {len(kev_domains)} domain ({time.time() - t0:.1f}s)"
 )
 
 # ── 5. Cross-reference: OTX ∩ URLhaus ──
@@ -91,7 +91,7 @@ if otx_urlhaus:
         print(f"    {val}")
 
 # OTX ∩ KEV (CVE)
-otx_cves = set(it["indicator"].strip().lower() for it in otx_iocs.get("CVE", []))
+otx_cves = {it["indicator"].strip().lower() for it in otx_iocs.get("CVE", [])}
 otx_kev_cve = otx_cves & kev_cves
 print(f"\n  OTX CVE ∩ KEV: {len(otx_kev_cve)} ortak CVE")
 if otx_kev_cve:
@@ -99,8 +99,8 @@ if otx_kev_cve:
         print(f"    {val}")
 
 # OTX IP ∩ URLhaus IP
-otx_ips = set(it["indicator"].strip().lower() for it in otx_iocs.get("IPv4", []))
-urlhaus_ips = set(it["indicator"].strip().lower() for it in urlhaus_iocs.get("IPv4", []))
+otx_ips = {it["indicator"].strip().lower() for it in otx_iocs.get("IPv4", [])}
+urlhaus_ips = {it["indicator"].strip().lower() for it in urlhaus_iocs.get("IPv4", [])}
 otx_urlhaus_ip = otx_ips & urlhaus_ips
 print(f"\n  OTX IPv4 ∩ URLhaus IPv4: {len(otx_urlhaus_ip)} ortak IP")
 if otx_urlhaus_ip:
@@ -108,9 +108,9 @@ if otx_urlhaus_ip:
         print(f"    {val}")
 
 # OTX domain ∩ URLhaus domain
-otx_domains = set(it["indicator"].strip().lower() for it in otx_iocs.get("domain", []))
-otx_domains |= set(it["indicator"].strip().lower() for it in otx_iocs.get("hostname", []))
-urlhaus_domains = set(it["indicator"].strip().lower() for it in urlhaus_iocs.get("domain", []))
+otx_domains = {it["indicator"].strip().lower() for it in otx_iocs.get("domain", [])}
+otx_domains |= {it["indicator"].strip().lower() for it in otx_iocs.get("hostname", [])}
+urlhaus_domains = {it["indicator"].strip().lower() for it in urlhaus_iocs.get("domain", [])}
 otx_urlhaus_domain = otx_domains & urlhaus_domains
 print(f"\n  OTX domain/hostname ∩ URLhaus domain: {len(otx_urlhaus_domain)} ortak domain")
 if otx_urlhaus_domain:
@@ -148,10 +148,10 @@ if otx_urlhaus:
         ]
         print(f"\n  Ortak: {val}")
         if uh:
-            print(f"    URLhaus kaynak: {uh[0].get('source','?')}")
+            print(f"    URLhaus kaynak: {uh[0].get('source', '?')}")
         if ot:
-            print(f"    OTX pulse: {ot[0].get('pulse_name','?')[:50]}")
-            print(f"    OTX tip: {ot[0].get('type','?')}")
+            print(f"    OTX pulse: {ot[0].get('pulse_name', '?')[:50]}")
+            print(f"    OTX tip: {ot[0].get('type', '?')}")
 
 # ── 7. Pipeline test with overlapping data (if found) ──
 print("\n" + "=" * 65)
@@ -209,8 +209,8 @@ if kev_overlap:
     matching = [v for v in kev_entries if v["cveID"].strip().lower() in kev_overlap]
     if matching:
         kev_text = "\n".join(
-            f'{v["cveID"]} {v.get("vendorProject","")} {v.get("product","")} '
-            f'{v.get("shortDescription","")} {v.get("knownRansomwareCampaignUse","")}'
+            f"{v['cveID']} {v.get('vendorProject', '')} {v.get('product', '')} "
+            f"{v.get('shortDescription', '')} {v.get('knownRansomwareCampaignUse', '')}"
             for v in matching[:20]
         )
         sources.append(
@@ -225,8 +225,8 @@ if kev_overlap:
 if not kev_text:
     print("\n  (OTX ile KEV ortak CVE yok — ilk 10 KEV kaydi kullaniliyor)")
     kev_text = "\n".join(
-        f'{v["cveID"]} {v.get("vendorProject","")} {v.get("product","")} '
-        f'{v.get("shortDescription","")} {v.get("knownRansomwareCampaignUse","")}'
+        f"{v['cveID']} {v.get('vendorProject', '')} {v.get('product', '')} "
+        f"{v.get('shortDescription', '')} {v.get('knownRansomwareCampaignUse', '')}"
         for v in kev_entries[:10]
     )
     sources.append(
@@ -252,7 +252,7 @@ for p in pulses:
         src["text"] = "OTX Pulse: " + p.name + ". Indicators: " + "; ".join(text_parts[:50]) + "."
     sources.append(src)
 
-print(f"\n  Toplam kaynak: {len(sources)} ({sum(len(s.get('text','')) for s in sources)} chars)")
+print(f"\n  Toplam kaynak: {len(sources)} ({sum(len(s.get('text', '')) for s in sources)} chars)")
 
 # Run pipeline
 from intelgraph.api.routers.dashboard import dashboard_state

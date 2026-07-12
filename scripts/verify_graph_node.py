@@ -203,9 +203,9 @@ result_efn = list(graph3.edges_for_node("node_B"))
 print(f"edges_for_node('node_B'): {result_efn}")
 
 assert not graph3.has_edge(edge_id), "Edge hala var! ORPHAN!"
-assert "node_A" not in graph3.node_edges.get(
-    "node_B", set()
-), "node_edges[B] hala A'ya ait edge'i tutuyor!"
+assert "node_A" not in graph3.node_edges.get("node_B", set()), (
+    "node_edges[B] hala A'ya ait edge'i tutuyor!"
+)
 print("\n✅ Referans bütünlüğü SAĞLAM: remove_node() cascade delete ile tüm edge'leri temizliyor.")
 print("   (graph.py:54-78 — remove_node içinde edge_ids döngüsü)")
 

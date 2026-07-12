@@ -16,9 +16,9 @@ BASE = "http://127.0.0.1:8113"
 
 
 def section(title):
-    print(f"\n{'='*72}")
+    print(f"\n{'=' * 72}")
     print(f"  {title}")
-    print(f"{'='*72}")
+    print(f"{'=' * 72}")
 
 
 def api(method, path, headers=None, data=None):
@@ -95,7 +95,7 @@ for te in result.get("truth_entries", []):
         continue
 
     ev = Evidence(
-        id=f"ev_{hash(key)%10**8:08x}",
+        id=f"ev_{hash(key) % 10**8:08x}",
         source=str(ssot),
         content=action,
         collected_at=now,
@@ -293,7 +293,7 @@ has_rl = any("ratelimit" in k.lower() for k in r["headers"])
 rl += chk(
     "Rate limit headers on GET /health",
     has_rl,
-    f"rl_headers={[f'{k}={v}' for k,v in r['headers'].items() if 'ratelimit' in k.lower()]}",
+    f"rl_headers={[f'{k}={v}' for k, v in r['headers'].items() if 'ratelimit' in k.lower()]}",
 )
 
 # 3.2 Verify rate limit headers on auth endpoint
@@ -322,7 +322,7 @@ for i in range(auth_limit * 2):
     )
     statuses.append(r["status"])
     if r["status"] == 429:
-        print(f"  → 429 at request {i+1}")
+        print(f"  → 429 at request {i + 1}")
         break
 got_429 = any(s == 429 for s in statuses)
 if got_429:
@@ -347,13 +347,13 @@ print(f"\n  api.main rate limit: {rl}/3 checks passed")
 # SUMMARY
 # ═══════════════════════════════════════════════════════════════
 total = p + g1 + a + rl
-print(f"\n{'='*72}")
+print(f"\n{'=' * 72}")
 print(f"  FAZ 8 SONUC: {total}/21 dogrulama gecti")
 print(f"    8.0 Server:        {p}/1")
 print(f"    8.1 graph.graph:   {g1}/12  (kapsanan unit testler dahil)")
 print(f"    8.2 api.main auth: {a}/6")
 print(f"    8.3 api.main rl:   {rl}/3")
-print(f"{'='*72}")
+print(f"{'=' * 72}")
 print("\n  graph.graph: 18/19 public method unit testlerde kapsanmis.")
 print("  Kalan: neighbors/outgoing/incoming/has_edge — yardimci metodlar,")
 print("  add_relationship/get_node/bfs/dfs/shortest_path/digerleri zaten testli.")

@@ -106,7 +106,7 @@ class TOTPManager:
 
         # Recovery code check
         code_normalized = code.strip().upper()
-        for i, stored_hash in enumerate(entry.get("recovery_hashes", [])):
+        for _i, stored_hash in enumerate(entry.get("recovery_hashes", [])):
             if _verify_recovery_code(code_normalized, stored_hash):
                 if code_normalized not in entry.get("used_recovery_codes", []):
                     used = entry.get("used_recovery_codes", [])

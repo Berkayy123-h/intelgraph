@@ -59,7 +59,7 @@ class SafetyChecker:
         total = sum(domain_counts.values())
         for domain, count in domain_counts.items():
             if count / total > SafetyChecker.SINGLE_DOMAIN_BIAS_THRESHOLD:
-                flags.append(f"domain bias: {domain} represents {count/total:.0%} of sources")
+                flags.append(f"domain bias: {domain} represents {count / total:.0%} of sources")
         return flags
 
     @staticmethod

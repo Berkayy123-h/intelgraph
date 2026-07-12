@@ -189,9 +189,9 @@ print("=" * 72)
 print("İSTATİSTİK ÖZETİ")
 print("=" * 72)
 print(f"  Toplam motor/engine sayısı:           {total}")
-print(f"  BAĞLI (gerçek veri akışı):             {gercek}  ({100*gercek//total}%)")
-print(f"  BAĞLI (yüzeysel, API/CLI wrapper):     {yuzeysel} ({100*yuzeysel//total}%)")
-print(f"  İZOLE (sadece test/own module):        {izole}  ({100*izole//total}%)")
+print(f"  BAĞLI (gerçek veri akışı):             {gercek}  ({100 * gercek // total}%)")
+print(f"  BAĞLI (yüzeysel, API/CLI wrapper):     {yuzeysel} ({100 * yuzeysel // total}%)")
+print(f"  İZOLE (sadece test/own module):        {izole}  ({100 * izole // total}%)")
 print()
 
 # ─── KRİTİK BULGULAR ────────────────────────────────────────────

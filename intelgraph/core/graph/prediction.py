@@ -152,7 +152,6 @@ class Predictor:
             + 0.1 * features["confidence"]
         )
         horizons = [ForecastHorizon.SHORT, ForecastHorizon.MEDIUM, ForecastHorizon.LONG]
-        horizon_map = {0: "short", 1: "medium", 2: "long"}
         decay = {0: 1.0, 1: 0.85, 2: 0.7}
         horizon_idx = min(horizon, 2)
         forecast_val = base_risk * decay.get(horizon_idx, 0.7)
@@ -380,9 +379,9 @@ class Predictor:
         w = weights or [1.0 / len(predictions)] * len(predictions)
         w_sum = sum(w)
         norm_w = [ww / w_sum for ww in w]
-        ensemble_val = sum(p.value * nw for p, nw in zip(predictions, norm_w))
-        ensemble_conf = sum(p.confidence * nw for p, nw in zip(predictions, norm_w))
-        ensemble_unc = sum(p.uncertainty * nw for p, nw in zip(predictions, norm_w))
+        ensemble_val = sum(p.value * nw for p, nw in zip(predictions, norm_w, strict=False))
+        ensemble_conf = sum(p.confidence * nw for p, nw in zip(predictions, norm_w, strict=False))
+        ensemble_unc = sum(p.uncertainty * nw for p, nw in zip(predictions, norm_w, strict=False))
         return PredictionResult(
             prediction_id=self._generate_id(),
             entity_id=predictions[0].entity_id,

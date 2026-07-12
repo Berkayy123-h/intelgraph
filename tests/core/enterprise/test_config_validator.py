@@ -1,4 +1,3 @@
-
 import pytest
 
 from intelgraph.core.enterprise.config_validator import (

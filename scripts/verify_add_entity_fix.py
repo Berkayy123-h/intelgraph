@@ -87,9 +87,9 @@ print(f"Log çıktısı: {log2.strip()}")
 
 assert graph2.node_count == 1
 assert graph2.nodes["ow_test"].entity.ip == "9.9.9.9"
-assert (
-    "ow_test" not in graph2.previous_versions
-), "overwrite=True ise previous_versions'a kaydedilmemeli!"
+assert "ow_test" not in graph2.previous_versions, (
+    "overwrite=True ise previous_versions'a kaydedilmemeli!"
+)
 assert "overwriting" in log2, "overwrite log'u üretilmeli!"
 print("✅ overwrite=True: eski davranış korunuyor, previous_versions kaydı YOK.")
 
@@ -104,7 +104,7 @@ try:
     e_bad = IPAddress(id="", ip="0.0.0.0")
     graph3.add_entity(e_bad)
     print("❌ Boş string ID KABUL EDİLDİ (beklenmiyordu)!")
-    assert False, "Boş ID kabul edilmemeli!"
+    raise AssertionError("Boş ID kabul edilmemeli!")
 except ValueError as ex:
     print(f"Boş string ID → ValueError: {ex}")
     print("✅ Reddedildi.")
@@ -113,7 +113,7 @@ try:
     e_none = IPAddress(id=None, ip="0.0.0.0")
     graph3.add_entity(e_none)
     print("❌ None ID KABUL EDİLDİ (beklenmiyordu)!")
-    assert False, "None ID kabul edilmemeli!"
+    raise AssertionError("None ID kabul edilmemeli!")
 except (ValueError, TypeError) as ex:
     print(f"None ID → {type(ex).__name__}: {ex}")
     print("✅ Reddedildi.")
@@ -140,9 +140,9 @@ assert "clean_test" in graph4.previous_versions
 removed = graph4.remove_node("clean_test")
 print(f"remove_node döndü: {removed}")
 print(f"Silme sonrası previous_versions: {dict(graph4.previous_versions)}")
-assert (
-    "clean_test" not in graph4.previous_versions
-), "remove_node previous_versions'ı da temizlemeli!"
+assert "clean_test" not in graph4.previous_versions, (
+    "remove_node previous_versions'ı da temizlemeli!"
+)
 print("✅ remove_node previous_versions'ı da temizliyor (graph.py'ye eklendi).")
 
 # =====================================================================

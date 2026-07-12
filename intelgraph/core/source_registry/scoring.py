@@ -1,4 +1,3 @@
-
 _KNOWN_LEGITIMATE_DOMAINS: set[str] = {
     "github.com",
     "gitlab.com",

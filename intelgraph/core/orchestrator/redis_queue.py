@@ -23,7 +23,7 @@ class RedisTaskQueue(TaskQueue):
     ) -> None:
         if not HAS_REDIS:
             raise ImportError(
-                "redis is required for RedisTaskQueue. " "Install it with: pip install redis"
+                "redis is required for RedisTaskQueue. Install it with: pip install redis"
             )
         self._client = redis_lib.Redis(host=host, port=port, db=db, password=password)
 

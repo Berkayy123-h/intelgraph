@@ -374,7 +374,7 @@ class TestFullForecast:
         assert e1["value"] == e2["value"]
         assert e1["confidence"] == e2["confidence"]
         assert e1["uncertainty"] == e2["uncertainty"]
-        for p1, p2 in zip(r1["predictions"], r2["predictions"]):
+        for p1, p2 in zip(r1["predictions"], r2["predictions"], strict=False):
             for k in (
                 "entity_id",
                 "prediction_type",
@@ -489,7 +489,7 @@ class TestMultiHorizonForecast:
     def test_deterministic_values(self, predictor: Predictor) -> None:
         r1 = predictor.multi_horizon_forecast("A")
         r2 = predictor.multi_horizon_forecast("A")
-        for p1, p2 in zip(r1, r2):
+        for p1, p2 in zip(r1, r2, strict=False):
             for k in (
                 "entity_id",
                 "prediction_type",

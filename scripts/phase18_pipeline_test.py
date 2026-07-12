@@ -68,8 +68,8 @@ matching_cves = [
     v for v in kev_data["vulnerabilities"] if v["cveID"].strip().lower() in OVERLAP_CVES
 ]
 kev_text = "\n".join(
-    f'{v["cveID"]} {v.get("vendorProject","")} {v.get("product","")} '
-    f'{v.get("shortDescription","")} {v.get("knownRansomwareCampaignUse","")}'
+    f"{v['cveID']} {v.get('vendorProject', '')} {v.get('product', '')} "
+    f"{v.get('shortDescription', '')} {v.get('knownRansomwareCampaignUse', '')}"
     for v in matching_cves
 )
 print(f"  {len(matching_cves)} CVE kaydi")
@@ -188,14 +188,16 @@ for nid, node in result.graph.nodes.items():
 print("\n  --- Merge audit (all) ---")
 for ma in result_dict.get("merge_audit", []):
     print(
-        f"    {ma.get('source_entity_id','')} -> {ma.get('target_entity_id','')} ({ma.get('merge_strategy','?')})"
+        f"    {ma.get('source_entity_id', '')} -> {ma.get('target_entity_id', '')} ({ma.get('merge_strategy', '?')})"
     )
 
 # Show alerts
 print("\n  --- Alerts ---")
 for a in result.alerts:
     ctx = a.get("context", {})
-    print(f"    [{a['category']}] entity={ctx.get('entity_id','')[:40]} cve={ctx.get('cve_id','')}")
+    print(
+        f"    [{a['category']}] entity={ctx.get('entity_id', '')[:40]} cve={ctx.get('cve_id', '')}"
+    )
 
 # ── Phase 19: Hash indicator → node counting ──
 print("\n" + "=" * 65)
@@ -223,10 +225,10 @@ if result.graph:
                 hash_node_count += 1
 print(f"  Graph node (hash → IPAddress): {hash_node_count}")
 print(
-    f"  Hash entity → graph node oranı: {hash_node_count}/{hash_entity_count} ({hash_node_count*100//max(hash_entity_count,1)}%)"
+    f"  Hash entity → graph node oranı: {hash_node_count}/{hash_entity_count} ({hash_node_count * 100 // max(hash_entity_count, 1)}%)"
 )
 print(
-    f"  Hash entity'lerin merge edilme oranı: {hash_entity_count - hash_node_count}/{hash_entity_count} ({(hash_entity_count - hash_node_count)*100//max(hash_entity_count,1)}%)"
+    f"  Hash entity'lerin merge edilme oranı: {hash_entity_count - hash_node_count}/{hash_entity_count} ({(hash_entity_count - hash_node_count) * 100 // max(hash_entity_count, 1)}%)"
 )
 
 # Show explain for each incident
@@ -239,7 +241,7 @@ for inc in result.incidents:
     expl = builder.explain(inc_id)
     steps = expl.get("steps", [])
     print(
-        f"    {inc_id}: [{inc.get('category')}] {len(steps)} steps, entity={expl.get('primary_entity','')[:40]}"
+        f"    {inc_id}: [{inc.get('category')}] {len(steps)} steps, entity={expl.get('primary_entity', '')[:40]}"
     )
 
 pipeline.cleanup()

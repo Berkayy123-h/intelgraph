@@ -60,7 +60,7 @@ def _entity_to_dict(entity: BaseEntity) -> dict[str, Any]:
         "validity_end",
     ):
         val = getattr(entity, field, None)
-        if val is not None and val != "" and val != () and val != tuple():
+        if val is not None and val != "" and val != () and val != ():
             if isinstance(val, (list, tuple)):
                 data[field] = list(val)
             elif hasattr(val, "isoformat"):

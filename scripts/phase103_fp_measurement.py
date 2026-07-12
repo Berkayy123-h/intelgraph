@@ -17,9 +17,9 @@ random.seed(42)
 
 
 def section(t):
-    print(f"\n{'='*72}")
+    print(f"\n{'=' * 72}")
     print(f"  {t}")
-    print(f"{'='*72}")
+    print(f"{'=' * 72}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -101,7 +101,7 @@ for i, row in enumerate(urlhaus_rows):
         all_relationships.append(rd)
     if (i + 1) % 5000 == 0:
         print(
-            f"  URLhaus: {i+1}/{len(urlhaus_rows)} satir, "
+            f"  URLhaus: {i + 1}/{len(urlhaus_rows)} satir, "
             f"{entity_count} entity, {len(all_relationships)} iliski",
             end="\r",
         )
@@ -118,8 +118,8 @@ kev_ent_count = 0
 t0 = time.perf_counter()
 for i, v in enumerate(kev_entries):
     text = (
-        f"CVE-{v['cveID']}: {v.get('vendorProject','')} {v.get('product','')} "
-        f"{v.get('vulnerabilityName','')}. {v.get('shortDescription','')}"
+        f"CVE-{v['cveID']}: {v.get('vendorProject', '')} {v.get('product', '')} "
+        f"{v.get('vulnerabilityName', '')}. {v.get('shortDescription', '')}"
     )
     entities = ner.extract(text)
     kev_ent_count += len(entities)
@@ -145,8 +145,8 @@ for i, v in enumerate(kev_entries):
         all_relationships.append(rd)
     if (i + 1) % 500 == 0:
         print(
-            f"  KEV: {i+1}/{len(kev_entries)} kayit, "
-            f"{kev_ent_count} entity, {len(all_relationships)-kev_rels_start} iliski",
+            f"  KEV: {i + 1}/{len(kev_entries)} kayit, "
+            f"{kev_ent_count} entity, {len(all_relationships) - kev_rels_start} iliski",
             end="\r",
         )
 
@@ -235,7 +235,7 @@ for bucket_name, bucket_label in [
     print(f"    Populasyon: {pop}")
     print(f"    Orneklem:   {len(sample)}")
     print(f"    FP sayisi:  {fp_count}")
-    print(f"    FP orani:   {fp_est*100:.1f}%")
+    print(f"    FP orani:   {fp_est * 100:.1f}%")
     print(f"    Ornekler ({min(5, len(sample))} adet):")
     for r in sample[:5]:
         src_t = (r.get("source") or {}).get("text", r.get("subject", "?"))
@@ -243,7 +243,7 @@ for bucket_name, bucket_label in [
         fp_label = "[FP]" if estimate_fp(r) else "[OK]"
         print(
             f"      {fp_label} {r['relation']} {src_t} -> {tgt_t} "
-            f"(src={r.get('_source','?')}) {r.get('sentence','')[:60]}"
+            f"(src={r.get('_source', '?')}) {r.get('sentence', '')[:60]}"
         )
 
     fp_results[bucket_name] = {
@@ -292,10 +292,10 @@ doc_fp = fp_results.get("doc_0.35", {}).get("fp_est", 0)
 
 FP_THRESHOLD = 0.20  # 20% FP rate limit
 
-print(f"  FP esik: {FP_THRESHOLD*100:.0f}%")
-print(f"  Verb (0.6):      FP={verb_fp*100:.1f}%")
-print(f"  Sentence (0.5):  FP={sent_fp*100:.1f}%")
-print(f"  Document (0.35): FP={doc_fp*100:.1f}%")
+print(f"  FP esik: {FP_THRESHOLD * 100:.0f}%")
+print(f"  Verb (0.6):      FP={verb_fp * 100:.1f}%")
+print(f"  Sentence (0.5):  FP={sent_fp * 100:.1f}%")
+print(f"  Document (0.35): FP={doc_fp * 100:.1f}%")
 
 if doc_fp >= FP_THRESHOLD:
     print("  >>> DOKUMAN-SEVIYESI (0.35) FP orani yuksek. Devre disi birakiliyor.")
@@ -351,7 +351,9 @@ report = {
     "decision": (
         "filter_all"
         if recommended_min_conf > 0.5
-        else "filter_doc_only" if recommended_min_conf == 0.4 else "no_filter"
+        else "filter_doc_only"
+        if recommended_min_conf == 0.4
+        else "no_filter"
     ),
     "status": "PASS",
 }
@@ -359,10 +361,10 @@ json.dump(report, open(REPORT_PATH, "w"), indent=2)
 print(f"\n  Rapor: {REPORT_PATH}")
 
 # ── Summary ──
-print(f"\n{'='*72}")
+print(f"\n{'=' * 72}")
 print("  FAZ 10.3 TAMAM")
 print(f"  Toplam iliski: {len(all_relationships)}")
-print(f"  Verb (0.6):      {level_stats['verb_0.6']['source_count']} ({verb_fp*100:.1f}% FP)")
-print(f"  Sentence (0.5):  {level_stats['sentence_0.5']['source_count']} ({sent_fp*100:.1f}% FP)")
-print(f"  Document (0.35): {level_stats['doc_0.35']['source_count']} ({doc_fp*100:.1f}% FP)")
+print(f"  Verb (0.6):      {level_stats['verb_0.6']['source_count']} ({verb_fp * 100:.1f}% FP)")
+print(f"  Sentence (0.5):  {level_stats['sentence_0.5']['source_count']} ({sent_fp * 100:.1f}% FP)")
+print(f"  Document (0.35): {level_stats['doc_0.35']['source_count']} ({doc_fp * 100:.1f}% FP)")
 print(f"  Karar: min_confidence = {recommended_min_conf}")

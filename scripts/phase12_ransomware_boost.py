@@ -22,9 +22,9 @@ os.makedirs("/tmp/opencode/phase12", exist_ok=True)
 
 
 def section(t):
-    print(f"\n{'='*72}")
+    print(f"\n{'=' * 72}")
     print(f"  {t}")
-    print(f"{'='*72}")
+    print(f"{'=' * 72}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -48,21 +48,21 @@ test_unknown = ransomware_unknown[:50]
 known_lines = []
 for v in test_known:
     known_lines.append(
-        f"{v['cveID']}: {v.get('vendorProject','')} {v.get('product','')} - "
-        f"{v.get('shortDescription','')} Ransomware campaign use: Known."
+        f"{v['cveID']}: {v.get('vendorProject', '')} {v.get('product', '')} - "
+        f"{v.get('shortDescription', '')} Ransomware campaign use: Known."
     )
 
 unknown_lines = []
 for v in test_unknown:
     unknown_lines.append(
-        f"{v['cveID']}: {v.get('vendorProject','')} {v.get('product','')} - "
-        f"{v.get('shortDescription','')} Ransomware campaign use: Unknown."
+        f"{v['cveID']}: {v.get('vendorProject', '')} {v.get('product', '')} - "
+        f"{v.get('shortDescription', '')} Ransomware campaign use: Unknown."
     )
 
 combined_text = "\n".join(known_lines + unknown_lines)
 print(
     f"  Test metni: {len(test_known)} Known + {len(test_unknown)} Unknown = "
-    f"{len(known_lines)+len(unknown_lines)} kayit, {len(combined_text)/1024:.1f} KB"
+    f"{len(known_lines) + len(unknown_lines)} kayit, {len(combined_text) / 1024:.1f} KB"
 )
 
 # CVE IDs in lowercase (NER normalizes to lowercase)
@@ -94,7 +94,7 @@ result = pipeline.run(
     query_target="",
 )
 t1 = time.perf_counter()
-print(f"  Pipeline sure:  {t1-t0:.3f}s")
+print(f"  Pipeline sure:  {t1 - t0:.3f}s")
 print(f"  Graph node:     {len(result.graph.nodes) if result.graph else 0}")
 print(f"  Alert:          {len(result.alerts)}")
 print(f"  Truth entry:    {len(result.truth_entries)}")
@@ -126,13 +126,13 @@ known_confs = [e.confidence_score for e in known_entities]
 unknown_confs = [e.confidence_score for e in unknown_entities]
 
 print(
-    f"\n  Known confidence_score:   avg={sum(known_confs)/len(known_confs):.1f}  "
+    f"\n  Known confidence_score:   avg={sum(known_confs) / len(known_confs):.1f}  "
     f"min={min(known_confs)} max={max(known_confs)}"
     if known_confs
     else "  Known: (empty)"
 )
 print(
-    f"  Unknown confidence_score: avg={sum(unknown_confs)/len(unknown_confs):.1f}  "
+    f"  Unknown confidence_score: avg={sum(unknown_confs) / len(unknown_confs):.1f}  "
     f"min={min(unknown_confs)} max={max(unknown_confs)}"
     if unknown_confs
     else "  Unknown: (empty)"
@@ -166,16 +166,16 @@ known_rel = [ev.reliability_score for ev in known_evidence]
 unknown_rel = [ev.reliability_score for ev in unknown_evidence]
 
 print(
-    f"  Known evidence trust_score:     {known_trust[:5]}... (avg={sum(known_trust)/max(len(known_trust),1):.1f})"
+    f"  Known evidence trust_score:     {known_trust[:5]}... (avg={sum(known_trust) / max(len(known_trust), 1):.1f})"
 )
 print(
-    f"  Unknown evidence trust_score:   {unknown_trust[:5]}... (avg={sum(unknown_trust)/max(len(unknown_trust),1):.1f})"
+    f"  Unknown evidence trust_score:   {unknown_trust[:5]}... (avg={sum(unknown_trust) / max(len(unknown_trust), 1):.1f})"
 )
 print(
-    f"  Known evidence reliability_score: {known_rel[:5]}... (avg={sum(known_rel)/max(len(known_rel),1):.1f})"
+    f"  Known evidence reliability_score: {known_rel[:5]}... (avg={sum(known_rel) / max(len(known_rel), 1):.1f})"
 )
 print(
-    f"  Unknown evidence reliability_score: {unknown_rel[:5]}... (avg={sum(unknown_rel)/max(len(unknown_rel),1):.1f})"
+    f"  Unknown evidence reliability_score: {unknown_rel[:5]}... (avg={sum(unknown_rel) / max(len(unknown_rel), 1):.1f})"
 )
 
 # Check that at least some known evidence has trust_score=100 (boosted)
@@ -200,19 +200,19 @@ if result.alerts:
         ctx = a.get("context", {})
         entity = a.get("entity", "?")
         conf = ctx.get("confidence", "?")
-        print(f"  Alert: entity={entity[:50]} conf={conf} severity={a.get('severity','?')}")
+        print(f"  Alert: entity={entity[:50]} conf={conf} severity={a.get('severity', '?')}")
 
 if result_dict.get("safety_result"):
     sr = result_dict["safety_result"]
-    print(f"  Approval level: {sr.get('approval_level','?')}")
-    print(f"  Risk score:     {sr.get('risk_score','?')}")
+    print(f"  Approval level: {sr.get('approval_level', '?')}")
+    print(f"  Risk score:     {sr.get('risk_score', '?')}")
 
 if result.incidents:
     for inc in result.incidents[:3]:
         i = inc.to_dict() if hasattr(inc, "to_dict") else inc
         print(
-            f"  Incident: {i.get('alert_id','?')[:20]} severity={i.get('severity','?')} "
-            f"entity_id={i.get('entity_id','?')[:40]}"
+            f"  Incident: {i.get('alert_id', '?')[:20]} severity={i.get('severity', '?')} "
+            f"entity_id={i.get('entity_id', '?')[:40]}"
         )
 
 # Graph node summary
@@ -267,7 +267,7 @@ report = {
     "graph_node_count": len(result.graph.nodes),
     "alert_count": len(result.alerts),
     "error_count": len(result.errors),
-    "criteria": {name: passed for name, passed in all_criteria},
+    "criteria": dict(all_criteria),
     "status": "PASS" if all_pass else "FAIL",
 }
 

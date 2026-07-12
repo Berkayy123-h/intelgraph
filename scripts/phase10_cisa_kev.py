@@ -16,9 +16,9 @@ REPORT_PATH = "/tmp/opencode/phase10/phase10_report.json"
 
 
 def section(t):
-    print(f"\n{'='*72}")
+    print(f"\n{'=' * 72}")
     print(f"  {t}")
-    print(f"{'='*72}")
+    print(f"{'=' * 72}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -29,11 +29,13 @@ section("Faz 10.0 — KEV Katalog Analizi")
 kev = json.load(open(KEV_PATH))
 vulns = kev["vulnerabilities"]
 print(f"  Toplam kayit:     {len(vulns)}")
-print(f"  Katalog versiyon: {kev.get('catalogVersion','')}")
-print(f"  Yayin tarihi:     {kev.get('dateReleased','')}")
+print(f"  Katalog versiyon: {kev.get('catalogVersion', '')}")
+print(f"  Yayin tarihi:     {kev.get('dateReleased', '')}")
 
 ransomware_known = [v for v in vulns if v.get("knownRansomwareCampaignUse") == "Known"]
-print(f"  Ransomware Known: {len(ransomware_known)} (%{len(ransomware_known)/len(vulns)*100:.1f})")
+print(
+    f"  Ransomware Known: {len(ransomware_known)} (%{len(ransomware_known) / len(vulns) * 100:.1f})"
+)
 
 vendors = Counter(v["vendorProject"] for v in vulns)
 print(f"  Firma: {len(vendors)} benzersiz")
@@ -59,7 +61,7 @@ for v in vulns:
     )
 
 kev_text = "\n".join(kev_text_parts)
-print(f"  KEV metin boyutu: {len(kev_text)/1024:.1f} KB")
+print(f"  KEV metin boyutu: {len(kev_text) / 1024:.1f} KB")
 
 ner = NEREngine()
 t0 = time.perf_counter()
@@ -67,7 +69,7 @@ entities = ner.extract(kev_text)
 t1 = time.perf_counter()
 
 ner_labels = Counter(e.label for e in entities)
-print(f"  NER sure:         {t1-t0:.3f}s")
+print(f"  NER sure:         {t1 - t0:.3f}s")
 print(f"  Toplam entity:    {len(entities)}")
 print("  Etiket dagilimi:")
 for lbl, cnt in ner_labels.most_common():
@@ -87,7 +89,7 @@ for e in cve_entities[:5]:
 
 # Check for CVE IDs that might have been missed
 cve_ids_in_text = set(re.findall(r"CVE-\d{4}-\d+", kev_text))
-cve_ids_extracted = set(e.text for e in cve_entities)
+cve_ids_extracted = {e.text for e in cve_entities}
 missed = cve_ids_in_text - cve_ids_extracted
 if missed:
     print(f"\n  KACIRILAN CVE: {len(missed)}")
@@ -113,7 +115,7 @@ pipeline = Pipeline()
 kev_subset_indices = list(range(100)) + [vulns.index(v) for v in ransomware_known]
 kev_subset_indices = sorted(set(kev_subset_indices))
 kev_subset_text = "\n".join(kev_text_parts[i] for i in kev_subset_indices)
-print(f"  KEV altkume: {len(kev_subset_indices)} kayit, {len(kev_subset_text)/1024:.1f} KB")
+print(f"  KEV altkume: {len(kev_subset_indices)} kayit, {len(kev_subset_text) / 1024:.1f} KB")
 
 t0 = time.perf_counter()
 result_kev = pipeline.run(
@@ -130,7 +132,7 @@ result_kev = pipeline.run(
     query_target="",
 )
 t1 = time.perf_counter()
-print(f"  Pipeline sure:      {t1-t0:.2f}s")
+print(f"  Pipeline sure:      {t1 - t0:.2f}s")
 print(f"  Graph node:         {len(result_kev.graph.nodes) if result_kev.graph else 0}")
 print(f"  Celiski:            {len(result_kev.contradictions)}")
 print(f"  Alert:              {len(result_kev.alerts)}")
@@ -179,10 +181,10 @@ if result_kev.graph:
     print(f"  Ransomware-Unknown:             {len(unknown_entries)}")
     if known_entries:
         known_confs = [te.get("truth", {}).get("confidence", 0) for te in known_entries]
-        print(f"  Ortalama confidence (Known):    {sum(known_confs)/len(known_confs):.3f}")
+        print(f"  Ortalama confidence (Known):    {sum(known_confs) / len(known_confs):.3f}")
     if unknown_entries:
         unk_confs = [te.get("truth", {}).get("confidence", 0) for te in unknown_entries]
-        print(f"  Ortalama confidence (Unknown):  {sum(unk_confs)/len(unk_confs):.3f}")
+        print(f"  Ortalama confidence (Unknown):  {sum(unk_confs) / len(unk_confs):.3f}")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 4. Cross-source: URLhaus CVE references + OTX pulse with CVE
@@ -243,7 +245,7 @@ result_cross = pipeline.run(
     query_target="",
 )
 t1 = time.perf_counter()
-print(f"\n  Cross-source pipeline sure: {t1-t0:.2f}s")
+print(f"\n  Cross-source pipeline sure: {t1 - t0:.2f}s")
 
 if result_cross.graph:
     from intelgraph.core.entity.cve import CveEntity

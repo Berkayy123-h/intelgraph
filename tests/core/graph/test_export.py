@@ -366,7 +366,7 @@ class TestExportCommunityAnnotations:
         settings = ExportSettings(communities=communities)
         exp = GraphExporter(g, settings)
         xml = exp.export("graphml")
-        first_id = list(g.nodes.keys())[0]
+        list(g.nodes.keys())[0]
         assert "community_id" in xml
 
     def test_community_in_json(self):

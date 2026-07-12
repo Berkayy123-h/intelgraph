@@ -1545,7 +1545,6 @@ FILENAME_EXTS = frozenset(
         "rpm",
         "msi",
         "pkg",
-        "dmg",
         # System / logs
         "log",
         "tmp",

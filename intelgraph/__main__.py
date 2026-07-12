@@ -1,4 +1,3 @@
-
 import click
 
 from intelgraph import __version__

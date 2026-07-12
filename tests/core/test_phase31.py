@@ -26,7 +26,7 @@ from intelgraph.core.scoring.threat_score import (
 def _make_ip(ip_str, confidence=85.0, evidence=None, first_seen_delta=-2, last_seen_delta=0):
     """Create an IPAddress entity with optional evidence tuple passed at construction."""
     e = IPAddress(
-        id=f"ip_{ip_str.replace('.','_')}",
+        id=f"ip_{ip_str.replace('.', '_')}",
         ip=ip_str,
         confidence_score=confidence,
         evidence=evidence or (),
@@ -38,7 +38,7 @@ def _make_ip(ip_str, confidence=85.0, evidence=None, first_seen_delta=-2, last_s
 
 def _make_domain(domain, confidence=45.0):
     return Domain(
-        id=f"dom_{domain.replace('.','_')}",
+        id=f"dom_{domain.replace('.', '_')}",
         domain_name=domain,
         confidence_score=confidence,
         evidence=(),
@@ -49,7 +49,7 @@ def _make_domain(domain, confidence=45.0):
 
 def _make_cve(cve_id, confidence=95.0, ransomware=False):
     return CveEntity(
-        id=f"cve_{cve_id.replace('-','_')}",
+        id=f"cve_{cve_id.replace('-', '_')}",
         cve_id=cve_id,
         confidence_score=confidence,
         known_ransomware_use=ransomware,

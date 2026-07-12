@@ -84,7 +84,7 @@ def register(
         query=query,
         feed_schema=feed_schema,
     )
-    result = store.register_source(cfg)
+    store.register_source(cfg)
     if feed_schema:
         store.save_feed_schema(cfg.id, feed_schema)
     click.echo(f"Data source registered: {name} (id: {cfg.id})")

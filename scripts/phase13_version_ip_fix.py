@@ -31,9 +31,9 @@ os.makedirs("/tmp/opencode/phase13", exist_ok=True)
 
 
 def section(t):
-    print(f"\n{'='*72}")
+    print(f"\n{'=' * 72}")
     print(f"  {t}")
-    print(f"{'='*72}")
+    print(f"{'=' * 72}")
 
 
 from intelgraph.core.nlp.extractor import IP_RE, NEREngine
@@ -124,8 +124,8 @@ section("Faz 13.2 â KEV Verisi Ãzerinde ÃlÃ§ek")
 kev = json.load(open(KEV_PATH))
 vulns = kev["vulnerabilities"]
 kev_lines = [
-    f"{v['cveID']}: {v.get('vendorProject','')} {v.get('product','')} - "
-    f"{v.get('shortDescription','')} Ransomware campaign use: {v.get('knownRansomwareCampaignUse','Unknown')}."
+    f"{v['cveID']}: {v.get('vendorProject', '')} {v.get('product', '')} - "
+    f"{v.get('shortDescription', '')} Ransomware campaign use: {v.get('knownRansomwareCampaignUse', 'Unknown')}."
     for v in vulns
 ]
 kev_text = "\n".join(kev_lines)
@@ -134,7 +134,7 @@ t0 = time.perf_counter()
 kev_ents = ner.extract(kev_text)
 t1 = time.perf_counter()
 kev_labels = Counter(e.label for e in kev_ents)
-print(f"  KEV NER sure: {t1-t0:.3f}s")
+print(f"  KEV NER sure: {t1 - t0:.3f}s")
 print(f"  Toplam entity: {len(kev_ents)}")
 print("  Etiket dagilimi:")
 for label, cnt in kev_labels.most_common():
@@ -192,7 +192,7 @@ for line in urlhaus_lines_list:
 t1 = time.perf_counter()
 
 print(f"  URLhaus satir: {total_lines}")
-print(f"  NER sure:      {t1-t0:.2f}s")
+print(f"  NER sure:      {t1 - t0:.2f}s")
 print("\n  Ãnce (tÃ¼m IP_RE eslesmeleri IP sayildi):")
 print(f"    IP:      {urlhaus_labels_before['IP']}")
 print("  After (_classify_ip_match):")
@@ -202,7 +202,7 @@ diff = urlhaus_labels_before["IP"] - urlhaus_labels_after["IP"]
 print(f"  DÃ¶nÃ¼Åen IP -> VERSION: {diff}")
 print(
     f"  Korunan IP: {urlhaus_labels_after['IP']} / {urlhaus_labels_before['IP']} = "
-    f"{urlhaus_labels_after['IP']/urlhaus_labels_before['IP']*100:.2f}%"
+    f"{urlhaus_labels_after['IP'] / urlhaus_labels_before['IP'] * 100:.2f}%"
 )
 
 print("\n  URLhaus VERSION Ã¶rnekleri (ilk 20):")
@@ -272,7 +272,7 @@ report = {
     ),
 }
 
-print(f"\n  {'â' if report['status']=='PASS' else 'â'} STATUS: {report['status']}")
+print(f"\n  {'â' if report['status'] == 'PASS' else 'â'} STATUS: {report['status']}")
 print(f"    Targeted cases: {passed_count}/{len(cases)}")
 print(f"    KEV IP -> VERSION: {len(kev_ips)} -> {len(kev_versions)}")
 print(f"    URLhaus preservation: {report['urlhaus_preservation_rate']}%")

@@ -117,7 +117,7 @@ class MetaReasoningEngine:
         reflection = {
             "reflection_id": f"ref_{uuid.uuid4().hex[:12]}",
             "timestamp": time.time(),
-            "state_summary": {k: v for k, v in list(global_state.items())[:10]},
+            "state_summary": dict(list(global_state.items())[:10]),
             "active_hypotheses": len(self._hypotheses),
             "suggestion": self._generate_reflection_suggestion(global_state),
         }

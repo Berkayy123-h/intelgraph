@@ -544,7 +544,6 @@ class CausalReasoner:
         cg = self._build_causal_graph()
         cause_chains: list[dict[str, Any]] = []
         effect_chains: list[dict[str, Any]] = []
-        visited_causes: set[str] = set()
         stack_causes: list[tuple[str, list[str], list[float], set[str]]] = [
             (node_id, [node_id], [], {node_id})
         ]
@@ -573,7 +572,6 @@ class CausalReasoner:
                         new_vis,
                     )
                 )
-        visited_effects: set[str] = set()
         stack_effects: list[tuple[str, list[str], list[float], set[str]]] = [
             (node_id, [node_id], [], {node_id})
         ]

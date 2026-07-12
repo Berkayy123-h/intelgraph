@@ -89,7 +89,7 @@ class ExplanationBuilder:
                         "order": len(steps) + 1,
                         "phase": "source_text",
                         "label": "Kaynak Metin",
-                        "detail": f"Kaynak metin #{i+1}'de gecmektedir",
+                        "detail": f"Kaynak metin #{i + 1}'de gecmektedir",
                         "evidence": st[:200],
                         "confidence": 1.0,
                     }
@@ -127,7 +127,7 @@ class ExplanationBuilder:
                         "phase": "contradiction",
                         "label": "Çelişki Tespiti",
                         "detail": c.get("explanation", ""),
-                        "evidence": f"{fa.get('source','?')}: {fa.get('value','?')} vs {fb.get('source','?')}: {fb.get('value','?')}",
+                        "evidence": f"{fa.get('source', '?')}: {fa.get('value', '?')} vs {fb.get('source', '?')}: {fb.get('value', '?')}",
                         "confidence": c.get("confidence", 0),
                         "resolution": c.get("resolution", "unresolved"),
                     }

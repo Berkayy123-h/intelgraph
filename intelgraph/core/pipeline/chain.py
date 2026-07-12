@@ -231,7 +231,6 @@ class Pipeline:
                     if poll_result.get("status") != "success":
                         result.errors.append(f"Poll failed for {sid}: {poll_result}")
                 else:
-
                     tfp = f"{db_path}.{sid}.txt"
                     with open(tfp, "w") as f:
                         f.write(text)
@@ -521,7 +520,7 @@ class Pipeline:
         if contradictions:
             c = contradictions[0]
             entity_ctx["contradiction"] = (
-                f"{c.fact_a.get('source','?')} vs {c.fact_b.get('source','?')}: {c.explanation[:80]}"
+                f"{c.fact_a.get('source', '?')} vs {c.fact_b.get('source', '?')}: {c.explanation[:80]}"
             )
         if paths:
             entity_ctx["path_summary"] = paths[0].to_path_summary()[:120]

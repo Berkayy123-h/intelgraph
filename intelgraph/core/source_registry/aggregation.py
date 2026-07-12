@@ -41,7 +41,7 @@ class TrustAggregator:
 
         weighted_trust = 0.0
         total_rel = 0.0
-        for t, r in zip(trust_scores, reliability_scores):
+        for t, r in zip(trust_scores, reliability_scores, strict=False):
             weighted_trust += t * r
             total_rel += r
         aggregated_trust = round(weighted_trust / total_rel) if total_rel > 0 else 0

@@ -120,25 +120,27 @@ class SelfLearningLoop:
             return None
         best = max(
             candidates,
-            key=lambda m: self._model_performance.get(
-                m["model_id"],
-                ModelPerformance(
-                    model_id=m["model_id"],
-                    task=task,
-                    accuracy=0.5,
-                    precision=0.5,
-                    recall=0.5,
-                    f1_score=0.5,
-                    sample_count=0,
-                ),
-            ).accuracy,
+            key=lambda m: (
+                self._model_performance.get(
+                    m["model_id"],
+                    ModelPerformance(
+                        model_id=m["model_id"],
+                        task=task,
+                        accuracy=0.5,
+                        precision=0.5,
+                        recall=0.5,
+                        f1_score=0.5,
+                        sample_count=0,
+                    ),
+                ).accuracy
+            ),
         )
         return best["model_id"]
 
     def record_model_performance(
         self, model_id: str, task: str, accuracy: float, precision: float, recall: float
     ) -> None:
-        fp = accuracy * precision / max(accuracy + precision, 0.001)
+        accuracy * precision / max(accuracy + precision, 0.001)
         f1 = 2 * (precision * recall) / max(precision + recall, 0.001)
         existing = self._model_performance.get(model_id)
         if existing:

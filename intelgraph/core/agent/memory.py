@@ -132,7 +132,7 @@ class ExecutionMemory:
 
     def get_memory(self, limit: int = 100) -> list[MemoryRecord]:
         all_recs = [r for records in self._records.values() for r in records]
-        expired = [r for r in all_recs if r.is_expired()]
+        [r for r in all_recs if r.is_expired()]
         return all_recs[:limit]
 
     def get_behaviors(self, limit: int = 100) -> list[BehaviorRecord]:

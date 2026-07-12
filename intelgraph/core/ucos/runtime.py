@@ -41,7 +41,6 @@ class UnifiedExecutionRuntime:
     ) -> UnifiedExecutionResult:
         start = time.perf_counter()
         steps = steps or [{"action": "default", "params": {"goal": goal}}]
-        results = []
         success = True
         error = ""
         outputs: dict[str, Any] = {}

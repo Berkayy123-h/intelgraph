@@ -182,12 +182,12 @@ class TestShortestPathAPI:
             "/graph/algorithms/shortest-path",
             params={
                 "source_id": "nonexistent",
-                "target_id": list(
+                "target_id": [
                     client.post(
                         "/entities", json={"entity_type": "person", "attributes": {"name": "X"}}
                     ).json()["id"]
                     for _ in range(1)
-                )[0],
+                ][0],
             },
         )
         assert resp.status_code == 404

@@ -26,7 +26,7 @@ from intelgraph.core.relationship.base import Relationship
 
 def _make_ip(ip_str, confidence=50.0, evidence=None, first_seen_delta=-2, last_seen_delta=0):
     return IPAddress(
-        id=f"ip_{ip_str.replace('.','_')}",
+        id=f"ip_{ip_str.replace('.', '_')}",
         ip=ip_str,
         confidence_score=confidence,
         evidence=evidence or (),
@@ -37,7 +37,7 @@ def _make_ip(ip_str, confidence=50.0, evidence=None, first_seen_delta=-2, last_s
 
 def _make_domain(domain, confidence=45.0):
     return Domain(
-        id=f"dom_{domain.replace('.','_')}",
+        id=f"dom_{domain.replace('.', '_')}",
         domain_name=domain,
         confidence_score=confidence,
         evidence=(),
@@ -48,7 +48,7 @@ def _make_domain(domain, confidence=45.0):
 
 def _make_cve(cve_id, confidence=95.0, ransomware=False):
     return CveEntity(
-        id=f"cve_{cve_id.replace('-','_')}",
+        id=f"cve_{cve_id.replace('-', '_')}",
         cve_id=cve_id,
         confidence_score=confidence,
         known_ransomware_use=ransomware,
@@ -230,7 +230,7 @@ class TestRelationshipOutlierAnomaly:
 class TestDetectAll:
     def test_detect_all_combines_anomalies(self):
         g = IntelligenceGraph()
-        now = datetime.now(UTC)
+        datetime.now(UTC)
         # Create a high-threat entity with lots of edges
         outlier = _make_ip("9.9.9.9", confidence=95.0)
         g.add_entity(outlier)

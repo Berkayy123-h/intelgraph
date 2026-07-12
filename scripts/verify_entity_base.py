@@ -88,13 +88,13 @@ print("  BaseEntity sadece confidence_score (0-100) ve trust_score (0-100) kontr
 # Confidence score validasyonu
 try:
     IPAddress(ip="1.1.1.1", confidence_score=150)
-    assert False, "Bu hataya düşmemeli!"
+    raise AssertionError("Bu hataya düşmemeli!")
 except ValueError as e:
     print(f"confidence_score=150: ValueError ✓ — {e}")
 
 try:
     IPAddress(ip="1.1.1.1", trust_score=-5)
-    assert False, "Bu hataya düşmemeli!"
+    raise AssertionError("Bu hataya düşmemeli!")
 except ValueError as e:
     print(f"trust_score=-5:      ValueError ✓ — {e}")
 

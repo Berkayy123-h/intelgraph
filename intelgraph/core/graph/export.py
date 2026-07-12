@@ -420,7 +420,7 @@ class GraphExporter:
             if self._settings.progress_callback:
                 self._settings.progress_callback(done, total)
 
-        for eid, edge, src, tgt in edges:
+        for _eid, edge, src, tgt in edges:
             attrs = self._build_edge_attrs(edge)
             parts = [f"label={self._dot_id(attrs['label'])}"]
             parts.append(f"confidence={attrs['confidence_score']}")
@@ -542,7 +542,13 @@ class GraphExporter:
                 last_seen = node.entity.last_seen
                 first_seen = node.entity.first_seen
                 if last_seen and first_seen:
-                    yield '        <spell start="' + first_seen.isoformat() + '" end="' + last_seen.isoformat() + '"/>\n'
+                    yield (
+                        '        <spell start="'
+                        + first_seen.isoformat()
+                        + '" end="'
+                        + last_seen.isoformat()
+                        + '"/>\n'
+                    )
                 elif first_seen:
                     yield '        <spell start="' + first_seen.isoformat() + '"/>\n'
             except AttributeError:
@@ -555,7 +561,7 @@ class GraphExporter:
         yield "    </nodes>\n"
         yield "    <edges>\n"
 
-        for i, (eid, edge, src, tgt) in enumerate(edges):
+        for _i, (eid, edge, src, tgt) in enumerate(edges):
             attrs = self._build_edge_attrs(edge)
             yield f'      <edge id="{self._safe(eid)}" source="{self._safe(src)}" target="{self._safe(tgt)}" label="{self._safe(attrs.get("label", ""))}">\n'
             yield "        <attvalues>\n"

@@ -22,9 +22,9 @@ REPORT_PATH = "/tmp/opencode/phase9/stress_report.json"
 
 
 def section(title):
-    print(f"\n{'='*72}")
+    print(f"\n{'=' * 72}")
     print(f"  {title}")
-    print(f"{'='*72}")
+    print(f"{'=' * 72}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -73,7 +73,7 @@ total = len(rows)
 text = "\n".join(rows)
 
 print(f"  Satir:     {total}")
-print(f"  Boyut:     {len(text)/1024/1024:.1f} MB")
+print(f"  Boyut:     {len(text) / 1024 / 1024:.1f} MB")
 print(f"  IPv6:      {ipv6_count}")
 print(f"  Host:      {len(hosts)}")
 print(f"  Tag:       {len(tags_set)}")
@@ -106,15 +106,15 @@ ner_labels = Counter(e.label for e in entities)
 print(f"  Sure:       {ner_time:.2f}s")
 print(f"  Bellek:     {ner_mem_mb:.1f} MB peak")
 print(f"  Entity:     {len(entities)}")
-print(f"  Verim:      {len(text)/1024/1024/ner_time:.2f} MB/s")
+print(f"  Verim:      {len(text) / 1024 / 1024 / ner_time:.2f} MB/s")
 print("  Dagilim:")
 for lbl, cnt in ner_labels.most_common():
-    print(f"    {lbl:12s} {cnt:>7d}  ({cnt/len(entities)*100:5.1f}%)")
+    print(f"    {lbl:12s} {cnt:>7d}  ({cnt / len(entities) * 100:5.1f}%)")
 
 dom = ner_labels.get("DOMAIN", 0)
 fn = ner_labels.get("FILENAME", 0)
 unk = ner_labels.get("UNKNOWN", 0)
-print(f"\n  FP rate:    {fn/(dom+fn)*100:.1f}% FILENAME vs DOMAIN")
+print(f"\n  FP rate:    {fn / (dom + fn) * 100:.1f}% FILENAME vs DOMAIN")
 print("  (Faz 5.5:   ~51% FILENAME, ~45% DOMAIN, ~4% UNKNOWN)")
 
 # Profile individual NER patterns
@@ -148,14 +148,14 @@ for pname, pat in [
     else:
         list(pat.finditer(sample_for_profile))
     t1 = time.perf_counter()
-    print(f"    {pname:15s} {t1-t0:.3f}s")
+    print(f"    {pname:15s} {t1 - t0:.3f}s")
 
 # Count urlparse calls
 t0 = time.perf_counter()
 for u in rows[:10000]:
     _urlparse(u)
 t1 = time.perf_counter()
-print(f"    urlparse(10K):  {t1-t0:.3f}s")
+print(f"    urlparse(10K):  {t1 - t0:.3f}s")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 2. ContradictionDetector O(n²) Profile
@@ -192,7 +192,7 @@ full_pairs = total * (total - 1) / 2
 avg_us = sum(t[1] / (t[0] * (t[0] - 1) / 2) * 1_000_000 for t in cd_times) / len(cd_times)
 projected_s = full_pairs * avg_us / 1_000_000
 print(
-    f"\n  {total:>10d}  (projeksiyon) ~{projected_s/3600:.1f} saat  {full_pairs:>12.0f}  {avg_us:>13.2f}"
+    f"\n  {total:>10d}  (projeksiyon) ~{projected_s / 3600:.1f} saat  {full_pairs:>12.0f}  {avg_us:>13.2f}"
 )
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -403,7 +403,7 @@ result = p.run(
     query_target="",
 )
 t1 = time.perf_counter()
-print(f"  Sure:      {t1-t0:.2f}s")
+print(f"  Sure:      {t1 - t0:.2f}s")
 print(f"  Node:      {len(result.graph.nodes) if result.graph else 0}")
 print(f"  Celiski:   {len(result.contradictions)}")
 print(f"  Alert:     {len(result.alerts)}")

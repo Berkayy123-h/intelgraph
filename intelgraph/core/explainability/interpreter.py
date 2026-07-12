@@ -6,6 +6,8 @@ import uuid
 from dataclasses import dataclass
 from typing import Any
 
+from intelgraph.core.graph.prediction import PredictionResult
+
 EXPLAINABILITY_SCHEMA_VERSION = "1.0"
 
 
@@ -70,7 +72,7 @@ class FeatureImportance:
         sorted_items = sorted(contributions.items(), key=lambda x: -abs(x[1]))
         total_abs = sum(abs(v) for v in contributions.values()) or 1.0
         result: list[FeatureContribution] = []
-        for i, (name, contribution) in enumerate(sorted_items[:top_n]):
+        for _i, (name, contribution) in enumerate(sorted_items[:top_n]):
             raw = features.get(name, 0.0)
             direction = "positive" if contribution >= 0 else "negative"
             importance_pct = abs(contribution) / total_abs

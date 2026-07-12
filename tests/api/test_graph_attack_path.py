@@ -1,5 +1,3 @@
-
-
 class TestAttackPathAPI:
     def _populate_graph(self, client):
         from intelgraph.api.main import _container

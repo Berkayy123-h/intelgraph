@@ -108,7 +108,7 @@ def list_collectors(ctx: click.Context) -> None:
 @click.option("--dry-run", is_flag=True, default=False)
 @click.pass_context
 def collect_company(ctx: click.Context, name: str, dry_run: bool) -> None:
-    mgr = _get_manager(ctx)
+    _get_manager(ctx)
     if dry_run:
         click.echo(json.dumps({"collector": "company", "target": name, "dry_run": True}, indent=2))
         return
@@ -129,7 +129,7 @@ def collect_company(ctx: click.Context, name: str, dry_run: bool) -> None:
 @click.option("--dry-run", is_flag=True, default=False)
 @click.pass_context
 def collect_person(ctx: click.Context, name: str, dry_run: bool) -> None:
-    mgr = _get_manager(ctx)
+    _get_manager(ctx)
     if dry_run:
         click.echo(json.dumps({"collector": "person", "target": name, "dry_run": True}, indent=2))
         return
@@ -150,7 +150,7 @@ def collect_person(ctx: click.Context, name: str, dry_run: bool) -> None:
 @click.option("--dry-run", is_flag=True, default=False)
 @click.pass_context
 def collect_domain(ctx: click.Context, domain: str, dry_run: bool) -> None:
-    mgr = _get_manager(ctx)
+    _get_manager(ctx)
     if dry_run:
         click.echo(json.dumps({"collector": "domain", "target": domain, "dry_run": True}, indent=2))
         return
@@ -171,7 +171,7 @@ def collect_domain(ctx: click.Context, domain: str, dry_run: bool) -> None:
 @click.option("--dry-run", is_flag=True, default=False)
 @click.pass_context
 def collect_username(ctx: click.Context, username: str, dry_run: bool) -> None:
-    mgr = _get_manager(ctx)
+    _get_manager(ctx)
     if dry_run:
         click.echo(
             json.dumps({"collector": "username", "target": username, "dry_run": True}, indent=2)

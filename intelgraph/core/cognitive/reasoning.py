@@ -211,7 +211,7 @@ class ReasoningEngine:
         visited.add(current)
         if self._graph and hasattr(self._graph, "adjacency"):
             neighbors = self._graph.adjacency.get(current, set())
-            forward = self._graph.forward_adjacency.get(current, set())
+            self._graph.forward_adjacency.get(current, set())
             for neighbor in neighbors:
                 if neighbor in visited:
                     continue

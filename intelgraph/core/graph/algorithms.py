@@ -66,7 +66,7 @@ class GraphAlgorithms:
 
     def _enumerate_weighted_edges(self) -> list[tuple[float, str, str, str]]:
         result: list[tuple[float, str, str, str]] = []
-        for eid, edge in self._graph.edges.items():
+        for eid, _edge in self._graph.edges.items():
             src_tgt = self._graph.edge_node_map.get(eid)
             if src_tgt is None:
                 continue
@@ -426,7 +426,7 @@ class GraphAlgorithms:
         total_deg = sum(len(self._graph.adjacency.get(nid, set())) for nid in self._graph.nodes)
         avg_deg = total_deg / n
         undirected_pairs: set[tuple[str, str]] = set()
-        for eid, (src, tgt) in self._graph.edge_node_map.items():
+        for _eid, (src, tgt) in self._graph.edge_node_map.items():
             pair = (src, tgt) if src <= tgt else (tgt, src)
             undirected_pairs.add(pair)
         unique_edges = len(undirected_pairs)

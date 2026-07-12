@@ -121,7 +121,7 @@ class ChaosSimulator:
         failures = 0
         total = len(test_inputs)
         recovery_times: list[float] = []
-        for i, inp in enumerate(test_inputs):
+        for _i, inp in enumerate(test_inputs):
             try:
                 start = time.perf_counter()
                 pipeline_fn(inp)
@@ -142,7 +142,11 @@ class ChaosSimulator:
             else (
                 "B"
                 if success_rate > 0.95
-                else "C" if success_rate > 0.9 else "D" if success_rate > 0.8 else "F"
+                else "C"
+                if success_rate > 0.9
+                else "D"
+                if success_rate > 0.8
+                else "F"
             )
         )
         return ResilienceScore(

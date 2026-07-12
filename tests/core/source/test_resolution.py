@@ -132,7 +132,7 @@ class TestMergeEngine:
         engine = MergeEngine()
         src_id = "src:1"
         tgt_id = "tgt:1"
-        merged = engine.merge(
+        engine.merge(
             {"id": src_id, "name": "Alice"},
             {"id": tgt_id, "name": "Alice Smith"},
         )

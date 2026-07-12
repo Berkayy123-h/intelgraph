@@ -21,7 +21,7 @@ def forecast_node(body: dict[str, Any]):
     if node_id not in graph.nodes:
         raise HTTPException(status_code=404, detail=f"Node {node_id} not found")
     predictor = Predictor(graph)
-    horizon = body.get("horizon", 1)
+    body.get("horizon", 1)
     communities = body.get("communities")
     result = predictor.full_forecast(node_id, communities)
     return result

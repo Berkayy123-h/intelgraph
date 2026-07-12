@@ -35,7 +35,7 @@ class APICollector(Collector):
         if params:
             target += "?" + urlencode(params)
 
-        headers = kwargs.get("headers", {})
+        kwargs.get("headers", {})
         http_result = self._http.collect(
             target,
             source_tier=kwargs.get("source_tier", 2),

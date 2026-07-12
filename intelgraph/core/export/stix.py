@@ -269,7 +269,7 @@ def graph_to_bundle(
             stix_objects.append(obj)
         node_stix_ids[node_id] = [o["id"] for o in objs]
 
-    for edge_id, edge in graph.edges.items():
+    for _edge_id, edge in graph.edges.items():
         if edge.source_id in node_stix_ids and edge.target_id in node_stix_ids:
             if filter_type and filter_type != "relationship":
                 continue

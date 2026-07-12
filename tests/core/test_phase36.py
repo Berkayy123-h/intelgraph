@@ -269,8 +269,8 @@ class TestFilters:
     def test_since_filter(self):
         g = _build_test_graph()
         # One node seen very recently, another seen long ago
-        old_dt = datetime(2020, 1, 1, tzinfo=UTC)
-        new_dt = datetime.now(UTC)
+        datetime(2020, 1, 1, tzinfo=UTC)
+        datetime.now(UTC)
         from intelgraph.core.graph.export import ExportSettings
 
         settings = ExportSettings(since="2023-01-01T00:00:00+00:00")

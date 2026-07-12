@@ -13,9 +13,9 @@ REPORT_PATH = "/tmp/opencode/phase10/phase102_report.json"
 
 
 def section(t):
-    print(f"\n{'='*72}")
+    print(f"\n{'=' * 72}")
     print(f"  {t}")
-    print(f"{'='*72}")
+    print(f"{'=' * 72}")
 
 
 # ── Step 0: Verify RelationshipExtractor co-occurrence logic ──
@@ -140,7 +140,7 @@ result = pipeline.run(
 t1 = time.perf_counter()
 pipeline.cleanup()
 
-print(f"\n  Pipeline sure: {t1-t0:.2f}s")
+print(f"\n  Pipeline sure: {t1 - t0:.2f}s")
 print(f"  Entity sayisi: {len(result.extracted_entities)}")
 print(f"  Graph node:    {len(result.graph.nodes) if result.graph else 0}")
 print(f"  Graph edge:    {len(result.graph.edges) if result.graph else 0}")
@@ -154,8 +154,8 @@ if hasattr(result, "relationships") and result.relationships:
     for rd in result.relationships:
         if isinstance(rd, dict) and "__graph_edge_count" not in rd:
             print(
-                f"    [{rd.get('relation','?')}] {rd.get('subject','?')} -> {rd.get('object','?')} "
-                f"(conf={rd.get('confidence','?')})"
+                f"    [{rd.get('relation', '?')}] {rd.get('subject', '?')} -> {rd.get('object', '?')} "
+                f"(conf={rd.get('confidence', '?')})"
             )
 
 # ── Step 2: Graph edges analysis ──
@@ -178,7 +178,7 @@ if result.graph:
     # Edge details
     if result.graph.edges:
         print(f"\n  Kenar detayi ({len(result.graph.edges)}):")
-        for eid, edge in result.graph.edges.items():
+        for _eid, edge in result.graph.edges.items():
             print(
                 f"    {edge.id}: {edge.source_id} --[{edge.relationship.type.name}]--> {edge.target_id} "
                 f"(conf={edge.relationship.confidence_score})"
@@ -271,7 +271,7 @@ if urlhaus_in_kev and result.graph and result.graph.edges:
         print(f"  Gercek capraz kenar: {len(real_edges)}")
         for cve_id, edge in real_edges:
             print(
-                f"    {cve_id} --[{edge.relationship.type.name}]--> {edge.target_id if edge.source_id != cve_id.replace('.','_').replace(':','_') else edge.source_id}"
+                f"    {cve_id} --[{edge.relationship.type.name}]--> {edge.target_id if edge.source_id != cve_id.replace('.', '_').replace(':', '_') else edge.source_id}"
             )
     else:
         print(
@@ -336,7 +336,7 @@ json.dump(report, open(REPORT_PATH, "w"), indent=2)
 print(f"\n  Rapor: {REPORT_PATH}")
 
 # ── Summary ──
-print(f"\n{'='*72}")
+print(f"\n{'=' * 72}")
 print("  FAZ 10.2 TAMAM")
 print(f"  RelationshipExtractor: {'UNIT TEST GECTI' if has_cve_ip else 'UNIT TEST BASARISIZ'}")
 print(

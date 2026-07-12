@@ -375,7 +375,7 @@ class TestNLPModelRegistry:
 
         registry = NLPModelRegistry()
         r1 = registry.register("model-a", "1.0", ModelTask.NER)
-        r2 = registry.register("model-b", "2.0", ModelTask.NER)
+        registry.register("model-b", "2.0", ModelTask.NER)
         assert registry.deploy(r1.model_id)
         active = registry.get_active(ModelTask.NER)
         assert active is not None

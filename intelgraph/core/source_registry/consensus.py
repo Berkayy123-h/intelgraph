@@ -22,7 +22,7 @@ class ConsensusScorer:
         reliabilities = source_reliability_scores or [50] * n
 
         total_weight = sum(r for r in reliabilities) or 1
-        weighted_sum = sum(t * r for t, r in zip(source_trust_scores, reliabilities))
+        weighted_sum = sum(t * r for t, r in zip(source_trust_scores, reliabilities, strict=False))
         consensus_score = weighted_sum / total_weight
 
         if n == 1:

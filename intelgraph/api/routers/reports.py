@@ -37,7 +37,7 @@ def scheduler_status() -> dict[str, Any]:
 @router.post("/generate")
 def generate(body: dict[str, Any], request: Request) -> dict[str, Any]:
     rtype = body.get("type", "threat_summary")
-    fmt = body.get("format", "html")
+    body.get("format", "html")
     time_range = body.get("time_range", "")
 
     data = _get_data(request)
@@ -91,7 +91,6 @@ def _build_entity_detail(data: dict, entity_key: str) -> dict[str, Any]:
             break
     if not target:
         return {}
-
 
     # Build a minimal graph from the nodes/edges in the result
     graph = data.get("_graph")

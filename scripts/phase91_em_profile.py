@@ -45,7 +45,7 @@ for sz in sizes:
     t0 = time.perf_counter()
     for i in range(sz):
         if i % 2 == 0:
-            e = make_ip(f"10.0.{i>>8}.{i&255}")
+            e = make_ip(f"10.0.{i >> 8}.{i & 255}")
         else:
             e = make_domain(f"malware{i}.example.com")
         g.add_entity(e)

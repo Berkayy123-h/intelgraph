@@ -41,7 +41,7 @@ def _search_in_memory(
             "product": getattr(entity, "product", ""),
             "vulnerability_name": getattr(entity, "vulnerability_name", ""),
         }
-        for field, val in data.items():
+        for _field, val in data.items():
             if isinstance(val, str):
                 search_text += val.lower() + " "
         # Evidence content
@@ -161,9 +161,8 @@ def search(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='search_index'"
             ).fetchone()
             if has_fts:
-                fts_type = type_filter
                 if type_filter in ("entity", "alert", "incident"):
-                    fts_type = "all"
+                    pass
                 results = conn.execute(
                     """
                     SELECT si.node_id, si.entity_type, si.entity_identifier,

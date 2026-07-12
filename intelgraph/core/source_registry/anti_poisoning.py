@@ -54,7 +54,7 @@ class AntiPoisoningEngine:
             )
 
         if source_records:
-            max_trust = max(s.get("trust_score", 0) for s in source_records)
+            max(s.get("trust_score", 0) for s in source_records)
             total_trust = sum(s.get("trust_score", 0) for s in source_records)
             if total_trust > 0:
                 for s in source_records:

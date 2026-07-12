@@ -50,7 +50,7 @@ class AnomalyBaseline:
     def record_snapshot(
         self, features: dict[str, dict[str, float]], timestamp: float | None = None
     ) -> None:
-        ts = timestamp or time.time()
+        timestamp or time.time()
         for nid, feats in features.items():
             self._feature_histories.setdefault(nid, []).append(feats)
         retained = self._config.get("baseline_history_size", 100)
@@ -60,7 +60,7 @@ class AnomalyBaseline:
 
     def compute_baselines(self, features: dict[str, dict[str, float]]) -> None:
         entity_features: dict[str, list[dict[str, float]]] = {}
-        for nid, feats in features.items():
+        for _nid, feats in features.items():
             n = feats.get("__entity_type", "unknown")
             entity_features.setdefault(n, []).append(
                 {k: v for k, v in feats.items() if not k.startswith("__")}
@@ -472,7 +472,7 @@ class AnomalyDetector:
                 if member not in self._graph.nodes:
                     continue
                 deg = len(self._graph.adjacency.get(member, set()))
-                node = self._graph.nodes.get(member)
+                self._graph.nodes.get(member)
                 node_anomalies: list[dict[str, Any]] = []
                 mean_deg = stats["mean_degree"]
                 std_deg = (
@@ -538,7 +538,7 @@ class AnomalyDetector:
         influence_scores = self._compute_influence_scores_snapshot()
         entity_type_signals: dict[str, dict[str, float]] = {}
         for nid in node_ids:
-            entity_type = features[nid].get("__entity_type", "unknown")
+            features[nid].get("__entity_type", "unknown")
             is_anomalous_z = nid in zscore_result["anomalies"]
             is_anomalous_iqr = nid in iqr_result["anomalies"]
             is_anomalous_deg = nid in degree_result["anomalies"]
@@ -783,7 +783,7 @@ class AnomalyDetector:
                         anomaly_type="temporal_spike",
                         anomaly_score=score,
                         explanation=f"Recent activity spike: {count_24h} evidence in 24h "
-                        f"({ratio:.1f}x the 30d daily avg of {count_30d/30:.1f})",
+                        f"({ratio:.1f}x the 30d daily avg of {count_30d / 30:.1f})",
                         entity_type=etype_name,
                         entity_identifier=self._entity_identifier(nid),
                     )

@@ -25,7 +25,7 @@ def _prometheus_format() -> str:
 
     endpoints = metrics.get("endpoints", {})
     for ep, count in sorted(endpoints.items()):
-        safe_ep = ep.replace("/", "_").replace("-", "_").strip("_")
+        ep.replace("/", "_").replace("-", "_").strip("_")
         lines.append(f'# HELP intelgraph_endpoint_requests_total Requests per endpoint "{ep}"')
         lines.append("# TYPE intelgraph_endpoint_requests_total counter")
         lines.append(f'intelgraph_endpoint_requests_total{{endpoint="{ep}"}} {count}')

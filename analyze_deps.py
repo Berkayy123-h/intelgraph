@@ -60,7 +60,7 @@ for f in py_files:
 # FAN-IN: exact module match only
 # =====================================================================
 fan_in_exact: dict[str, int] = defaultdict(int)
-for source_mod, imported_set in deps.items():
+for _source_mod, imported_set in deps.items():
     for imported_mod in imported_set:
         fan_in_exact[imported_mod] += 1
 

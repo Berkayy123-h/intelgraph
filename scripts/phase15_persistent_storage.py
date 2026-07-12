@@ -29,7 +29,7 @@ if os.path.exists(DB_PATH):
 
 
 def section(t):
-    print(f"\n{'='*72}\n  {t}\n{'='*72}")
+    print(f"\n{'=' * 72}\n  {t}\n{'=' * 72}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -82,8 +82,8 @@ kev_vulns = kev_data["vulnerabilities"]
 known = [v for v in kev_vulns if v.get("knownRansomwareCampaignUse") == "Known"][:25]
 unknown = [v for v in kev_vulns if v.get("knownRansomwareCampaignUse") == "Unknown"][:25]
 kev_text = "\n".join(
-    f"{v['cveID']}: {v.get('vendorProject','')} {v.get('product','')} - "
-    f"{v.get('shortDescription','')} Ransomware campaign use: {v.get('knownRansomwareCampaignUse','Unknown')}."
+    f"{v['cveID']}: {v.get('vendorProject', '')} {v.get('product', '')} - "
+    f"{v.get('shortDescription', '')} Ransomware campaign use: {v.get('knownRansomwareCampaignUse', 'Unknown')}."
     for v in known + unknown
 )
 
@@ -104,7 +104,9 @@ result = pipeline.run(
     query_target="",
 )
 t1 = time.perf_counter()
-print(f"  Pipeline: {t1-t0:.2f}s, {len(result.graph.nodes)} nodes, {len(result.graph.edges)} edges")
+print(
+    f"  Pipeline: {t1 - t0:.2f}s, {len(result.graph.nodes)} nodes, {len(result.graph.edges)} edges"
+)
 
 # Now persist: create a persistent graph and copy all nodes/edges
 from intelgraph.core.graph.graph import IntelligenceGraph
@@ -116,7 +118,7 @@ for nid, node in result.graph.nodes.items():
     g_persist.add_entity(node.entity, overwrite=True)
 
 # Copy edges
-for eid, edge in result.graph.edges.items():
+for _eid, edge in result.graph.edges.items():
     g_persist.add_relationship(edge.relationship)
 
 orig_node_count = len(g_persist.nodes)
@@ -212,7 +214,7 @@ section("Faz 15.4 — Performans Karsilastirma")
 g1 = IntelligenceGraph()
 t0 = time.perf_counter()
 for i in range(100):
-    g1.add_entity(IPAddress(id=f"ip_{i}", ip=f"10.{i//256}.{i%256}.1", confidence_score=80))
+    g1.add_entity(IPAddress(id=f"ip_{i}", ip=f"10.{i // 256}.{i % 256}.1", confidence_score=80))
 t1 = time.perf_counter()
 mem_time = t1 - t0
 print(f"  In-memory  (100 nodes): {mem_time:.3f}s")
@@ -224,11 +226,13 @@ if os.path.exists(db_perf):
 g2 = IntelligenceGraph(storage_path=db_perf)
 t0 = time.perf_counter()
 for i in range(100):
-    g2.add_entity(IPAddress(id=f"ip_{i}", ip=f"10.{i//256}.{i%256}.1", confidence_score=80))
+    g2.add_entity(IPAddress(id=f"ip_{i}", ip=f"10.{i // 256}.{i % 256}.1", confidence_score=80))
 t1 = time.perf_counter()
 storage_time = t1 - t0
 print(f"  Storage    (100 nodes): {storage_time:.3f}s")
-print(f"  Overhead:  {((storage_time-mem_time)/mem_time*100):.1f}% ({storage_time/mem_time:.2f}x)")
+print(
+    f"  Overhead:  {((storage_time - mem_time) / mem_time * 100):.1f}% ({storage_time / mem_time:.2f}x)"
+)
 g2._storage.close()
 os.remove(db_perf)
 
@@ -240,7 +244,9 @@ g3 = IntelligenceGraph(storage_path=db_perf2)
 t0 = time.perf_counter()
 for i in range(500):
     g3.add_entity(
-        IPAddress(id=f"ip_{i}", ip=f"10.{i//65536}.{(i//256)%256}.{i%256}", confidence_score=80)
+        IPAddress(
+            id=f"ip_{i}", ip=f"10.{i // 65536}.{(i // 256) % 256}.{i % 256}", confidence_score=80
+        )
     )
 t1 = time.perf_counter()
 storage_time_500 = t1 - t0
@@ -316,7 +322,7 @@ print(
 )
 print(f"    Regression: in-memory OK ({len(g_mem.nodes)} nodes)")
 print(
-    f"    Performance: 100 nodes in-memory={mem_time:.3f}s vs storage={storage_time:.3f}s ({((storage_time-mem_time)/mem_time*100):.1f}% overhead)"
+    f"    Performance: 100 nodes in-memory={mem_time:.3f}s vs storage={storage_time:.3f}s ({((storage_time - mem_time) / mem_time * 100):.1f}% overhead)"
 )
 
 with open(PHASE15 / "phase15_report.json", "w") as f:
@@ -332,4 +338,6 @@ print(
     f"  Restart persistence: {restart_node_count}/{orig_node_count} nodes, {restart_edge_count}/{orig_edge_count} edges"
 )
 print(f"  Regression: storage_path=None → in-memory ({len(g_mem.nodes)} nodes)")
-print(f"  Performance: 100 nodes storage overhead ~{((storage_time-mem_time)/mem_time*100):.0f}%")
+print(
+    f"  Performance: 100 nodes storage overhead ~{((storage_time - mem_time) / mem_time * 100):.0f}%"
+)

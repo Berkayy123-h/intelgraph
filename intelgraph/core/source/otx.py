@@ -25,7 +25,7 @@ class OtxPulse:
 
     def to_source_dict(self) -> dict[str, Any]:
         indicators_text = "; ".join(
-            f"{i.get('type','?')}:{i.get('indicator','')}" for i in self.indicators[:50]
+            f"{i.get('type', '?')}:{i.get('indicator', '')}" for i in self.indicators[:50]
         )
         tags_text = ", ".join(self.tags)
         text = (

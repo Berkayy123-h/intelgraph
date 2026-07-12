@@ -256,7 +256,7 @@ class DatabaseConnector(Connector):
             cursor = self._db_conn.execute(self._config.query or "SELECT * FROM entities")
             columns = [desc[0] for desc in cursor.description]
             rows = cursor.fetchall()
-            entries = [dict(zip(columns, row)) for row in rows]
+            entries = [dict(zip(columns, row, strict=False)) for row in rows]
             validated = self.validate_data(entries)
             return PollResult(success=True, raw_data=validated, nodes_ingested=len(validated))
         except Exception as exc:

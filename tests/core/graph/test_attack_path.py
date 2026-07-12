@@ -155,7 +155,7 @@ class TestAttackPathAnalyzer:
         g.forward_adjacency = {}
         g.reverse_adjacency = {}
         analyzer = AttackPathAnalyzer(g)
-        result = analyzer.find_shortest_path("node_0", "node_11")
+        analyzer.find_shortest_path("node_0", "node_11")
         # node_0 and node_11 exist but disconnected
         g2 = _make_graph()
         analyzer2 = AttackPathAnalyzer(g2)
@@ -231,7 +231,7 @@ class TestAttackPathAnalyzer:
         g = _make_graph()
         cache = AttackPathCache()
         d1 = AttackPathAnalyzer(g, cache=cache)
-        r1 = d1.find_all_paths("node_0", max_depth=3)
+        d1.find_all_paths("node_0", max_depth=3)
         d2 = AttackPathAnalyzer(g, cache=cache)
         r2 = d2.find_all_paths("node_0", max_depth=3)
         assert r2.get("cached") is True

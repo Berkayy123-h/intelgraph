@@ -513,8 +513,7 @@ evaluations = [
     (
         "1. DataSourceManager",
         "GERÇEK + ÇALIŞIYOR",
-        "FileConnector dosyayı okuyor, poll mekanizması çalışıyor. "
-        "Ama sadece raw text döndürüyor.",
+        "FileConnector dosyayı okuyor, poll mekanizması çalışıyor. Ama sadece raw text döndürüyor.",
     ),
     (
         "2. NEREngine",
@@ -532,7 +531,7 @@ evaluations = [
     (
         "3b. UnifiedTruthEngine",
         "GERÇEK + ÇALIŞIYOR",
-        "Confidence-weighted: 0.9 > 0.3, yüksek güven kazanıyor. " "Çelişki log'da tutuluyor.",
+        "Confidence-weighted: 0.9 > 0.3, yüksek güven kazanıyor. Çelişki log'da tutuluyor.",
     ),
     (
         "3c. SingleSourceOfTruth",

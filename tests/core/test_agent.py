@@ -54,7 +54,7 @@ class TestAgentOrchestrator:
         from intelgraph.core.agent.hierarchy import AgentOrchestrator
 
         orch = AgentOrchestrator()
-        root = orch.decompose_task("simple task", max_depth=1)
+        orch.decompose_task("simple task", max_depth=1)
         deadlocks = orch.detect_deadlock()
         assert deadlocks == []
 
@@ -531,7 +531,7 @@ class TestSharedWorkQueue:
 
         q = SharedWorkQueue()
         q.push("task_1")
-        task = q.pop()
+        q.pop()
         q.complete("task_1", True)
         assert q.stats()["completed"] == 1
 

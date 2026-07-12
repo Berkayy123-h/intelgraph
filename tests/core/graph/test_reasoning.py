@@ -140,7 +140,6 @@ class TestCausalReasoner:
         reasoner = CausalReasoner(g)
         cg = reasoner._build_causal_graph()
         edges = cg.get_all_edges()
-        visited: set[str] = set()
         for edge in edges:
             assert edge.cause_id != edge.effect_id
             assert edge.confidence > 0
@@ -177,7 +176,7 @@ class TestCausalReasoner:
         r2 = CausalReasoner(g, deterministic=True)
         res1 = r1.root_cause_analysis("node_7", max_depth=4)
         res2 = r2.root_cause_analysis("node_7", max_depth=4)
-        for rc1, rc2 in zip(res1["root_causes"], res2["root_causes"]):
+        for rc1, rc2 in zip(res1["root_causes"], res2["root_causes"], strict=False):
             assert rc1["root_cause_node"] == rc2["root_cause_node"]
             assert rc1["path"] == rc2["path"]
             assert abs(rc1["confidence"] - rc2["confidence"]) < 0.01
@@ -352,7 +351,7 @@ class TestCausalRegression:
         res2 = r2.root_cause_analysis("node_7", max_depth=4)
         assert res1["found"] == res2["found"]
         assert len(res1["root_causes"]) == len(res2["root_causes"])
-        for rc1, rc2 in zip(res1["root_causes"], res2["root_causes"]):
+        for rc1, rc2 in zip(res1["root_causes"], res2["root_causes"], strict=False):
             assert rc1["root_cause_node"] == rc2["root_cause_node"]
             assert rc1["path"] == rc2["path"]
             assert abs(rc1["confidence"] - rc2["confidence"]) < 0.01

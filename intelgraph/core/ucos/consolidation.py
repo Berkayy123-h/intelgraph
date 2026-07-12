@@ -96,7 +96,7 @@ class ConsolidationEngine:
         for mod_name, phase in phases.items():
             try:
                 mod = importlib.import_module(mod_name)
-                for name, cls in inspect.getmembers(mod, inspect.isclass):
+                for name, _cls in inspect.getmembers(mod, inspect.isclass):
                     fn = function_labels.get(name, "other")
                     self._engines.append(
                         EngineRecord(

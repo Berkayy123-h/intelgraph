@@ -486,7 +486,7 @@ class TestAnomalyRegression:
         d2 = AnomalyDetector(g)
         r1 = d1.timeline()
         r2 = d2.timeline()
-        for e1, e2 in zip(r1["timeline"], r2["timeline"]):
+        for e1, e2 in zip(r1["timeline"], r2["timeline"], strict=False):
             assert e1["node_id"] == e2["node_id"]
             assert e1["current_score"] == e2["current_score"]
 

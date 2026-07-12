@@ -19,7 +19,7 @@ REPO = Path("/home/berkay/intelgraph")
 
 
 def section(t):
-    print(f"\n{'='*72}\n  {t}\n{'='*72}")
+    print(f"\n{'=' * 72}\n  {t}\n{'=' * 72}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -45,7 +45,7 @@ if m:
     pytest_failed = int(m.group(1))
 print(f"  passed: {pytest_passed}")
 print(f"  failed: {pytest_failed}")
-print(f"  duration: {t1-t0:.1f}s")
+print(f"  duration: {t1 - t0:.1f}s")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 2. Full pipeline: URLhaus + OTX + KEV
@@ -76,15 +76,15 @@ kev_vulns = kev_data["vulnerabilities"]
 known = [v for v in kev_vulns if v.get("knownRansomwareCampaignUse") == "Known"][:25]
 unknown = [v for v in kev_vulns if v.get("knownRansomwareCampaignUse") == "Unknown"][:25]
 kev_lines = [
-    f"{v['cveID']}: {v.get('vendorProject','')} {v.get('product','')} - "
-    f"{v.get('shortDescription','')} Ransomware campaign use: {v.get('knownRansomwareCampaignUse','Unknown')}."
+    f"{v['cveID']}: {v.get('vendorProject', '')} {v.get('product', '')} - "
+    f"{v.get('shortDescription', '')} Ransomware campaign use: {v.get('knownRansomwareCampaignUse', 'Unknown')}."
     for v in known + unknown
 ]
 kev_text = "\n".join(kev_lines)
 
 print(f"  URLhaus: {len(urlhaus_lines)} satir, {len(urlhaus_text)} char")
 print(f"  OTX:     {len(otx_text)} char")
-print(f"  KEV:     {len(known)+len(unknown)} kayit, {len(kev_text)} char")
+print(f"  KEV:     {len(known) + len(unknown)} kayit, {len(kev_text)} char")
 
 pipeline = Pipeline()
 t0 = time.perf_counter()
@@ -99,7 +99,7 @@ result = pipeline.run(
     query_target="",
 )
 t1 = time.perf_counter()
-print(f"\n  Pipeline: {t1-t0:.2f}s")
+print(f"\n  Pipeline: {t1 - t0:.2f}s")
 print(f"  Errors: {len(result.errors)}")
 for e in result.errors[:5]:
     print(f"    - {e}")
@@ -168,7 +168,7 @@ with open(PHASE14 / "phase14_health_check.json", "w") as f:
 print(f"\n  Rapor: {PHASE14}/phase14_health_check.json")
 
 section("FAZ 14 TAMAM")
-print(f"  pytest: {pytest_passed}/{pytest_passed+pytest_failed}")
+print(f"  pytest: {pytest_passed}/{pytest_passed + pytest_failed}")
 print(
     f"  Pipeline: {report['pipeline_duration_sec']}s, {report['graph_node_count']} node, {report['graph_edge_count']} edge"
 )

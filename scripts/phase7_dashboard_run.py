@@ -107,17 +107,17 @@ dashboard_state.feed_ner(dict(ner_labels), ner_samples)
 
 pipeline.cleanup()
 
-print(f"\n{'='*60}")
+print(f"\n{'=' * 60}")
 print("Dashboard state populated:")
 print(f"  Entities:  {len(result.extracted_entities)}")
-print(f"  DOMAIN:    {ner_labels.get('DOMAIN',0)}")
-print(f"  FILENAME:  {ner_labels.get('FILENAME',0)}")
-print(f"  UNKNOWN:   {ner_labels.get('UNKNOWN',0)}")
+print(f"  DOMAIN:    {ner_labels.get('DOMAIN', 0)}")
+print(f"  FILENAME:  {ner_labels.get('FILENAME', 0)}")
+print(f"  UNKNOWN:   {ner_labels.get('UNKNOWN', 0)}")
 print(f"  Nodes:     {len(result.graph.nodes) if result.graph else 0}")
 print(f"  Alerts:    {len(result.alerts)}")
 print(f"  Incidents: {len(result.incidents)}")
 print(f"  Errors:    {len(result.errors)}")
-print(f"{'='*60}")
+print(f"{'=' * 60}")
 
 # ── 6. Save result JSON ──
 out = Path("/tmp/opencode/phase7")

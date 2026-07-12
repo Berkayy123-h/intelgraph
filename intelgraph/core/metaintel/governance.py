@@ -116,7 +116,7 @@ class GlobalGovernanceEngine:
 
     def detect_conflicts(self) -> list[dict[str, Any]]:
         conflicts = []
-        for lid, layer in self._layers.items():
+        for _lid, layer in self._layers.items():
             if layer.conflicts:
                 conflicts.extend(layer.conflicts)
         return conflicts

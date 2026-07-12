@@ -289,7 +289,7 @@ def graph_shortest_path(ctx: click.Context, source_id: str, target_id: str, algo
         click.echo("  Path:")
         for i, pid in enumerate(result["path"]):
             marker = " -> " if i < len(result["path"]) - 1 else ""
-            click.echo(f"    {i+1}. {pid}{marker}")
+            click.echo(f"    {i + 1}. {pid}{marker}")
     else:
         click.echo(f"No path found between {source_id[:8]} and {target_id[:8]}")
 
@@ -333,7 +333,8 @@ def graph_weighted_pagerank(
     ctx: click.Context, damping: float, max_iterations: int, tolerance: float, top: int | None
 ) -> None:
     g = _build_graph(ctx)
-    weight_fn = lambda e: float(e.relationship.confidence_score) / 100.0 if e.relationship else 1.0
+    def weight_fn(e):
+        return float(e.relationship.confidence_score) / 100.0 if e.relationship else 1.0
     infl = InfluencePropagation(g, weight_fn=weight_fn)
     result = infl.weighted_page_rank(damping, max_iterations, tolerance)
     click.echo(

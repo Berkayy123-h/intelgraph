@@ -81,7 +81,7 @@ urlhaus_iocs = fetch_urlhaus_iocs(URLHAUS_CSV)
 total_urlhaus = sum(len(v) for v in urlhaus_iocs.values())
 print(f"  Toplam URLhaus IOC sayısı: {total_urlhaus}")
 for ioc_type, items in sorted(urlhaus_iocs.items()):
-    unique_vals = len(set(i["indicator"].strip().lower() for i in items if i.get("indicator")))
+    unique_vals = len({i["indicator"].strip().lower() for i in items if i.get("indicator")})
     print(f"    {ioc_type:12s}: {len(items)} entry, {unique_vals} unique")
 
 
@@ -105,10 +105,10 @@ for ioc_type in ("domain", "IPv4", "URL"):
 
 # Even if no exact match, we check for IP overlaps specifically
 # because URLhaus IPs are often in OTX too
-urlhaus_domains = set(i["indicator"].strip().lower() for i in urlhaus_iocs.get("domain", []))
-otx_domains = set(i["indicator"].strip().lower() for i in all_otx_iocs.get("domain", []))
-urlhaus_ips = set(i["indicator"].strip().lower() for i in urlhaus_iocs.get("IPv4", []))
-otx_ips = set(i["indicator"].strip().lower() for i in all_otx_iocs.get("IPv4", []))
+urlhaus_domains = {i["indicator"].strip().lower() for i in urlhaus_iocs.get("domain", [])}
+otx_domains = {i["indicator"].strip().lower() for i in all_otx_iocs.get("domain", [])}
+urlhaus_ips = {i["indicator"].strip().lower() for i in urlhaus_iocs.get("IPv4", [])}
+otx_ips = {i["indicator"].strip().lower() for i in all_otx_iocs.get("IPv4", [])}
 
 ip_overlap = urlhaus_ips & otx_ips
 domain_overlap = urlhaus_domains & otx_domains
@@ -150,7 +150,7 @@ for p in pulses[:5]:
 
 print(f"  Kaynak sayısı: {len(sources)}")
 for s in sources:
-    print(f"    [{s['id'][:16]}] {s['name'][:60]} (value={s.get('value','?')})")
+    print(f"    [{s['id'][:16]}] {s['name'][:60]} (value={s.get('value', '?')})")
 
 thresholds = {
     "c2_detection": {
@@ -193,7 +193,7 @@ print(f"  FILENAME: {len(filenames)}")
 print(f"  UNKNOWN:  {len(unknowns)}")
 
 if domains:
-    unique_domains = sorted(set(d.text for d in domains))
+    unique_domains = sorted({d.text for d in domains})
     print(f"  Benzersiz domain: {len(unique_domains)}")
     print(f"  Örnek: {unique_domains[:10]}")
 
@@ -274,7 +274,7 @@ for p in pulses[:10]:
 print("  OTX pulse'larında NER entity dağılımı:")
 total_ner = sum(otx_ner_stats.values())
 for label, cnt in otx_ner_stats.most_common():
-    print(f"    {label:12s}: {cnt} ({cnt/total_ner*100:.1f}%)")
+    print(f"    {label:12s}: {cnt} ({cnt / total_ner * 100:.1f}%)")
 
 print("\n  Örnekler:")
 for label, examples in otx_ner_examples.items():
@@ -352,7 +352,7 @@ Pipeline:
 
 NER FP Fix (OTX):
   OTX NER entity:          {total_ner}
-  DOMAIN/FILENAME/UNKNOWN: {otx_ner_stats.get('DOMAIN',0)}/{otx_ner_stats.get('FILENAME',0)}/{otx_ner_stats.get('UNKNOWN',0)}
+  DOMAIN/FILENAME/UNKNOWN: {otx_ner_stats.get("DOMAIN", 0)}/{otx_ner_stats.get("FILENAME", 0)}/{otx_ner_stats.get("UNKNOWN", 0)}
 """)
 
 # Save full result

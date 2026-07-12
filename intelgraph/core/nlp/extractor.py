@@ -568,7 +568,7 @@ class EventExtractor:
             for event_type, triggers in TRIGGER_EVENTS.items():
                 for trigger in triggers:
                     if re.search(r"\b" + trigger + r"\b", sentence, re.IGNORECASE):
-                        words = sentence.split()
+                        sentence.split()
                         actors = [
                             e.text
                             for e in (entities or [])

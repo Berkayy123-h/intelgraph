@@ -112,7 +112,7 @@ print(f"Eşik (0.7): {'GEÇTİ' if score >= 0.7 else 'KALDI'}")
 duplicates = matcher.find_duplicates([monday_dict, tuesday_dict])
 print(f"\nfind_duplicates sonucu: {len(duplicates)} çift bulundu")
 for a, b, s in duplicates:
-    print(f"  {a.get('id','?')[:12]} ↔ {b.get('id','?')[:12]}  skor={s:.4f}")
+    print(f"  {a.get('id', '?')[:12]} ↔ {b.get('id', '?')[:12]}  skor={s:.4f}")
 
 # Merge
 merger = MergeEngine(default_strategy="most_confident")

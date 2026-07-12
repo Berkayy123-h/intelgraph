@@ -64,9 +64,8 @@ class CrossSystemConsistency:
         score = 1.0
         if anomaly_result and causal_result:
             anom_scores = anomaly_result.get("scores", {})
-            causal_paths = 0
             if causal_result.get("root_causes"):
-                causal_paths = len(causal_result["root_causes"])
+                len(causal_result["root_causes"])
             overlap = 0
             for nid in anom_scores:
                 for rc in causal_result.get("root_causes", []):

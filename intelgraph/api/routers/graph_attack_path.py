@@ -98,7 +98,9 @@ def get_attack_surface(entity_id: str, max_depth: int = 4):
 
 
 @router.post("/explain/{path_id}", summary="Get edge-level explanation of an attack path")
-def explain_attack_path(path_id: str, body: dict[str, Any] = {}):
+def explain_attack_path(path_id: str, body: dict[str, Any] = None):
+    if body is None:
+        body = {}
     analyzer = AttackPathAnalyzer(_build_graph(), cache=_cache)
     result = analyzer.explain_path(path_id, body)
     if not result["found"]:
