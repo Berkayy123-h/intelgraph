@@ -1,14 +1,15 @@
-import math
 import random
 from typing import Any
 
-import pytest
-
 from intelgraph.core.entity.person import Person
-from intelgraph.core.graph.graph import IntelligenceGraph
+from intelgraph.core.graph.anomaly import (
+    EXPLANATION_SCHEMA_VERSION,
+    AnomalyBaseline,
+    AnomalyDetector,
+)
 from intelgraph.core.graph.edge import Edge
+from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.graph.node import Node
-from intelgraph.core.graph.anomaly import AnomalyDetector, AnomalyBaseline, EXPLANATION_SCHEMA_VERSION
 
 
 def _make_graph(seed: int = 42) -> IntelligenceGraph:
@@ -24,15 +25,24 @@ def _make_graph(seed: int = 42) -> IntelligenceGraph:
         g.reverse_adjacency[nid] = set()
         g.node_edges[nid] = set()
     edges_data = [
-        ("node_0", "node_1", 80), ("node_0", "node_2", 60),
-        ("node_1", "node_3", 90), ("node_1", "node_4", 50),
-        ("node_2", "node_5", 70), ("node_2", "node_6", 40),
-        ("node_3", "node_7", 85), ("node_4", "node_8", 75),
-        ("node_5", "node_9", 65), ("node_6", "node_7", 55),
-        ("node_7", "node_8", 45), ("node_8", "node_9", 95),
-        ("node_3", "node_0", 30), ("node_5", "node_6", 35),
-        ("node_10", "node_11", 80), ("node_11", "node_12", 70),
-        ("node_12", "node_13", 90), ("node_13", "node_14", 60),
+        ("node_0", "node_1", 80),
+        ("node_0", "node_2", 60),
+        ("node_1", "node_3", 90),
+        ("node_1", "node_4", 50),
+        ("node_2", "node_5", 70),
+        ("node_2", "node_6", 40),
+        ("node_3", "node_7", 85),
+        ("node_4", "node_8", 75),
+        ("node_5", "node_9", 65),
+        ("node_6", "node_7", 55),
+        ("node_7", "node_8", 45),
+        ("node_8", "node_9", 95),
+        ("node_3", "node_0", 30),
+        ("node_5", "node_6", 35),
+        ("node_10", "node_11", 80),
+        ("node_11", "node_12", 70),
+        ("node_12", "node_13", 90),
+        ("node_13", "node_14", 60),
     ]
     for idx, (src, tgt, conf) in enumerate(edges_data):
         eid = f"edge_{idx}"
@@ -52,6 +62,7 @@ def _make_graph(seed: int = 42) -> IntelligenceGraph:
 def _make_rel(eid: str, src: str, tgt: str, conf: int) -> Any:
     from intelgraph.core.relationship import Relationship
     from intelgraph.core.relationship.types import RelationshipType
+
     return Relationship(
         id=eid,
         source_id=src,
@@ -89,7 +100,10 @@ class TestAnomalyBaseline:
 
     def test_adaptive_threshold(self):
         bl = AnomalyBaseline()
-        features = {f"n{i}": {"degree": float(i), "confidence": 50.0, "__entity_type": "t"} for i in range(10)}
+        features = {
+            f"n{i}": {"degree": float(i), "confidence": 50.0, "__entity_type": "t"}
+            for i in range(10)
+        }
         bl.compute_baselines(features)
         thresh = bl.compute_adaptive_threshold("t", "degree", multiplier=2.0)
         mean = bl.get_baseline("t", "degree")["mean"]
@@ -99,7 +113,10 @@ class TestAnomalyBaseline:
 
     def test_drift_deviation(self):
         bl = AnomalyBaseline()
-        features = {f"n{i}": {"degree": float(i), "confidence": 50.0, "__entity_type": "t"} for i in range(5)}
+        features = {
+            f"n{i}": {"degree": float(i), "confidence": 50.0, "__entity_type": "t"}
+            for i in range(5)
+        }
         bl.compute_baselines(features)
         new_features = {"n0": {"degree": 100.0, "confidence": 50.0, "__entity_type": "t"}}
         drift = bl.drift_deviation(new_features)
@@ -109,7 +126,9 @@ class TestAnomalyBaseline:
     def test_historical_drift(self):
         bl = AnomalyBaseline()
         for i in range(10):
-            bl.record_snapshot({"n1": {"degree": float(i), "confidence": 50.0, "__entity_type": "t"}})
+            bl.record_snapshot(
+                {"n1": {"degree": float(i), "confidence": 50.0, "__entity_type": "t"}}
+            )
         drift = bl.historical_drift()
         assert "n1" in drift
         assert drift["n1"] > 0
@@ -518,7 +537,14 @@ class TestAnomalyFeatureAttribution:
         detector = AnomalyDetector(g)
         result = detector.detect_for_node("node_0")
         signals = result["signals"]
-        expected_signals = {"zscore", "iqr", "degree_outlier", "temporal", "community", "influence_score"}
+        expected_signals = {
+            "zscore",
+            "iqr",
+            "degree_outlier",
+            "temporal",
+            "community",
+            "influence_score",
+        }
         assert expected_signals.issubset(set(signals.keys()))
 
     def test_contribution_stability(self):

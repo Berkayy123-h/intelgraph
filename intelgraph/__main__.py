@@ -1,30 +1,30 @@
+
 import click
-import sys
 
 from intelgraph import __version__
-from intelgraph.cli.collect import collect_group
-from intelgraph.cli.graph import graph_group
-from intelgraph.cli.verify import verify_group
-from intelgraph.cli.report import report_group
-from intelgraph.cli.source import source_group
-from intelgraph.cli.evidence import evidence_group
-from intelgraph.cli.review import review_group
-from intelgraph.cli.task import task_group
-from intelgraph.cli.ops import ops_group
-from intelgraph.cli.datasource import datasource_group
+from intelgraph.cli.agent import agent_group
 from intelgraph.cli.anomaly import anomaly_group
 from intelgraph.cli.attack_path import attack_path_group
-from intelgraph.cli.agent import agent_group
 from intelgraph.cli.cognitive import cognitive_group
+from intelgraph.cli.collect import collect_group
+from intelgraph.cli.datasource import datasource_group
+from intelgraph.cli.evidence import evidence_group
+from intelgraph.cli.graph import graph_group
 from intelgraph.cli.metaintel import metaintel_group
-from intelgraph.cli.ucos import ucos_group
-from intelgraph.cli.reasoning import reasoning_group
 from intelgraph.cli.nlp import nlp_group
+from intelgraph.cli.ops import ops_group
 from intelgraph.cli.prediction import prediction_group
+from intelgraph.cli.reasoning import reasoning_group
+from intelgraph.cli.report import report_group
+from intelgraph.cli.review import review_group
+from intelgraph.cli.source import source_group
+from intelgraph.cli.task import task_group
+from intelgraph.cli.ucos import ucos_group
+from intelgraph.cli.verify import verify_group
 from intelgraph.core.config import load_config
+from intelgraph.core.correlation import CorrelationID
 from intelgraph.core.enterprise import load_env_overrides, validate_config
 from intelgraph.core.logging import setup_logging
-from intelgraph.core.correlation import CorrelationID
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})

@@ -3,13 +3,14 @@ from __future__ import annotations
 import math
 import time
 from collections import deque
-from dataclasses import dataclass, field
-from datetime import datetime, timezone, timedelta
-from typing import Any, Callable
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
+from intelgraph.core.enterprise.observability import get_metrics
 from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.graph.node import Node
-from intelgraph.core.enterprise.observability import get_metrics
 
 EXPLANATION_SCHEMA_VERSION = "1.0"
 
@@ -46,7 +47,9 @@ class AnomalyBaseline:
     def _entity_type_key(self, node: Node) -> str:
         return node.entity_type or "unknown"
 
-    def record_snapshot(self, features: dict[str, dict[str, float]], timestamp: float | None = None) -> None:
+    def record_snapshot(
+        self, features: dict[str, dict[str, float]], timestamp: float | None = None
+    ) -> None:
         ts = timestamp or time.time()
         for nid, feats in features.items():
             self._feature_histories.setdefault(nid, []).append(feats)
@@ -59,7 +62,9 @@ class AnomalyBaseline:
         entity_features: dict[str, list[dict[str, float]]] = {}
         for nid, feats in features.items():
             n = feats.get("__entity_type", "unknown")
-            entity_features.setdefault(n, []).append({k: v for k, v in feats.items() if not k.startswith("__")})
+            entity_features.setdefault(n, []).append(
+                {k: v for k, v in feats.items() if not k.startswith("__")}
+            )
         for etype, feat_list in entity_features.items():
             if not feat_list:
                 continue
@@ -86,7 +91,9 @@ class AnomalyBaseline:
                 }
             self._baselines[etype] = baseline
 
-    def compute_adaptive_threshold(self, etype: str, feature: str, multiplier: float = 3.0) -> float:
+    def compute_adaptive_threshold(
+        self, etype: str, feature: str, multiplier: float = 3.0
+    ) -> float:
         bl = self._baselines.get(etype, {})
         feat_bl = bl.get(feature, {})
         mean = feat_bl.get("mean", 0.0)
@@ -129,7 +136,11 @@ class AnomalyBaseline:
             recent_5 = history[-5:] if len(history) >= 5 else history
             means: list[float] = []
             for f in recent_5:
-                numeric = [v for k, v in f.items() if isinstance(v, (int, float)) and not k.startswith("__")]
+                numeric = [
+                    v
+                    for k, v in f.items()
+                    if isinstance(v, (int, float)) and not k.startswith("__")
+                ]
                 means.append(sum(numeric) / max(len(numeric), 1) if numeric else 0.0)
             drift[nid] = round(max(means) - min(means), 4) if means else 0.0
         return drift
@@ -201,7 +212,9 @@ class AnomalyDetector:
             }
         return features
 
-    def statistical_zscore(self, features: dict[str, dict[str, float]] | None = None) -> dict[str, Any]:
+    def statistical_zscore(
+        self, features: dict[str, dict[str, float]] | None = None
+    ) -> dict[str, Any]:
         t0 = time.perf_counter_ns()
         if features is None:
             features = self._compute_features()
@@ -227,14 +240,16 @@ class AnomalyDetector:
                 z = (val - mean) / std
                 threshold = self._config.get("zscore_threshold", 3.0)
                 if abs(z) > threshold:
-                    node_anomalies.append({
-                        "feature": key,
-                        "value": round(val, 4),
-                        "mean": round(mean, 4),
-                        "std": round(std, 4),
-                        "zscore": round(z, 4),
-                        "severity": "high" if abs(z) > threshold * 1.5 else "medium",
-                    })
+                    node_anomalies.append(
+                        {
+                            "feature": key,
+                            "value": round(val, 4),
+                            "mean": round(mean, 4),
+                            "std": round(std, 4),
+                            "zscore": round(z, 4),
+                            "severity": "high" if abs(z) > threshold * 1.5 else "medium",
+                        }
+                    )
             if node_anomalies:
                 anomalies[nid] = node_anomalies
         duration = time.perf_counter_ns() - t0
@@ -248,7 +263,9 @@ class AnomalyDetector:
             "execution_time_ms": round(duration / 1_000_000, 2),
         }
 
-    def statistical_iqr(self, features: dict[str, dict[str, float]] | None = None) -> dict[str, Any]:
+    def statistical_iqr(
+        self, features: dict[str, dict[str, float]] | None = None
+    ) -> dict[str, Any]:
         t0 = time.perf_counter_ns()
         if features is None:
             features = self._compute_features()
@@ -274,18 +291,22 @@ class AnomalyDetector:
                 stats = global_stats[key]
                 if val < stats["lower"] or val > stats["upper"]:
                     direction = "high" if val > stats["upper"] else "low"
-                    distance = max(abs(val - stats["upper"]), abs(val - stats["lower"])) / max(stats["iqr"], 1e-10)
-                    node_anomalies.append({
-                        "feature": key,
-                        "value": round(val, 4),
-                        "q1": round(stats["q1"], 4),
-                        "q3": round(stats["q3"], 4),
-                        "iqr": round(stats["iqr"], 4),
-                        "lower_fence": round(stats["lower"], 4),
-                        "upper_fence": round(stats["upper"], 4),
-                        "direction": direction,
-                        "severity": "high" if distance > 3.0 else "medium",
-                    })
+                    distance = max(abs(val - stats["upper"]), abs(val - stats["lower"])) / max(
+                        stats["iqr"], 1e-10
+                    )
+                    node_anomalies.append(
+                        {
+                            "feature": key,
+                            "value": round(val, 4),
+                            "q1": round(stats["q1"], 4),
+                            "q3": round(stats["q3"], 4),
+                            "iqr": round(stats["iqr"], 4),
+                            "lower_fence": round(stats["lower"], 4),
+                            "upper_fence": round(stats["upper"], 4),
+                            "direction": direction,
+                            "severity": "high" if distance > 3.0 else "medium",
+                        }
+                    )
             if node_anomalies:
                 anomalies[nid] = node_anomalies
         duration = time.perf_counter_ns() - t0
@@ -312,24 +333,30 @@ class AnomalyDetector:
         lower = q1 - 1.5 * iqr
         upper = q3 + 1.5 * iqr
         mean_deg = sum(deg_values) / len(deg_values)
-        std_deg = math.sqrt(sum((d - mean_deg) ** 2 for d in deg_values) / len(deg_values)) if deg_values else 1e-10
+        std_deg = (
+            math.sqrt(sum((d - mean_deg) ** 2 for d in deg_values) / len(deg_values))
+            if deg_values
+            else 1e-10
+        )
         anomalies: dict[str, list[dict[str, Any]]] = {}
         for nid, deg in degrees:
             z = (deg - mean_deg) / std_deg if std_deg > 0 else 0.0
             node_anomalies: list[dict[str, Any]] = []
             if deg < lower or deg > upper:
                 direction = "high_degree" if deg > upper else "low_degree"
-                node_anomalies.append({
-                    "feature": "degree",
-                    "value": deg,
-                    "mean": round(mean_deg, 2),
-                    "std": round(std_deg, 2),
-                    "zscore": round(z, 4),
-                    "lower_fence": round(lower, 2),
-                    "upper_fence": round(upper, 2),
-                    "direction": direction,
-                    "severity": "high" if abs(z) > 4.0 else "medium",
-                })
+                node_anomalies.append(
+                    {
+                        "feature": "degree",
+                        "value": deg,
+                        "mean": round(mean_deg, 2),
+                        "std": round(std_deg, 2),
+                        "zscore": round(z, 4),
+                        "lower_fence": round(lower, 2),
+                        "upper_fence": round(upper, 2),
+                        "direction": direction,
+                        "severity": "high" if abs(z) > 4.0 else "medium",
+                    }
+                )
                 anomalies[nid] = node_anomalies
         duration = time.perf_counter_ns() - t0
         self._record_duration("degree_outliers", duration)
@@ -359,20 +386,24 @@ class AnomalyDetector:
             node_anomalies: list[dict[str, Any]] = []
             deviation = drift.get(nid, 0.0)
             if deviation > threshold:
-                node_anomalies.append({
-                    "feature": "baseline_deviation",
-                    "value": round(deviation, 4),
-                    "threshold": threshold,
-                    "severity": "high" if deviation > threshold * 1.5 else "medium",
-                })
+                node_anomalies.append(
+                    {
+                        "feature": "baseline_deviation",
+                        "value": round(deviation, 4),
+                        "threshold": threshold,
+                        "severity": "high" if deviation > threshold * 1.5 else "medium",
+                    }
+                )
             hist_drift = historical_drift.get(nid, 0.0)
             if hist_drift > threshold:
-                node_anomalies.append({
-                    "feature": "historical_drift",
-                    "value": round(hist_drift, 4),
-                    "threshold": threshold,
-                    "severity": "high" if hist_drift > threshold * 1.5 else "medium",
-                })
+                node_anomalies.append(
+                    {
+                        "feature": "historical_drift",
+                        "value": round(hist_drift, 4),
+                        "threshold": threshold,
+                        "severity": "high" if hist_drift > threshold * 1.5 else "medium",
+                    }
+                )
             if node_anomalies:
                 anomalies[nid] = node_anomalies
         duration = time.perf_counter_ns() - t0
@@ -421,7 +452,9 @@ class AnomalyDetector:
                 communities.setdefault(cid, []).append(nid)
         community_stats: dict[str, dict[str, float]] = {}
         for cid, members in communities.items():
-            member_degrees = [len(self._graph.adjacency.get(m, set())) for m in members if m in self._graph.nodes]
+            member_degrees = [
+                len(self._graph.adjacency.get(m, set())) for m in members if m in self._graph.nodes
+            ]
             if not member_degrees:
                 continue
             community_stats[cid] = {
@@ -442,25 +475,35 @@ class AnomalyDetector:
                 node = self._graph.nodes.get(member)
                 node_anomalies: list[dict[str, Any]] = []
                 mean_deg = stats["mean_degree"]
-                std_deg = math.sqrt(
-                    sum((len(self._graph.adjacency.get(m, set())) - mean_deg) ** 2
-                        for m in members if m in self._graph.nodes) / max(len(members), 1)
-                ) if len(members) > 1 else 1e-10
+                std_deg = (
+                    math.sqrt(
+                        sum(
+                            (len(self._graph.adjacency.get(m, set())) - mean_deg) ** 2
+                            for m in members
+                            if m in self._graph.nodes
+                        )
+                        / max(len(members), 1)
+                    )
+                    if len(members) > 1
+                    else 1e-10
+                )
                 z = (deg - mean_deg) / std_deg if std_deg > 0 else 0.0
                 threshold = self._config.get("community_zscore_threshold", 2.5)
                 if abs(z) > threshold:
                     direction = "high_degree_for_community" if z > 0 else "low_degree_for_community"
-                    node_anomalies.append({
-                        "feature": "community_degree_deviation",
-                        "value": deg,
-                        "community_mean": round(mean_deg, 2),
-                        "community_std": round(std_deg, 2),
-                        "zscore": round(z, 4),
-                        "community_id": cid,
-                        "community_size": stats["size"],
-                        "direction": direction,
-                        "severity": "high" if abs(z) > threshold * 1.5 else "medium",
-                    })
+                    node_anomalies.append(
+                        {
+                            "feature": "community_degree_deviation",
+                            "value": deg,
+                            "community_mean": round(mean_deg, 2),
+                            "community_std": round(std_deg, 2),
+                            "zscore": round(z, 4),
+                            "community_id": cid,
+                            "community_size": stats["size"],
+                            "direction": direction,
+                            "severity": "high" if abs(z) > threshold * 1.5 else "medium",
+                        }
+                    )
                 if node_anomalies:
                     anomalies[member] = node_anomalies
         duration = time.perf_counter_ns() - t0
@@ -476,6 +519,7 @@ class AnomalyDetector:
 
     def _compute_influence_scores_snapshot(self) -> dict[str, float]:
         from intelgraph.core.graph.influence import InfluencePropagation
+
         infl = InfluencePropagation(self._graph, weight_fn=self._weight_fn)
         result = infl.influence_scores()
         return result.get("scores", {})
@@ -500,20 +544,32 @@ class AnomalyDetector:
             is_anomalous_deg = nid in degree_result["anomalies"]
             is_anomalous_temp = nid in temporal_result["anomalies"]
             is_anomalous_comm = nid in community_result["anomalies"]
-            zscore_intensity = sum(abs(a.get("zscore", 0.0)) for a in zscore_result["anomalies"].get(nid, [])) / max(len(zscore_result["anomalies"].get(nid, [])), 1)
+            zscore_intensity = sum(
+                abs(a.get("zscore", 0.0)) for a in zscore_result["anomalies"].get(nid, [])
+            ) / max(len(zscore_result["anomalies"].get(nid, [])), 1)
             iqr_intensity = len(iqr_result["anomalies"].get(nid, []))
-            deg_intensity = sum(abs(a.get("zscore", 0.0)) for a in degree_result["anomalies"].get(nid, [])) / max(len(degree_result["anomalies"].get(nid, [])), 1)
+            deg_intensity = sum(
+                abs(a.get("zscore", 0.0)) for a in degree_result["anomalies"].get(nid, [])
+            ) / max(len(degree_result["anomalies"].get(nid, [])), 1)
             temp_intensity = len(temporal_result["anomalies"].get(nid, []))
             comm_intensity = len(community_result["anomalies"].get(nid, []))
             influence_score = influence_scores.get(nid, 0.0)
-            signal_count = sum([is_anomalous_z, is_anomalous_iqr, is_anomalous_deg, is_anomalous_temp, is_anomalous_comm])
+            signal_count = sum(
+                [
+                    is_anomalous_z,
+                    is_anomalous_iqr,
+                    is_anomalous_deg,
+                    is_anomalous_temp,
+                    is_anomalous_comm,
+                ]
+            )
             raw = (
-                float(is_anomalous_z) * 0.20 +
-                float(is_anomalous_iqr) * 0.15 +
-                float(is_anomalous_deg) * 0.20 +
-                float(is_anomalous_temp) * 0.15 +
-                float(is_anomalous_comm) * 0.15 +
-                min(influence_score, 1.0) * 0.15
+                float(is_anomalous_z) * 0.20
+                + float(is_anomalous_iqr) * 0.15
+                + float(is_anomalous_deg) * 0.20
+                + float(is_anomalous_temp) * 0.15
+                + float(is_anomalous_comm) * 0.15
+                + min(influence_score, 1.0) * 0.15
             )
             score = min(raw * (1.0 + 0.3 * math.log2(max(signal_count, 1))), 1.0)
             entity_type_signals[nid] = {
@@ -539,7 +595,15 @@ class AnomalyDetector:
             raw_score += signals["temporal"] * 0.15
             raw_score += signals["community"] * 0.15
             raw_score += min(signals["influence_score"], 1.0) * 0.15
-            signal_count = sum([signals["zscore"], signals["iqr"], signals["degree_outlier"], signals["temporal"], signals["community"]])
+            signal_count = sum(
+                [
+                    signals["zscore"],
+                    signals["iqr"],
+                    signals["degree_outlier"],
+                    signals["temporal"],
+                    signals["community"],
+                ]
+            )
             score = min(raw_score * (1.0 + 0.3 * math.log2(max(signal_count, 1))), 1.0)
             scores[nid] = round(score, 6)
         scores_sorted = dict(sorted(scores.items(), key=lambda x: -x[1]))
@@ -549,8 +613,12 @@ class AnomalyDetector:
         self._record_duration("multi_factor", duration)
         self._metrics.set_gauge("anomaly_multi_factor_duration_ms", duration / 1_000_000)
         self._metrics.set_gauge("anomaly_node_count", float(len(scores)))
-        self._metrics.set_gauge("anomaly_high_count", float(sum(1 for v in scores.values() if v > 0.7)))
-        self._metrics.set_gauge("anomaly_medium_count", float(sum(1 for v in scores.values() if 0.4 < v <= 0.7)))
+        self._metrics.set_gauge(
+            "anomaly_high_count", float(sum(1 for v in scores.values() if v > 0.7))
+        )
+        self._metrics.set_gauge(
+            "anomaly_medium_count", float(sum(1 for v in scores.values() if 0.4 < v <= 0.7))
+        )
         self._metrics.set_gauge("anomaly_mean_score", sum(scores.values()) / max(len(scores), 1))
         return {
             "scores": scores_sorted,
@@ -660,20 +728,22 @@ class AnomalyDetector:
             z = (ts - mean) / std
             if z >= 2.0:
                 score = min(100.0, z * 20.0)
-                results.append(AnomalyResult(
-                    node_id=nid,
-                    anomaly_type="threat_score",
-                    anomaly_score=score,
-                    explanation=f"Threat score {ts:.1f} is {z:.1f}σ above {etype_name} mean {mean:.1f}",
-                    entity_type=etype_name,
-                    entity_identifier=self._entity_identifier(nid),
-                ))
+                results.append(
+                    AnomalyResult(
+                        node_id=nid,
+                        anomaly_type="threat_score",
+                        anomaly_score=score,
+                        explanation=f"Threat score {ts:.1f} is {z:.1f}σ above {etype_name} mean {mean:.1f}",
+                        entity_type=etype_name,
+                        entity_identifier=self._entity_identifier(nid),
+                    )
+                )
         return results
 
     def temporal_spike_anomaly(self) -> list[AnomalyResult]:
         """Flag entities with sudden activity spike in last 24h vs 30d avg."""
         results: list[AnomalyResult] = []
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         cutoff_24h = now - timedelta(hours=24)
         cutoff_30d = now - timedelta(days=30)
 
@@ -707,15 +777,17 @@ class AnomalyDetector:
             ratio = count_24h / (count_30d / 30.0)  # normalized to daily rate
             if ratio > 3.0:
                 score = min(100.0, ratio * 15.0)
-                results.append(AnomalyResult(
-                    node_id=nid,
-                    anomaly_type="temporal_spike",
-                    anomaly_score=score,
-                    explanation=f"Recent activity spike: {count_24h} evidence in 24h "
-                                f"({ratio:.1f}x the 30d daily avg of {count_30d/30:.1f})",
-                    entity_type=etype_name,
-                    entity_identifier=self._entity_identifier(nid),
-                ))
+                results.append(
+                    AnomalyResult(
+                        node_id=nid,
+                        anomaly_type="temporal_spike",
+                        anomaly_score=score,
+                        explanation=f"Recent activity spike: {count_24h} evidence in 24h "
+                        f"({ratio:.1f}x the 30d daily avg of {count_30d/30:.1f})",
+                        entity_type=etype_name,
+                        entity_identifier=self._entity_identifier(nid),
+                    )
+                )
         return results
 
     def relationship_outlier_anomaly(self) -> list[AnomalyResult]:
@@ -755,20 +827,26 @@ class AnomalyDetector:
             z = (deg - mean) / std
             if z >= 2.0:
                 score = min(100.0, z * 15.0)
-                results.append(AnomalyResult(
-                    node_id=nid,
-                    anomaly_type="relationship_outlier",
-                    anomaly_score=score,
-                    explanation=f"Has {deg} edges ({z:.1f}σ above {etype_name} mean {mean:.1f})",
-                    entity_type=etype_name,
-                    entity_identifier=self._entity_identifier(nid),
-                ))
+                results.append(
+                    AnomalyResult(
+                        node_id=nid,
+                        anomaly_type="relationship_outlier",
+                        anomaly_score=score,
+                        explanation=f"Has {deg} edges ({z:.1f}σ above {etype_name} mean {mean:.1f})",
+                        entity_type=etype_name,
+                        entity_identifier=self._entity_identifier(nid),
+                    )
+                )
         return results
 
     def detect_all(self) -> list[AnomalyResult]:
         """Run all anomaly algorithms and return combined, deduplicated results."""
         combined: dict[str, AnomalyResult] = {}
-        for detector in [self.threat_score_anomaly, self.temporal_spike_anomaly, self.relationship_outlier_anomaly]:
+        for detector in [
+            self.threat_score_anomaly,
+            self.temporal_spike_anomaly,
+            self.relationship_outlier_anomaly,
+        ]:
             for r in detector():
                 key = f"{r.node_id}:{r.anomaly_type}"
                 if key not in combined or r.anomaly_score > combined[key].anomaly_score:
@@ -809,13 +887,17 @@ class AnomalyDetector:
             conf = self.confidence_score(nid)
             contribs = self.feature_contributions(nid)
             top_signal = max(contribs, key=contribs.get) if contribs else "unknown"
-            top_anomalies.append({
-                "node_id": nid,
-                "anomaly_score": score,
-                "confidence": conf,
-                "top_signal": top_signal,
-                "signal_count": sum(1 for k, v in sig.items() if k.endswith("_intensity") is False and v > 0),
-            })
+            top_anomalies.append(
+                {
+                    "node_id": nid,
+                    "anomaly_score": score,
+                    "confidence": conf,
+                    "top_signal": top_signal,
+                    "signal_count": sum(
+                        1 for k, v in sig.items() if k.endswith("_intensity") is False and v > 0
+                    ),
+                }
+            )
         duration = time.perf_counter_ns() - t0
         self._record_duration("detect", duration)
         self._metrics.set_gauge("anomaly_detect_duration_ms", duration / 1_000_000)
@@ -851,7 +933,14 @@ class AnomalyDetector:
         conf = self.confidence_score(node_id)
         contribs = self.feature_contributions(node_id)
         node_signal_breakdown: dict[str, Any] = {}
-        for signal_name in ["zscore", "iqr", "degree_outlier", "temporal", "community", "influence_score"]:
+        for signal_name in [
+            "zscore",
+            "iqr",
+            "degree_outlier",
+            "temporal",
+            "community",
+            "influence_score",
+        ]:
             val = sig.get(signal_name, 0.0)
             intensity_key = f"{signal_name}_intensity" if signal_name != "influence_score" else None
             intensity = sig.get(intensity_key, 0.0) if intensity_key else val
@@ -882,12 +971,18 @@ class AnomalyDetector:
         for nid in node_ids:
             hist_drift = historical_drift.get(nid, 0.0)
             score = multi_scores.get(nid, 0.0)
-            timeline_entries.append({
-                "node_id": nid,
-                "current_score": score,
-                "historical_drift": hist_drift,
-                "trend": "increasing" if hist_drift > 0.5 else ("stable" if hist_drift > 0.1 else "decreasing"),
-            })
+            timeline_entries.append(
+                {
+                    "node_id": nid,
+                    "current_score": score,
+                    "historical_drift": hist_drift,
+                    "trend": (
+                        "increasing"
+                        if hist_drift > 0.5
+                        else ("stable" if hist_drift > 0.1 else "decreasing")
+                    ),
+                }
+            )
         timeline_entries.sort(key=lambda x: -x["current_score"])
         return {
             "timeline": timeline_entries,
@@ -908,13 +1003,19 @@ class AnomalyDetector:
             sig = signals.get(nid, {})
             conf = self.confidence_score(nid)
             contribs = self.feature_contributions(nid)
-            result.append({
-                "node_id": nid,
-                "anomaly_score": score,
-                "confidence": conf,
-                "top_signal": max(contribs, key=contribs.get) if contribs else "unknown",
-                "signal_count": sum(1 for k, v in sig.items() if not k.endswith("_intensity") and k != "influence_score" and v > 0),
-            })
+            result.append(
+                {
+                    "node_id": nid,
+                    "anomaly_score": score,
+                    "confidence": conf,
+                    "top_signal": max(contribs, key=contribs.get) if contribs else "unknown",
+                    "signal_count": sum(
+                        1
+                        for k, v in sig.items()
+                        if not k.endswith("_intensity") and k != "influence_score" and v > 0
+                    ),
+                }
+            )
         duration = time.perf_counter_ns() - t0
         return {
             "top_nodes": result,
@@ -930,10 +1031,18 @@ class AnomalyDetector:
         detailed: bool = False,
     ) -> dict[str, Any]:
         if node_id not in self._graph.nodes:
-            return {"node_id": node_id, "found": False, "schema_version": EXPLANATION_SCHEMA_VERSION}
+            return {
+                "node_id": node_id,
+                "found": False,
+                "schema_version": EXPLANATION_SCHEMA_VERSION,
+            }
         features = self._compute_features()
         if node_id not in features:
-            return {"node_id": node_id, "found": False, "schema_version": EXPLANATION_SCHEMA_VERSION}
+            return {
+                "node_id": node_id,
+                "found": False,
+                "schema_version": EXPLANATION_SCHEMA_VERSION,
+            }
         entity_type = features[node_id].get("__entity_type", "unknown")
         multi_result = self.multi_factor_score()
         overall_score = multi_result["scores"].get(node_id, 0.0)
@@ -948,7 +1057,11 @@ class AnomalyDetector:
             intensity = signals.get(f"{signal_name}_intensity", 0.0)
             detail: dict[str, Any] = {
                 "score": round(float(intensity), 4) if detected else 0.0,
-                "contribution": contribs.get(signal_name, 0.0) if detailed else round(contribs.get(signal_name, 0.0), 4),
+                "contribution": (
+                    contribs.get(signal_name, 0.0)
+                    if detailed
+                    else round(contribs.get(signal_name, 0.0), 4)
+                ),
                 "detected": detected,
             }
             if detailed:
@@ -957,20 +1070,30 @@ class AnomalyDetector:
             signal_details[signal_name] = detail
         influence_signal = {
             "score": round(signals.get("influence_score", 0.0), 6),
-            "contribution": contribs.get("influence_score", 0.0) if detailed else round(contribs.get("influence_score", 0.0), 4),
+            "contribution": (
+                contribs.get("influence_score", 0.0)
+                if detailed
+                else round(contribs.get("influence_score", 0.0), 4)
+            ),
             "detected": bool(signals.get("influence_score", 0.0) > 0.1),
         }
         signal_details["influence"] = influence_signal
         top_contributors = sorted(contribs.items(), key=lambda x: -x[1])[:3]
-        baseline_deviation = sum(abs(feats.get(k, 0.0) - bl.get(k, {}).get("mean", 0.0)) / max(bl.get(k, {}).get("std", 1e-10), 1e-10)
-                                for k in feats if k in bl and bl[k].get("std", 0) > 0)
+        baseline_deviation = sum(
+            abs(feats.get(k, 0.0) - bl.get(k, {}).get("mean", 0.0))
+            / max(bl.get(k, {}).get("std", 1e-10), 1e-10)
+            for k in feats
+            if k in bl and bl[k].get("std", 0) > 0
+        )
         result: dict[str, Any] = {
             "schema_version": EXPLANATION_SCHEMA_VERSION,
             "node_id": node_id,
             "found": True,
             "overall_score": round(overall_score, 6),
             "confidence": conf,
-            "severity": "high" if overall_score > 0.7 else ("medium" if overall_score > 0.4 else "low"),
+            "severity": (
+                "high" if overall_score > 0.7 else ("medium" if overall_score > 0.4 else "low")
+            ),
             "signals": signal_details,
             "top_contributors": [
                 {"feature": k, "weight": round(v, 4)} for k, v in top_contributors

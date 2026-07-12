@@ -4,9 +4,8 @@ import json
 import logging
 import os
 import threading
-import time
-from datetime import datetime, timezone, timedelta
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from intelgraph.core.reporting.reporters import generate_report
 
@@ -52,10 +51,12 @@ class ReportScheduler:
 
     def list_reports(self) -> list[dict[str, Any]]:
         with self._lock:
-            return [dict(r) for r in sorted(
-                self._reports.values(),
-                key=lambda r: r.get("generated_at", ""), reverse=True
-            )]
+            return [
+                dict(r)
+                for r in sorted(
+                    self._reports.values(), key=lambda r: r.get("generated_at", ""), reverse=True
+                )
+            ]
 
     def get_report(self, report_id: str) -> dict[str, Any] | None:
         with self._lock:
@@ -115,7 +116,9 @@ class ReportScheduler:
 
                     exec_report = generate_report("executive_summary", data)
                     self.save_report(exec_report)
-                    logger.info("Scheduled executive summary report generated: %s", exec_report.report_id)
+                    logger.info(
+                        "Scheduled executive summary report generated: %s", exec_report.report_id
+                    )
         except Exception as e:
             logger.error("Scheduled report generation error: %s", e)
         self._schedule_next()

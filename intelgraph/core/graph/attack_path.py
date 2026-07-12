@@ -4,10 +4,11 @@ import hashlib
 import heapq
 import time
 from collections import defaultdict, deque
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
-from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.enterprise.observability import get_metrics
+from intelgraph.core.graph.graph import IntelligenceGraph
 
 ATTACK_PATH_SCHEMA_VERSION = "1.0"
 
@@ -21,13 +22,22 @@ class AttackPathCache:
         raw = f"{source}|{target}|{max_depth}"
         return hashlib.sha256(raw.encode()).hexdigest()
 
-    def get(self, source: str, target: str, max_depth: int, graph_version: str) -> list[dict[str, Any]] | None:
+    def get(
+        self, source: str, target: str, max_depth: int, graph_version: str
+    ) -> list[dict[str, Any]] | None:
         key = self._make_key(source, target, max_depth)
         if key in self._sub_paths and self._graph_versions.get(key) == graph_version:
             return self._sub_paths[key]
         return None
 
-    def set(self, source: str, target: str, max_depth: int, graph_version: str, paths: list[dict[str, Any]]) -> None:
+    def set(
+        self,
+        source: str,
+        target: str,
+        max_depth: int,
+        graph_version: str,
+        paths: list[dict[str, Any]],
+    ) -> None:
         key = self._make_key(source, target, max_depth)
         self._sub_paths[key] = paths
         self._graph_versions[key] = graph_version
@@ -91,6 +101,7 @@ class AttackPathAnalyzer:
     def _node_influence(self, node_id: str) -> float:
         try:
             from intelgraph.core.graph.influence import InfluencePropagation
+
             infl = InfluencePropagation(self._graph, weight_fn=self._weight_fn)
             result = infl.influence_scores()
             return result.get("scores", {}).get(node_id, 0.0)
@@ -107,7 +118,13 @@ class AttackPathAnalyzer:
 
     def _path_risk_score(self, edge_ids: list[str]) -> dict[str, Any]:
         if not edge_ids:
-            return {"score": 0.0, "confidence_product": 0.0, "trust_product": 0.0, "mean_edge_confidence": 0.0, "mean_edge_trust": 0.0}
+            return {
+                "score": 0.0,
+                "confidence_product": 0.0,
+                "trust_product": 0.0,
+                "mean_edge_confidence": 0.0,
+                "mean_edge_trust": 0.0,
+            }
         conf_prod = 1.0
         trust_prod = 1.0
         confs: list[float] = []
@@ -121,7 +138,10 @@ class AttackPathAnalyzer:
             trusts.append(t)
         mean_conf = sum(confs) / len(confs)
         mean_trust = sum(trusts) / len(trusts)
-        influence_scores = [self._node_influence(self._graph.edge_node_map.get(eid, ("", ""))[1]) for eid in edge_ids]
+        influence_scores = [
+            self._node_influence(self._graph.edge_node_map.get(eid, ("", ""))[1])
+            for eid in edge_ids
+        ]
         mean_influence = sum(influence_scores) / max(len(influence_scores), 1)
         composite = conf_prod * trust_prod * (1.0 + mean_influence)
         return {
@@ -133,7 +153,9 @@ class AttackPathAnalyzer:
             "mean_target_influence": round(mean_influence, 6),
         }
 
-    def _build_path_dict(self, path_id: str, node_ids: list[str], edge_ids: list[str]) -> dict[str, Any]:
+    def _build_path_dict(
+        self, path_id: str, node_ids: list[str], edge_ids: list[str]
+    ) -> dict[str, Any]:
         risk = self._path_risk_score(edge_ids)
         return {
             "path_id": path_id,
@@ -147,15 +169,31 @@ class AttackPathAnalyzer:
     def find_shortest_path(self, source: str, target: str) -> dict[str, Any]:
         t0 = time.perf_counter_ns()
         if source not in self._graph.nodes:
-            return {"found": False, "source": source, "target": target, "error": "source not found", "execution_time_ms": 0.0}
+            return {
+                "found": False,
+                "source": source,
+                "target": target,
+                "error": "source not found",
+                "execution_time_ms": 0.0,
+            }
         if target not in self._graph.nodes:
-            return {"found": False, "source": source, "target": target, "error": "target not found", "execution_time_ms": 0.0}
+            return {
+                "found": False,
+                "source": source,
+                "target": target,
+                "error": "target not found",
+                "execution_time_ms": 0.0,
+            }
         if source == target:
             return {
-                "found": True, "source": source, "target": target,
+                "found": True,
+                "source": source,
+                "target": target,
                 "path_id": self._next_path_id(),
-                "node_ids": [source], "edge_ids": [],
-                "length": 0, "risk_score": 1.0,
+                "node_ids": [source],
+                "edge_ids": [],
+                "length": 0,
+                "risk_score": 1.0,
                 "risk_decomposition": self._path_risk_score([]),
                 "schema_version": ATTACK_PATH_SCHEMA_VERSION,
                 "graph_version": self._graph_version,
@@ -190,7 +228,9 @@ class AttackPathAnalyzer:
             duration = time.perf_counter_ns() - t0
             self._record_duration("find_shortest", duration)
             return {
-                "found": False, "source": source, "target": target,
+                "found": False,
+                "source": source,
+                "target": target,
                 "error": "no path exists",
                 "schema_version": ATTACK_PATH_SCHEMA_VERSION,
                 "graph_version": self._graph_version,
@@ -235,7 +275,12 @@ class AttackPathAnalyzer:
     ) -> dict[str, Any]:
         t0 = time.perf_counter_ns()
         if source not in self._graph.nodes:
-            return {"found": False, "source": source, "error": "source not found", "execution_time_ms": 0.0}
+            return {
+                "found": False,
+                "source": source,
+                "error": "source not found",
+                "execution_time_ms": 0.0,
+            }
         cache_key_source = source
         cache_key_target = target or ""
         cached = self._cache.get(cache_key_source, cache_key_target, max_depth, self._graph_version)
@@ -267,7 +312,11 @@ class AttackPathAnalyzer:
                 found_paths.append(self._build_path_dict(path_id, list(nodes), list(edges)))
             if len(edges) >= max_depth:
                 continue
-            neighbors = sorted(self._graph.forward_adjacency.get(cur, set())) if self._deterministic else list(self._graph.forward_adjacency.get(cur, set()))
+            neighbors = (
+                sorted(self._graph.forward_adjacency.get(cur, set()))
+                if self._deterministic
+                else list(self._graph.forward_adjacency.get(cur, set()))
+            )
             for neighbor in neighbors:
                 if neighbor in visited:
                     continue
@@ -281,7 +330,9 @@ class AttackPathAnalyzer:
                     continue
                 new_visited = visited | {neighbor}
                 stack.append((neighbor, nodes + [neighbor], edges + [edge_found], new_visited))
-        self._cache.set(cache_key_source, cache_key_target, max_depth, self._graph_version, found_paths)
+        self._cache.set(
+            cache_key_source, cache_key_target, max_depth, self._graph_version, found_paths
+        )
         duration = time.perf_counter_ns() - t0
         self._record_duration("all_paths", duration)
         self._metrics.set_gauge("attack_path_all_paths_count", float(len(found_paths)))
@@ -303,8 +354,10 @@ class AttackPathAnalyzer:
     def _analyze_paths(self, paths: list[dict[str, Any]]) -> dict[str, Any]:
         if not paths:
             return {
-                "risk_distribution": {}, "critical_node_frequency": {},
-                "path_length_stats": {}, "bottleneck_nodes": [],
+                "risk_distribution": {},
+                "critical_node_frequency": {},
+                "path_length_stats": {},
+                "bottleneck_nodes": [],
             }
         risk_scores = [p["risk_score"] for p in paths]
         path_lengths = [p["length"] for p in paths]
@@ -327,8 +380,12 @@ class AttackPathAnalyzer:
                 "q1": round(sorted_risks[n // 4], 6),
                 "q3": round(sorted_risks[(3 * n) // 4], 6),
             },
-            "critical_node_frequency": dict(sorted(node_frequency.items(), key=lambda x: -x[1])[:20]),
-            "bottleneck_nodes": [{"node_id": nid, "path_frequency": freq} for nid, freq in bottleneck_nodes[:10]],
+            "critical_node_frequency": dict(
+                sorted(node_frequency.items(), key=lambda x: -x[1])[:20]
+            ),
+            "bottleneck_nodes": [
+                {"node_id": nid, "path_frequency": freq} for nid, freq in bottleneck_nodes[:10]
+            ],
             "path_length_stats": {
                 "min": min(path_lengths),
                 "max": max(path_lengths),
@@ -339,11 +396,15 @@ class AttackPathAnalyzer:
 
     def critical_nodes(self, max_depth: int = 5) -> dict[str, Any]:
         t0 = time.perf_counter_ns()
-        node_ids = sorted(self._graph.nodes.keys()) if self._deterministic else list(self._graph.nodes.keys())
+        node_ids = (
+            sorted(self._graph.nodes.keys())
+            if self._deterministic
+            else list(self._graph.nodes.keys())
+        )
         if not node_ids:
             return {"critical_nodes": [], "execution_time_ms": 0.0}
         all_paths: list[dict[str, Any]] = []
-        sampled_sources = node_ids[:min(20, len(node_ids))]
+        sampled_sources = node_ids[: min(20, len(node_ids))]
         for src in sampled_sources:
             result = self.find_all_paths(src, max_depth=max_depth, max_paths=50)
             all_paths.extend(result.get("paths", []))
@@ -376,7 +437,12 @@ class AttackPathAnalyzer:
     def attack_surface(self, entity_id: str, max_depth: int = 4) -> dict[str, Any]:
         t0 = time.perf_counter_ns()
         if entity_id not in self._graph.nodes:
-            return {"found": False, "entity_id": entity_id, "error": "entity not found", "execution_time_ms": 0.0}
+            return {
+                "found": False,
+                "entity_id": entity_id,
+                "error": "entity not found",
+                "execution_time_ms": 0.0,
+            }
         node = self._graph.nodes[entity_id]
         entity_type = getattr(node, "entity_type", "unknown")
         reachable_nodes: set[str] = set()
@@ -431,10 +497,17 @@ class AttackPathAnalyzer:
             "execution_time_ms": round(duration / 1_000_000, 2),
         }
 
-    def explain_path(self, path_id: str, paths_result: dict[str, Any] | None = None) -> dict[str, Any]:
+    def explain_path(
+        self, path_id: str, paths_result: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         t0 = time.perf_counter_ns()
         if paths_result is None:
-            return {"found": False, "path_id": path_id, "error": "no path result provided", "execution_time_ms": 0.0}
+            return {
+                "found": False,
+                "path_id": path_id,
+                "error": "no path result provided",
+                "execution_time_ms": 0.0,
+            }
         all_paths = paths_result.get("paths", [])
         if not all_paths:
             single = paths_result.get("path")
@@ -446,7 +519,12 @@ class AttackPathAnalyzer:
                 target_path = p
                 break
         if target_path is None:
-            return {"found": False, "path_id": path_id, "error": "path not found in result", "execution_time_ms": 0.0}
+            return {
+                "found": False,
+                "path_id": path_id,
+                "error": "path not found in result",
+                "execution_time_ms": 0.0,
+            }
         edge_ids = target_path.get("edge_ids", [])
         node_ids = target_path.get("node_ids", [])
         segment_breakdown: list[dict[str, Any]] = []
@@ -457,17 +535,19 @@ class AttackPathAnalyzer:
             trust = self._edge_trust(eid)
             influence = self._node_influence(tgt)
             w = self._edge_risk_weight(eid)
-            segment_breakdown.append({
-                "segment_index": i,
-                "source": src,
-                "target": tgt,
-                "edge_id": eid,
-                "confidence": round(conf, 4),
-                "trust": round(trust, 4),
-                "target_influence": round(influence, 6),
-                "risk_weight": round(w, 4),
-                "contribution": round(conf * trust * (1.0 + influence), 6),
-            })
+            segment_breakdown.append(
+                {
+                    "segment_index": i,
+                    "source": src,
+                    "target": tgt,
+                    "edge_id": eid,
+                    "confidence": round(conf, 4),
+                    "trust": round(trust, 4),
+                    "target_influence": round(influence, 6),
+                    "risk_weight": round(w, 4),
+                    "contribution": round(conf * trust * (1.0 + influence), 6),
+                }
+            )
         total_contribution = sum(s["contribution"] for s in segment_breakdown) or 1.0
         for s in segment_breakdown:
             s["normalized_contribution"] = round(s["contribution"] / total_contribution, 4)
@@ -489,5 +569,15 @@ class AttackPathAnalyzer:
     def get_path_by_id(self, path_id: str, paths_list: list[dict[str, Any]]) -> dict[str, Any]:
         for p in paths_list:
             if p.get("path_id") == path_id:
-                return {"found": True, "path": p, "schema_version": ATTACK_PATH_SCHEMA_VERSION, "graph_version": self._graph_version}
-        return {"found": False, "path_id": path_id, "error": "path not found", "schema_version": ATTACK_PATH_SCHEMA_VERSION}
+                return {
+                    "found": True,
+                    "path": p,
+                    "schema_version": ATTACK_PATH_SCHEMA_VERSION,
+                    "graph_version": self._graph_version,
+                }
+        return {
+            "found": False,
+            "path_id": path_id,
+            "error": "path not found",
+            "schema_version": ATTACK_PATH_SCHEMA_VERSION,
+        }

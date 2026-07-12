@@ -14,7 +14,9 @@ def store():
 
 class TestDataSourceStore:
     def test_register_and_get(self, store):
-        cfg = ConnectorConfig(id="src1", name="Test Source", connector_type="http", endpoint_url="https://example.com")
+        cfg = ConnectorConfig(
+            id="src1", name="Test Source", connector_type="http", endpoint_url="https://example.com"
+        )
         store.register_source(cfg)
         src = store.get_source("src1")
         assert src is not None
@@ -23,7 +25,9 @@ class TestDataSourceStore:
 
     def test_list_sources(self, store):
         store.register_source(ConnectorConfig(id="a", name="A", connector_type="http"))
-        store.register_source(ConnectorConfig(id="b", name="B", connector_type="file", file_path="/tmp/x.json"))
+        store.register_source(
+            ConnectorConfig(id="b", name="B", connector_type="file", file_path="/tmp/x.json")
+        )
         sources = store.list_sources()
         assert len(sources) == 2
 
@@ -68,9 +72,12 @@ class TestDataSourceStore:
 
     def test_record_and_get_resolution(self, store):
         res_id = store.record_resolution(
-            source_entity_id="e1", target_entity_id="e2",
-            data_source_id="ds1", merge_strategy="priority",
-            merged_fields={"name": "Alice"}, confidence=0.95,
+            source_entity_id="e1",
+            target_entity_id="e2",
+            data_source_id="ds1",
+            merge_strategy="priority",
+            merged_fields={"name": "Alice"},
+            confidence=0.95,
         )
         assert res_id is not None
         history = store.get_resolution_history(entity_id="e1")

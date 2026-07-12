@@ -1,22 +1,19 @@
 from __future__ import annotations
 
 import bisect
-import hashlib
 import ipaddress
 import re
-import time
-from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 from urllib.parse import urlparse
 
-from intelgraph.core.nlp._tlds import IANA_TLDS, FILENAME_EXTS, AMBIGUOUS_EXTS
+from intelgraph.core.nlp._tlds import AMBIGUOUS_EXTS, FILENAME_EXTS, IANA_TLDS
 
 NLP_SCHEMA_VERSION = "1.0"
 
 
 def _split_sentences(text: str) -> list[str]:
-    parts = re.split(r'(?<=[.!?])\s+', text)
+    parts = re.split(r"(?<=[.!?])\s+", text)
     result = []
     for part in parts:
         stripped = part.strip().rstrip(".!?")
@@ -26,43 +23,60 @@ def _split_sentences(text: str) -> list[str]:
         result = [text.strip()]
     return result
 
+
 # ---------------------------------------------------------------------------
 # Entity patterns for rule-based NER
 # ---------------------------------------------------------------------------
 
-IP_RE = re.compile(r'\b(?:\d{1,3}\.){3}\d{1,3}\b')
+IP_RE = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 
 # IPv6 pattern — handles full, compressed (::), IPv4-mapped, loopback, and zone IDs.
-_H = r'[0-9a-fA-F]{1,4}'
-_V4 = r'(?:\d{1,3}\.){3}\d{1,3}'
-_HEX_SEQ = rf'{_H}(?::{_H})*'
-_HEX_SEQ_OPT = rf'(?:{_HEX_SEQ})?'
+_H = r"[0-9a-fA-F]{1,4}"
+_V4 = r"(?:\d{1,3}\.){3}\d{1,3}"
+_HEX_SEQ = rf"{_H}(?::{_H})*"
+_HEX_SEQ_OPT = rf"(?:{_HEX_SEQ})?"
 IPV6_RE = re.compile(
-    r'(?<![:.\w])(?:'
-    rf'(?:{_H}:){{7}}{_H}'                                    # 1. full 8-group
-    rf'|(?:{_H}:){{6}}{_V4}'                                   # 2. full 6-group + IPv4 tail
-    rf'|{_HEX_SEQ_OPT}::{_HEX_SEQ_OPT}'                       # 3. compressed :: (hex only)
-    rf'|{_HEX_SEQ_OPT}::(?:(?:{_H}:)*){_V4}'                  # 4. compressed :: + IPv4 tail
-    r')'
-    r'(?:%[a-zA-Z0-9_]+)?'                                     # zone ID (e.g. %eth0)
-    r'(?![:.\w])',
+    r"(?<![:.\w])(?:"
+    rf"(?:{_H}:){{7}}{_H}"  # 1. full 8-group
+    rf"|(?:{_H}:){{6}}{_V4}"  # 2. full 6-group + IPv4 tail
+    rf"|{_HEX_SEQ_OPT}::{_HEX_SEQ_OPT}"  # 3. compressed :: (hex only)
+    rf"|{_HEX_SEQ_OPT}::(?:(?:{_H}:)*){_V4}"  # 4. compressed :: + IPv4 tail
+    r")"
+    r"(?:%[a-zA-Z0-9_]+)?"  # zone ID (e.g. %eth0)
+    r"(?![:.\w])",
     re.IGNORECASE,
 )
-DOMAIN_RE = re.compile(r'\b(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}\b')
-CVE_RE = re.compile(r'\bCVE-\d{4}-\d{4,7}\b', re.IGNORECASE)
-EMAIL_RE = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b')
+DOMAIN_RE = re.compile(r"\b(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}\b")
+CVE_RE = re.compile(r"\bCVE-\d{4}-\d{4,7}\b", re.IGNORECASE)
+EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 URL_RE = re.compile(r'\bhttps?://[^\s<>"\'\]\[]+', re.IGNORECASE)
-MD5_RE = re.compile(r'\b[a-fA-F0-9]{32}\b')
-SHA1_RE = re.compile(r'\b[a-fA-F0-9]{40}\b')
-SHA256_RE = re.compile(r'\b[a-fA-F0-9]{64}\b')
+MD5_RE = re.compile(r"\b[a-fA-F0-9]{32}\b")
+SHA1_RE = re.compile(r"\b[a-fA-F0-9]{40}\b")
+SHA256_RE = re.compile(r"\b[a-fA-F0-9]{64}\b")
 MALWARE_KEYWORDS = [
-    "trojan", "ransomware", "worm", "backdoor", "dropper", "rootkit",
-    "keylogger", "spyware", "adware", "botnet", "virus", "malware",
-    "loader", "stealer", "infostealer", "rat", "webshell",
+    "trojan",
+    "ransomware",
+    "worm",
+    "backdoor",
+    "dropper",
+    "rootkit",
+    "keylogger",
+    "spyware",
+    "adware",
+    "botnet",
+    "virus",
+    "malware",
+    "loader",
+    "stealer",
+    "infostealer",
+    "rat",
+    "webshell",
 ]
 ORG_KEYWORDS = ["inc", "corp", "ltd", "llc", "gmbh", "group", "organization", "department"]
-PERSON_TITLE_RE = re.compile(r'\b(Mr\.|Ms\.|Mrs\.|Dr\.|Prof\.|Capt\.|Gen\.)\s+([A-Z][a-z]+)\b')
-ORG_RE = re.compile(r'\b[A-Z][a-zA-Z]+(?:[-\s][A-Z][a-zA-Z]+)*(?:\s(?:Inc|Corp|Ltd|LLC|Group|Organization|Department))\b')
+PERSON_TITLE_RE = re.compile(r"\b(Mr\.|Ms\.|Mrs\.|Dr\.|Prof\.|Capt\.|Gen\.)\s+([A-Z][a-z]+)\b")
+ORG_RE = re.compile(
+    r"\b[A-Z][a-zA-Z]+(?:[-\s][A-Z][a-zA-Z]+)*(?:\s(?:Inc|Corp|Ltd|LLC|Group|Organization|Department))\b"
+)
 
 
 @dataclass
@@ -148,6 +162,7 @@ class ExtractedEvent:
 # NER Engine
 # ---------------------------------------------------------------------------
 
+
 class NEREngine:
     def __init__(self) -> None:
         self._patterns: dict[str, list[tuple[re.Pattern, str, float]]] = {
@@ -159,29 +174,62 @@ class NEREngine:
             "HASH_MD5": [(MD5_RE, "HASH_MD5", 0.95)],
             "HASH_SHA1": [(SHA1_RE, "HASH_SHA1", 0.95)],
             "HASH_SHA256": [(SHA256_RE, "HASH_SHA256", 0.95)],
-            "MALWARE": [(re.compile(r'\b' + kw + r'\b', re.IGNORECASE), "MALWARE", 0.85) for kw in MALWARE_KEYWORDS],
+            "MALWARE": [
+                (re.compile(r"\b" + kw + r"\b", re.IGNORECASE), "MALWARE", 0.85)
+                for kw in MALWARE_KEYWORDS
+            ],
             "PERSON": [(PERSON_TITLE_RE, "PERSON", 0.7)],
             "ORGANIZATION": [(ORG_RE, "ORGANIZATION", 0.65)],
         }
 
-# Keywords used by _classify_ip_match to detect version-number context.
+    # Keywords used by _classify_ip_match to detect version-number context.
     # These words *immediately* precede the dotted-decimal match (e.g. "before 2.2.3.1").
     _VERSION_KEYWORDS = (
-        "version", "s\u00fcr\u00fcm", "release", "build", "update", "patch",
-        "before", "after", "prior to", "up to", "through", "starting from",
-        "fixed in", "patched in", "updated to", "affects", "impacts", "firmware",
+        "version",
+        "s\u00fcr\u00fcm",
+        "release",
+        "build",
+        "update",
+        "patch",
+        "before",
+        "after",
+        "prior to",
+        "up to",
+        "through",
+        "starting from",
+        "fixed in",
+        "patched in",
+        "updated to",
+        "affects",
+        "impacts",
+        "firmware",
     )
     # Operators that appear immediately before a version number (e.g. "<= 2.2.3.1").
     _VERSION_OPERATORS = ("<=", ">=", "<", ">", "=")
 
     # Strong IP indicators appearing anywhere in the context window.
     _IP_SIGNALS = (
-        "http://", "https://", "://",
-        "ip address", "ip:", "host:", "host ",
-        "observed", "connect", "c2", "c&c",
-        "src=", "dst=", "source:", "destination:",
-        "victim", "infected", "scan",
-        "server ", "address ", "host. ",
+        "http://",
+        "https://",
+        "://",
+        "ip address",
+        "ip:",
+        "host:",
+        "host ",
+        "observed",
+        "connect",
+        "c2",
+        "c&c",
+        "src=",
+        "dst=",
+        "source:",
+        "destination:",
+        "victim",
+        "infected",
+        "scan",
+        "server ",
+        "address ",
+        "host. ",
     )
 
     def _classify_ip_match(
@@ -212,8 +260,8 @@ class NEREngine:
         matching the Phase 13 requirement that context checking is mandatory.
         """
         # ── IPv6 path ──
-        if ':' in match_str:
-            addr = match_str.split('%')[0]
+        if ":" in match_str:
+            addr = match_str.split("%")[0]
             try:
                 ipaddress.IPv6Address(addr)
             except (ipaddress.AddressValueError, ValueError):
@@ -223,7 +271,7 @@ class NEREngine:
             return "IP", 0.9
 
         # ── IPv4 path (existing logic) ──
-        octets = match_str.split('.')
+        octets = match_str.split(".")
         if any(int(o) > 255 for o in octets):
             return "VERSION", 0.95
 
@@ -232,8 +280,8 @@ class NEREngine:
 
         window_before = 60
         window_after = 30
-        before = text[max(0, start - window_before):start].lower()
-        after = text[end:min(len(text), end + window_after)].lower()
+        before = text[max(0, start - window_before) : start].lower()
+        after = text[end : min(len(text), end + window_after)].lower()
 
         before_stripped = before.rstrip()
 
@@ -249,7 +297,7 @@ class NEREngine:
                     break
         if not has_version:
             # Single-letter "v"/"V" prefix (e.g. "v 1.2.3.4", "V.2.0.0.1")
-            if re.search(r'\bv\.?\s*$', before_stripped[-15:]):
+            if re.search(r"\bv\.?\s*$", before_stripped[-15:]):
                 has_version = True
 
         has_ip = False
@@ -257,7 +305,7 @@ class NEREngine:
             if sig in before or sig in after:
                 has_ip = True
                 break
-        if re.match(r'^:\d{1,5}\b', after):
+        if re.match(r"^:\d{1,5}\b", after):
             has_ip = True
 
         if has_version and not has_ip:
@@ -274,7 +322,7 @@ class NEREngine:
         inside_url: bool,
         known_hostnames: set[str],
     ) -> tuple[str, float]:
-        labels = match_str.split('.')
+        labels = match_str.split(".")
         tld = labels[-1].lower()
 
         if match_str.lower() in known_hostnames:
@@ -309,14 +357,16 @@ class NEREngine:
                     continue
                 seen.add(span)
                 url_spans.append(span)
-                entities.append(ExtractedEntity(
-                    text=match.group(),
-                    label=label,
-                    start=match.start(),
-                    end=match.end(),
-                    confidence=confidence,
-                    normalized=match.group().lower(),
-                ))
+                entities.append(
+                    ExtractedEntity(
+                        text=match.group(),
+                        label=label,
+                        start=match.start(),
+                        end=match.end(),
+                        confidence=confidence,
+                        normalized=match.group().lower(),
+                    )
+                )
                 try:
                     parsed = urlparse(match.group())
                     hostname = (parsed.hostname or "").lower()
@@ -344,33 +394,41 @@ class NEREngine:
 
                     if label == "DOMAIN":
                         pos = match.start()
-                        idx = bisect.bisect_right(url_spans, (pos, float('inf'))) - 1
+                        idx = bisect.bisect_right(url_spans, (pos, float("inf"))) - 1
                         inside = False
                         if idx >= 0:
                             us = url_spans[idx]
                             inside = us[0] <= pos and match.end() <= us[1]
                         effective_label, effective_conf = self._classify_domain_match(
-                            match.group(), inside, known_hostnames,
+                            match.group(),
+                            inside,
+                            known_hostnames,
                         )
                     elif label == "IP":
                         pos = match.start()
-                        idx = bisect.bisect_right(url_spans, (pos, float('inf'))) - 1
+                        idx = bisect.bisect_right(url_spans, (pos, float("inf"))) - 1
                         inside = False
                         if idx >= 0:
                             us = url_spans[idx]
                             inside = us[0] <= pos and match.end() <= us[1]
                         effective_label, effective_conf = self._classify_ip_match(
-                            match.group(), text, match.start(), match.end(), inside,
+                            match.group(),
+                            text,
+                            match.start(),
+                            match.end(),
+                            inside,
                         )
 
-                    entities.append(ExtractedEntity(
-                        text=match.group(),
-                        label=effective_label,
-                        start=match.start(),
-                        end=match.end(),
-                        confidence=effective_conf,
-                        normalized=match.group().lower(),
-                    ))
+                    entities.append(
+                        ExtractedEntity(
+                            text=match.group(),
+                            label=effective_label,
+                            start=match.start(),
+                            end=match.end(),
+                            confidence=effective_conf,
+                            normalized=match.group().lower(),
+                        )
+                    )
 
         entities.sort(key=lambda e: e.start)
         return entities
@@ -380,19 +438,37 @@ class NEREngine:
 # Relationship Extraction Engine
 # ---------------------------------------------------------------------------
 
+
 class RelationshipExtractor:
     def __init__(self, min_confidence: float = 0.0) -> None:
         self._min_confidence = min_confidence
         self._verb_patterns: list[tuple[re.Pattern, str]] = [
-            (re.compile(r'\b(connected to|linked to|communicates with|uses|exploits|targets|attacks)\b', re.IGNORECASE), "connects_to"),
-            (re.compile(r'\b(owns|controls|manages|operates|hosts|runs)\b', re.IGNORECASE), "owns"),
-            (re.compile(r'\b(contains|includes|has|possesses)\b', re.IGNORECASE), "contains"),
-            (re.compile(r'\b(related to|associated with|part of|member of)\b', re.IGNORECASE), "associated_with"),
-            (re.compile(r'\b(authenticates|logs in|accesses|connects)\b', re.IGNORECASE), "accesses"),
-            (re.compile(r'\b(downloads|uploads|sends|receives|transmits)\b', re.IGNORECASE), "transfers_to"),
+            (
+                re.compile(
+                    r"\b(connected to|linked to|communicates with|uses|exploits|targets|attacks)\b",
+                    re.IGNORECASE,
+                ),
+                "connects_to",
+            ),
+            (re.compile(r"\b(owns|controls|manages|operates|hosts|runs)\b", re.IGNORECASE), "owns"),
+            (re.compile(r"\b(contains|includes|has|possesses)\b", re.IGNORECASE), "contains"),
+            (
+                re.compile(r"\b(related to|associated with|part of|member of)\b", re.IGNORECASE),
+                "associated_with",
+            ),
+            (
+                re.compile(r"\b(authenticates|logs in|accesses|connects)\b", re.IGNORECASE),
+                "accesses",
+            ),
+            (
+                re.compile(r"\b(downloads|uploads|sends|receives|transmits)\b", re.IGNORECASE),
+                "transfers_to",
+            ),
         ]
 
-    def extract(self, text: str, entities: list[ExtractedEntity] | None = None) -> list[ExtractedRelationship]:
+    def extract(
+        self, text: str, entities: list[ExtractedEntity] | None = None
+    ) -> list[ExtractedRelationship]:
         relationships: list[ExtractedRelationship] = []
         sentences = _split_sentences(text)
         for sentence in sentences:
@@ -400,21 +476,23 @@ class RelationshipExtractor:
                 match = verb_pattern.search(sentence)
                 if not match:
                     continue
-                before = sentence[:match.start()].strip()
-                after = sentence[match.end():].strip()
+                before = sentence[: match.start()].strip()
+                after = sentence[match.end() :].strip()
                 if entities:
                     before_ents = [e for e in entities if before.rfind(e.text) >= 0]
                     after_ents = [e for e in entities if after.find(e.text) >= 0]
                     if before_ents and after_ents:
-                        relationships.append(ExtractedRelationship(
-                            subject=before_ents[-1].text,
-                            relation=rel_type,
-                            obj=after_ents[0].text,
-                            confidence=0.6,
-                            sentence=sentence,
-                            source_entity=before_ents[-1],
-                            target_entity=after_ents[0],
-                        ))
+                        relationships.append(
+                            ExtractedRelationship(
+                                subject=before_ents[-1].text,
+                                relation=rel_type,
+                                obj=after_ents[0].text,
+                                confidence=0.6,
+                                sentence=sentence,
+                                source_entity=before_ents[-1],
+                                target_entity=after_ents[0],
+                            )
+                        )
             # Phase 10.2: Same-sentence co-occurrence — CVE↔IP/Domain pairs
             if entities:
                 sent_ents = [e for e in entities if sentence.find(e.text) >= 0]
@@ -424,18 +502,19 @@ class RelationshipExtractor:
                     for ce in cve_ents:
                         for oe in other_ents:
                             if not any(
-                                r.subject == ce.text and r.obj == oe.text
-                                for r in relationships
+                                r.subject == ce.text and r.obj == oe.text for r in relationships
                             ):
-                                relationships.append(ExtractedRelationship(
-                                    subject=ce.text,
-                                    relation="related_to",
-                                    obj=oe.text,
-                                    confidence=0.5,
-                                    sentence=sentence,
-                                    source_entity=ce,
-                                    target_entity=oe,
-                                ))
+                                relationships.append(
+                                    ExtractedRelationship(
+                                        subject=ce.text,
+                                        relation="related_to",
+                                        obj=oe.text,
+                                        confidence=0.5,
+                                        sentence=sentence,
+                                        source_entity=ce,
+                                        target_entity=oe,
+                                    )
+                                )
         # Phase 10.2: Document-level co-occurrence — CVE↔IP/Domain across sentences
         if entities:
             doc_cve = [e for e in entities if e.label == "CVE"]
@@ -444,18 +523,19 @@ class RelationshipExtractor:
                 for ce in doc_cve:
                     for oe in doc_other:
                         if not any(
-                            r.subject == ce.text and r.obj == oe.text
-                            for r in relationships
+                            r.subject == ce.text and r.obj == oe.text for r in relationships
                         ):
-                            relationships.append(ExtractedRelationship(
-                                subject=ce.text,
-                                relation="related_to",
-                                obj=oe.text,
-                                confidence=0.35,
-                                sentence="",
-                                source_entity=ce,
-                                target_entity=oe,
-                            ))
+                            relationships.append(
+                                ExtractedRelationship(
+                                    subject=ce.text,
+                                    relation="related_to",
+                                    obj=oe.text,
+                                    confidence=0.35,
+                                    sentence="",
+                                    source_entity=ce,
+                                    target_entity=oe,
+                                )
+                            )
         # Filter by min_confidence
         if self._min_confidence > 0:
             relationships = [r for r in relationships if r.confidence >= self._min_confidence]
@@ -479,25 +559,39 @@ TRIGGER_EVENTS: dict[str, list[str]] = {
 
 
 class EventExtractor:
-    def extract(self, text: str, entities: list[ExtractedEntity] | None = None) -> list[ExtractedEvent]:
+    def extract(
+        self, text: str, entities: list[ExtractedEntity] | None = None
+    ) -> list[ExtractedEvent]:
         events: list[ExtractedEvent] = []
         sentences = _split_sentences(text)
         for sentence in sentences:
             for event_type, triggers in TRIGGER_EVENTS.items():
                 for trigger in triggers:
-                    if re.search(r'\b' + trigger + r'\b', sentence, re.IGNORECASE):
+                    if re.search(r"\b" + trigger + r"\b", sentence, re.IGNORECASE):
                         words = sentence.split()
-                        actors = [e.text for e in (entities or []) if sentence.find(e.text) >= 0 and e.label in ("PERSON", "ORGANIZATION", "IP", "DOMAIN")]
-                        targets = [e.text for e in (entities or []) if sentence.find(e.text) >= 0 and e.label in ("IP", "DOMAIN", "CVE", "URL")]
-                        events.append(ExtractedEvent(
-                            event_type=event_type,
-                            trigger_word=trigger,
-                            actors=actors,
-                            actions=[trigger],
-                            targets=targets,
-                            confidence=0.7,
-                            sentence=sentence,
-                        ))
+                        actors = [
+                            e.text
+                            for e in (entities or [])
+                            if sentence.find(e.text) >= 0
+                            and e.label in ("PERSON", "ORGANIZATION", "IP", "DOMAIN")
+                        ]
+                        targets = [
+                            e.text
+                            for e in (entities or [])
+                            if sentence.find(e.text) >= 0
+                            and e.label in ("IP", "DOMAIN", "CVE", "URL")
+                        ]
+                        events.append(
+                            ExtractedEvent(
+                                event_type=event_type,
+                                trigger_word=trigger,
+                                actors=actors,
+                                actions=[trigger],
+                                targets=targets,
+                                confidence=0.7,
+                                sentence=sentence,
+                            )
+                        )
                         break
         return events
 
@@ -507,45 +601,45 @@ class EventExtractor:
 # ---------------------------------------------------------------------------
 
 THREAT_TYPE_PATTERNS: dict[str, list[tuple[re.Pattern, float]]] = {
-    "malware": [(re.compile(r'\b' + kw + r'\b', re.IGNORECASE), 0.8) for kw in MALWARE_KEYWORDS],
+    "malware": [(re.compile(r"\b" + kw + r"\b", re.IGNORECASE), 0.8) for kw in MALWARE_KEYWORDS],
     "phishing": [
-        (re.compile(r'\bphish', re.IGNORECASE), 0.9),
-        (re.compile(r'\bsocial engineering\b', re.IGNORECASE), 0.85),
+        (re.compile(r"\bphish", re.IGNORECASE), 0.9),
+        (re.compile(r"\bsocial engineering\b", re.IGNORECASE), 0.85),
     ],
     "vulnerability": [
-        (re.compile(r'\bcve-\d', re.IGNORECASE), 0.95),
-        (re.compile(r'\bvulnerability\b', re.IGNORECASE), 0.7),
-        (re.compile(r'\bzero.day\b', re.IGNORECASE), 0.85),
+        (re.compile(r"\bcve-\d", re.IGNORECASE), 0.95),
+        (re.compile(r"\bvulnerability\b", re.IGNORECASE), 0.7),
+        (re.compile(r"\bzero.day\b", re.IGNORECASE), 0.85),
     ],
     "network_attack": [
-        (re.compile(r'\bddos\b', re.IGNORECASE), 0.9),
-        (re.compile(r'\bport scan\b', re.IGNORECASE), 0.8),
-        (re.compile(r'\bintrusion\b', re.IGNORECASE), 0.75),
+        (re.compile(r"\bddos\b", re.IGNORECASE), 0.9),
+        (re.compile(r"\bport scan\b", re.IGNORECASE), 0.8),
+        (re.compile(r"\bintrusion\b", re.IGNORECASE), 0.75),
     ],
     "data_breach": [
-        (re.compile(r'\bbreach\b', re.IGNORECASE), 0.85),
-        (re.compile(r'\bleak\b', re.IGNORECASE), 0.7),
-        (re.compile(r'\bexfiltrat', re.IGNORECASE), 0.9),
+        (re.compile(r"\bbreach\b", re.IGNORECASE), 0.85),
+        (re.compile(r"\bleak\b", re.IGNORECASE), 0.7),
+        (re.compile(r"\bexfiltrat", re.IGNORECASE), 0.9),
     ],
 }
 
 SEVERITY_PATTERNS: dict[str, list[tuple[re.Pattern, float]]] = {
     "critical": [
-        (re.compile(r'\bcritical\b', re.IGNORECASE), 0.9),
-        (re.compile(r'\bsevere\b', re.IGNORECASE), 0.85),
-        (re.compile(r'\bemergency\b', re.IGNORECASE), 0.95),
+        (re.compile(r"\bcritical\b", re.IGNORECASE), 0.9),
+        (re.compile(r"\bsevere\b", re.IGNORECASE), 0.85),
+        (re.compile(r"\bemergency\b", re.IGNORECASE), 0.95),
     ],
     "high": [
-        (re.compile(r'\bhigh\b', re.IGNORECASE), 0.8),
-        (re.compile(r'\bdangerous\b', re.IGNORECASE), 0.75),
+        (re.compile(r"\bhigh\b", re.IGNORECASE), 0.8),
+        (re.compile(r"\bdangerous\b", re.IGNORECASE), 0.75),
     ],
     "medium": [
-        (re.compile(r'\bmedium\b', re.IGNORECASE), 0.7),
-        (re.compile(r'\bmoderate\b', re.IGNORECASE), 0.65),
+        (re.compile(r"\bmedium\b", re.IGNORECASE), 0.7),
+        (re.compile(r"\bmoderate\b", re.IGNORECASE), 0.65),
     ],
     "low": [
-        (re.compile(r'\blow\b', re.IGNORECASE), 0.6),
-        (re.compile(r'\bminor\b', re.IGNORECASE), 0.6),
+        (re.compile(r"\blow\b", re.IGNORECASE), 0.6),
+        (re.compile(r"\bminor\b", re.IGNORECASE), 0.6),
     ],
 }
 
@@ -597,6 +691,7 @@ class TextClassifier:
 # ---------------------------------------------------------------------------
 # Document Summarizer
 # ---------------------------------------------------------------------------
+
 
 class DocumentSummarizer:
     def __init__(self, max_sentences: int = 5) -> None:

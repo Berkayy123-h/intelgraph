@@ -1,7 +1,6 @@
 import json
-import sys
 from dataclasses import asdict, is_dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, TextIO
 
@@ -37,7 +36,7 @@ class JSONOutput:
         if isinstance(obj, (str, int, float, bool)):
             return obj
         if isinstance(obj, datetime):
-            return obj.astimezone(timezone.utc).isoformat()
+            return obj.astimezone(UTC).isoformat()
         if isinstance(obj, dict):
             return {k: JSONOutput._serialize(v) for k, v in obj.items()}
         if isinstance(obj, (list, tuple)):

@@ -67,12 +67,20 @@ _CATEGORY_PREFIXES: dict[str, tuple[str, ...]] = {
     "health": ("/health",),
     "auth": ("/auth",),
     "read": (
-        "/entities/", "/relationships/", "/sources", "/query",
-        "/search", "/tasks/", "/graph/",
+        "/entities/",
+        "/relationships/",
+        "/sources",
+        "/query",
+        "/search",
+        "/tasks/",
+        "/graph/",
     ),
     "write": (
-        "/entities", "/relationships", "/tasks/collect_entity",
-        "/tasks/verify_entity", "/tasks/generate_report",
+        "/entities",
+        "/relationships",
+        "/tasks/collect_entity",
+        "/tasks/verify_entity",
+        "/tasks/generate_report",
     ),
 }
 
@@ -127,11 +135,7 @@ def setup_rate_limiting(app: FastAPI, config: dict | None = None) -> None:
     @app.middleware("http")
     async def rate_limit_middleware(request: Request, call_next: Any) -> Any:
         path = request.url.path
-        user_key = (
-            _get_client_ip(request)
-            if per_user_enabled
-            else "global"
-        )
+        user_key = _get_client_ip(request) if per_user_enabled else "global"
         category = _get_category(path)
         max_r, win = limits.get(category, (100, 60.0))
         key_parts = [user_key]

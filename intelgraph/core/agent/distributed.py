@@ -4,7 +4,7 @@ import random
 import time
 import uuid
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from intelgraph.core.agent.hierarchy import TaskStatus
@@ -39,8 +39,9 @@ class SharedWorkQueue:
         self._order: list[str] = []
 
     def push(self, task_id: str, priority: int = 0) -> None:
-        rec = TaskRecord(task_id=task_id, priority=priority,
-                         status=TaskStatus.PENDING, created_at=time.time())
+        rec = TaskRecord(
+            task_id=task_id, priority=priority, status=TaskStatus.PENDING, created_at=time.time()
+        )
         self._queue[task_id] = rec
         self._order.append(task_id)
         self._order.sort(key=lambda tid: (-self._queue[tid].priority, self._queue[tid].created_at))
@@ -70,8 +71,9 @@ class SharedWorkQueue:
         return False
 
     def peek(self, limit: int = 10) -> list[TaskRecord]:
-        pending = [self._queue[tid] for tid in self._order
-                   if self._queue[tid].status == TaskStatus.PENDING]
+        pending = [
+            self._queue[tid] for tid in self._order if self._queue[tid].status == TaskStatus.PENDING
+        ]
         return pending[:limit]
 
     def stats(self) -> dict[str, int]:
@@ -128,7 +130,9 @@ class MultiNodeOrchestrator:
 
 
 class RetryWithBackoff:
-    def __init__(self, max_attempts: int = 3, base_delay: float = 1.0, max_delay: float = 60.0) -> None:
+    def __init__(
+        self, max_attempts: int = 3, base_delay: float = 1.0, max_delay: float = 60.0
+    ) -> None:
         self._max_attempts = max_attempts
         self._base_delay = base_delay
         self._max_delay = max_delay
@@ -141,7 +145,10 @@ class RetryWithBackoff:
             except Exception as e:
                 last_exception = e
                 if attempt < self._max_attempts:
-                    delay = min(self._base_delay * (2 ** (attempt - 1)) + random.uniform(0, 0.1), self._max_delay)
+                    delay = min(
+                        self._base_delay * (2 ** (attempt - 1)) + random.uniform(0, 0.1),
+                        self._max_delay,
+                    )
                     time.sleep(delay)
         raise last_exception
 

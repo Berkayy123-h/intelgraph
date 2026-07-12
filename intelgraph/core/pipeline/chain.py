@@ -1,38 +1,38 @@
 from __future__ import annotations
 
-import json
 import hashlib
+import json
 import re
 import sqlite3
 import tempfile
 import time
 import uuid
 from dataclasses import dataclass, field, replace
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
-from intelgraph.core.source.manager import DataSourceManager
-from intelgraph.core.nlp.extractor import NEREngine, TextClassifier, RelationshipExtractor
-from intelgraph.core.relationship.base import Relationship
-from intelgraph.core.relationship.types import RelationshipType
+from intelgraph.core.agent.safety import SafetyGovernor
 from intelgraph.core.cognitive.contradiction import ContradictionDetector
-from intelgraph.core.ucos.truth import UnifiedTruthEngine
-from intelgraph.core.ucos.state import SingleSourceOfTruth
-from intelgraph.core.ucos.alerting import UnifiedAlertingCore
 from intelgraph.core.cognitive.reasoning import ReasoningEngine
+from intelgraph.core.entity.cve import CveEntity
+from intelgraph.core.entity.domain import Domain
+from intelgraph.core.entity.ip_address import IPAddress
+from intelgraph.core.evidence import Evidence
+from intelgraph.core.evidence_chain import ChainManager
 from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.graph.node import Node
-from intelgraph.core.entity.ip_address import IPAddress
-from intelgraph.core.entity.domain import Domain
-from intelgraph.core.entity.cve import CveEntity
-from intelgraph.core.evidence import Evidence
-from intelgraph.core.evidence_chain import ChainManager, EvidenceItem, SupportType
-from intelgraph.core.agent.safety import SafetyGovernor, ApprovalLevel
 from intelgraph.core.human_review import ReviewManager, ReviewOutcome
 from intelgraph.core.metaintel.alerting import IncidentControlCenter, MetaAlert
 from intelgraph.core.metaintel.observability import GlobalObservabilityDashboard
-from intelgraph.core.verification.manager import VerificationManager
+from intelgraph.core.nlp.extractor import NEREngine, RelationshipExtractor, TextClassifier
+from intelgraph.core.relationship.base import Relationship
+from intelgraph.core.relationship.types import RelationshipType
+from intelgraph.core.source.manager import DataSourceManager
+from intelgraph.core.ucos.alerting import UnifiedAlertingCore
 from intelgraph.core.ucos.safety import UnifiedSafetyLayer
+from intelgraph.core.ucos.state import SingleSourceOfTruth
+from intelgraph.core.ucos.truth import UnifiedTruthEngine
+from intelgraph.core.verification.manager import VerificationManager
 
 
 @dataclass
@@ -115,7 +115,9 @@ class PipelineResult:
             "source_texts": self.source_texts[:50],  # keep reasonable size
             "entity_count": len(self.extracted_entities),
             "contradiction_count": len(self.contradictions),
-            "contradictions": [c.to_dict() if hasattr(c, 'to_dict') else str(c) for c in self.contradictions[:20]],
+            "contradictions": [
+                c.to_dict() if hasattr(c, "to_dict") else str(c) for c in self.contradictions[:20]
+            ],
             "truth_entries": self.truth_entries,
             "graph_node_count": len(self.graph.nodes) if self.graph else 0,
             "graph_edge_count": len(self.graph.edges) if self.graph else 0,
@@ -164,6 +166,7 @@ class Pipeline:
     def cleanup(self) -> None:
         if self._tmpdir:
             import shutil
+
             shutil.rmtree(self._tmpdir, ignore_errors=True)
             self._tmpdir = None
 
@@ -181,12 +184,15 @@ class Pipeline:
         mgr.initialize()
         return mgr
 
-    def run(self, sources: list[dict[str, Any]],
-            thresholds: dict[str, dict[str, Any]] | None = None,
-            query_ip: str = "",
-            query_target: str = "",
-            min_confidence: float = 0.0,
-            enrich: bool = False) -> PipelineResult:
+    def run(
+        self,
+        sources: list[dict[str, Any]],
+        thresholds: dict[str, dict[str, Any]] | None = None,
+        query_ip: str = "",
+        query_target: str = "",
+        min_confidence: float = 0.0,
+        enrich: bool = False,
+    ) -> PipelineResult:
         _start_time = time.time()
         result = PipelineResult()
         db_path = self._ensure_db()
@@ -206,6 +212,7 @@ class Pipeline:
 
                 if fpath:
                     from pathlib import Path
+
                     text = Path(fpath).read_text()
 
                 if not text:
@@ -215,7 +222,8 @@ class Pipeline:
 
                 if fpath:
                     dsm.register_connector(
-                        source_id=sid, source_name=src.get("name", sid),
+                        source_id=sid,
+                        source_name=src.get("name", sid),
                         connector_type="file",
                         config_overrides={"file_path": fpath},
                     )
@@ -223,12 +231,13 @@ class Pipeline:
                     if poll_result.get("status") != "success":
                         result.errors.append(f"Poll failed for {sid}: {poll_result}")
                 else:
-                    import tempfile as tf
+
                     tfp = f"{db_path}.{sid}.txt"
                     with open(tfp, "w") as f:
                         f.write(text)
                     dsm.register_connector(
-                        source_id=sid, source_name=src.get("name", sid),
+                        source_id=sid,
+                        source_name=src.get("name", sid),
                         connector_type="file",
                         config_overrides={"file_path": tfp},
                     )
@@ -274,7 +283,7 @@ class Pipeline:
         for e in result.extracted_entities:
             if e.label == "VERSION":
                 continue
-            ctx: dict[str, Any] = getattr(e, '_pipeline_context', {})
+            ctx: dict[str, Any] = getattr(e, "_pipeline_context", {})
             fact = e.to_contradiction_dict(ctx)
             facts.append(fact)
 
@@ -287,7 +296,7 @@ class Pipeline:
                     re.IGNORECASE | re.DOTALL,
                 )
                 m = pat.search(full_context)
-                fact["known_ransomware_use"] = (m is not None and m.group(1) == "Known")
+                fact["known_ransomware_use"] = m is not None and m.group(1) == "Known"
 
         contradictions = detector.detect(facts)
         result.contradictions = contradictions
@@ -316,13 +325,17 @@ class Pipeline:
             tr = ute.write(key=entity_key, value=value_data, source=source, confidence=truth_conf)
             # SSOT collapsed into UTE — delegate set for backward compat
             sr = ssot.set(key=entity_key, value=value_data, source=source, confidence=truth_conf)
-            result.truth_entries.append({"key": entity_key, "truth": tr, "ssot": sr.get("action", sr)})
+            result.truth_entries.append(
+                {"key": entity_key, "truth": tr, "ssot": sr.get("action", sr)}
+            )
 
         truth_map: dict[str, dict[str, Any]] = {}
         for fact in facts:
             ek = str(fact.get("entity", ""))
             te = ute.read(ek)
-            if te and (ek not in truth_map or te.get("confidence", 0) > truth_map[ek].get("confidence", 0)):
+            if te and (
+                ek not in truth_map or te.get("confidence", 0) > truth_map[ek].get("confidence", 0)
+            ):
                 truth_map[ek] = te
 
         # ── Bridge 3->4: Truth -> IntelligenceGraph (with ChainManager injection) ──
@@ -348,11 +361,11 @@ class Pipeline:
                 try:
                     ev_time = datetime.fromisoformat(src_ts)
                 except ValueError:
-                    ev_time = datetime.now(timezone.utc)
+                    ev_time = datetime.now(UTC)
             elif isinstance(src_ts, datetime):
                 ev_time = src_ts
             else:
-                ev_time = datetime.now(timezone.utc)
+                ev_time = datetime.now(UTC)
 
             ev = Evidence(
                 id=f"ev_pipeline_{hashlib.md5(ek.encode()).hexdigest()[:8]}",
@@ -367,22 +380,34 @@ class Pipeline:
             if label == "CVE":
                 is_ransomware = val.get("known_ransomware_use", False)
                 cs = 95 if is_ransomware else 80
-                entity = CveEntity(id=entity_id, cve_id=ek, evidence=(ev,),
-                                   vendor_project=val.get("vendor_project", ""),
-                                   product=val.get("product", ""),
-                                   vulnerability_name=val.get("vulnerability_name", ""),
-                                   known_ransomware_use=is_ransomware,
-                                   confidence_score=cs,
-                                   first_seen=ev_time, last_seen=ev_time)
+                entity = CveEntity(
+                    id=entity_id,
+                    cve_id=ek,
+                    evidence=(ev,),
+                    vendor_project=val.get("vendor_project", ""),
+                    product=val.get("product", ""),
+                    vulnerability_name=val.get("vulnerability_name", ""),
+                    known_ransomware_use=is_ransomware,
+                    confidence_score=cs,
+                    first_seen=ev_time,
+                    last_seen=ev_time,
+                )
             elif label == "IP" or "." not in ek:
-                entity = IPAddress(id=entity_id, ip=ek, evidence=(ev,),
-                                   first_seen=ev_time, last_seen=ev_time)
+                entity = IPAddress(
+                    id=entity_id, ip=ek, evidence=(ev,), first_seen=ev_time, last_seen=ev_time
+                )
             elif label == "DOMAIN" or "." in ek:
-                entity = Domain(id=entity_id, domain_name=ek, evidence=(ev,),
-                                first_seen=ev_time, last_seen=ev_time)
+                entity = Domain(
+                    id=entity_id,
+                    domain_name=ek,
+                    evidence=(ev,),
+                    first_seen=ev_time,
+                    last_seen=ev_time,
+                )
             else:
-                entity = IPAddress(id=entity_id, ip=ek, evidence=(ev,),
-                                   first_seen=ev_time, last_seen=ev_time)
+                entity = IPAddress(
+                    id=entity_id, ip=ek, evidence=(ev,), first_seen=ev_time, last_seen=ev_time
+                )
             graph.add_entity(entity)
 
         result.graph = graph
@@ -495,7 +520,9 @@ class Pipeline:
             entity_ctx["source_summary"] = str(te.get("source", "unknown"))
         if contradictions:
             c = contradictions[0]
-            entity_ctx["contradiction"] = f"{c.fact_a.get('source','?')} vs {c.fact_b.get('source','?')}: {c.explanation[:80]}"
+            entity_ctx["contradiction"] = (
+                f"{c.fact_a.get('source','?')} vs {c.fact_b.get('source','?')}: {c.explanation[:80]}"
+            )
         if paths:
             entity_ctx["path_summary"] = paths[0].to_path_summary()[:120]
         if result.source_texts:
@@ -531,8 +558,11 @@ class Pipeline:
             thresholds.setdefault(k, v)
 
         # Separate CVE thresholds for CVE-only evaluate
-        cve_thresholds = {k: v for k, v in thresholds.items()
-                          if k in cve_defaults or v.get("metric_key", k) in cve_metrics}
+        cve_thresholds = {
+            k: v
+            for k, v in thresholds.items()
+            if k in cve_defaults or v.get("metric_key", k) in cve_metrics
+        }
 
         # Evaluate entity-level alerts (URL, IP, etc.) with entity context
         alerts = alerter.evaluate(entity_metrics, thresholds, context=entity_ctx)
@@ -547,8 +577,10 @@ class Pipeline:
             max_ts_threshold = thresholds.get("max_threat_score", {})
             if max_ts_threshold.get("enabled", False) and graph:
                 from intelgraph.core.scoring.threat_score import compute_threat_scores
+
                 ts_scores = compute_threat_scores(graph)
                 from intelgraph.core.graph.anomaly import _THREAT_SCORE_CACHE
+
                 _THREAT_SCORE_CACHE.update(ts_scores)
                 max_val = max_ts_threshold.get("max", 75.0)
                 max_entity = ""
@@ -566,19 +598,22 @@ class Pipeline:
         try:
             if graph and graph.nodes:
                 from intelgraph.core.graph.anomaly import AnomalyDetector
+
                 detector = AnomalyDetector(graph)
                 anomaly_results = detector.detect_all()
                 result.anomaly_results = [r.to_dict() for r in anomaly_results]
                 # Auto-alert for high anomaly scores (80+)
                 high_anomalies = [r for r in anomaly_results if r.anomaly_score >= 80]
                 for ar in high_anomalies:
-                    alerts.append({
-                        "alert_id": f"anom_{ar.node_id[:8]}",
-                        "severity": "critical",
-                        "message": f"Anomaly: {ar.anomaly_type} — {ar.explanation}",
-                        "category": "anomaly_detection",
-                        "entity_id": ar.node_id,
-                    })
+                    alerts.append(
+                        {
+                            "alert_id": f"anom_{ar.node_id[:8]}",
+                            "severity": "critical",
+                            "message": f"Anomaly: {ar.anomaly_type} — {ar.explanation}",
+                            "category": "anomaly_detection",
+                            "entity_id": ar.node_id,
+                        }
+                    )
                     result.alert_count = len(alerts)
         except Exception as exc:
             result.errors.append(f"Anomaly detection error: {exc}")
@@ -589,7 +624,9 @@ class Pipeline:
             icc_alerts = icc.evaluate(entity_metrics, thresholds, context=entity_ctx)
             if cve_alert_ctx and cve_metrics:
                 cve_icc = IncidentControlCenter({"cooldown_seconds": 0})
-                cve_icc_alerts = cve_icc.evaluate(cve_metrics, cve_thresholds, context=cve_alert_ctx)
+                cve_icc_alerts = cve_icc.evaluate(
+                    cve_metrics, cve_thresholds, context=cve_alert_ctx
+                )
                 icc_alerts.extend(cve_icc_alerts)
             result.incidents = [a.to_dict() for a in icc_alerts]
             self._icc = icc
@@ -612,7 +649,12 @@ class Pipeline:
 
         # ── Phase 3.2b: SafetyGovernor — risk-based action governance (stacked on USL) ──
         try:
-            governor = SafetyGovernor({"human_in_loop": True, "forbidden_actions": ["block_subnet", "mass_block", "shutdown"]})
+            governor = SafetyGovernor(
+                {
+                    "human_in_loop": True,
+                    "forbidden_actions": ["block_subnet", "mass_block", "shutdown"],
+                }
+            )
 
             # Find the highest-confidence alert to build an action
             action: SuggestedAction | None = None
@@ -671,7 +713,7 @@ class Pipeline:
             result.safety_result = {"error": str(exc)}
 
         # ── Phase 4.1a: If ESCALATE, create ICC incident record ──
-        if getattr(self, '_icc', None) and result.safety_result:
+        if getattr(self, "_icc", None) and result.safety_result:
             sf = result.safety_result
             if sf.get("approval_level") == "escalate" or sf.get("risk_score", 0) >= 0.9:
                 try:
@@ -680,7 +722,7 @@ class Pipeline:
                         category="security_escalation",
                         severity="critical",
                         message=f"ESCALATE: {result.suggested_action.reason if result.suggested_action else 'High-risk action'}; "
-                                f"review required before execution",
+                        f"review required before execution",
                         source_layers=["pipeline", "safety_governor", "incident_control"],
                         current_value=sf.get("risk_score", 0.0),
                         threshold_value=0.9,
@@ -698,7 +740,10 @@ class Pipeline:
 
             if result.suggested_action and result.safety_result:
                 sf = result.safety_result
-                is_high_risk = sf.get("approval_level") in ("review", "escalate") or sf.get("risk_score", 0) >= 0.7
+                is_high_risk = (
+                    sf.get("approval_level") in ("review", "escalate")
+                    or sf.get("risk_score", 0) >= 0.7
+                )
 
                 if is_high_risk and graph.nodes:
                     primary_nid = list(graph.nodes.keys())[0]
@@ -716,7 +761,9 @@ class Pipeline:
                         )
                         result.review_record = rec.to_dict()
                     else:
-                        result.review_record = {"info": "Auto-approve threshold met, no review needed"}
+                        result.review_record = {
+                            "info": "Auto-approve threshold met, no review needed"
+                        }
 
         except Exception as exc:
             result.errors.append(f"ReviewManager error: {exc}")
@@ -736,7 +783,7 @@ class Pipeline:
 
         # ── Phase 4.1b: ICC confirm (NOT resolve) on review approval ──
         # approved != resolved: review only confirms threat, remediation is separate
-        if getattr(self, '_icc', None) and result.review_record:
+        if getattr(self, "_icc", None) and result.review_record:
             try:
                 for inc in self._icc.get_alerts():
                     if not inc.confirmed:
@@ -745,13 +792,13 @@ class Pipeline:
                             if rd.get("alert_id") == inc.alert_id:
                                 rd["confirmed"] = True
                 result.incidents_awaiting_remediation = [
-                    rd for rd in result.incidents
-                    if rd.get("confirmed") and not rd.get("resolved")
+                    rd for rd in result.incidents if rd.get("confirmed") and not rd.get("resolved")
                 ]
 
                 # ── Phase 4.1c: Playbook auto-trigger for confirmed incidents ──
                 try:
                     from intelgraph.core.playbook import PlaybookEngine
+
                     playbook_engine = PlaybookEngine()
                     result.playbook_statuses = {}
                     for inc in result.incidents_awaiting_remediation:
@@ -788,12 +835,12 @@ class Pipeline:
         try:
             chain_mgr2 = self._init_chain_mgr(db_path)
             all_chains = chain_mgr2.list_chains()
-            result.chain_stats.update({
-                "updated_chains": len(all_chains),
-                "contradiction_chains": len(
-                    chain_mgr2.list_chains(only_contradictions=True)
-                ),
-            })
+            result.chain_stats.update(
+                {
+                    "updated_chains": len(all_chains),
+                    "contradiction_chains": len(chain_mgr2.list_chains(only_contradictions=True)),
+                }
+            )
         except Exception as exc:
             result.errors.append(f"ChainManager final stats error: {exc}")
 
@@ -825,7 +872,9 @@ class Pipeline:
             snapshot_metrics = {
                 "reasoning_quality": min(1.0, dash_metrics.get("overall_confidence", 0.0)),
                 "execution_reliability": 1.0 - (dash_metrics.get("contradiction_count", 0) * 0.1),
-                "knowledge_consistency": max(0.0, 1.0 - (dash_metrics.get("governance_conflict_rate", 0.0))),
+                "knowledge_consistency": max(
+                    0.0, 1.0 - (dash_metrics.get("governance_conflict_rate", 0.0))
+                ),
                 "system_drift": min(1.0, dash_metrics.get("governance_conflict_rate", 0.0)),
                 "cross_phase_alignment": 0.8 if dash_metrics.get("node_count", 0) > 0 else 0.2,
                 "stability_index": 1.0 - (dash_metrics.get("incident_count", 0) * 0.15),
@@ -857,65 +906,86 @@ class Pipeline:
         # ── Phase 4.3: Notification dispatch — async alerts/incidents/playbook ──
         try:
             from intelgraph.core.notification.manager import NotificationManager
+
             notifier = NotificationManager()
-            if getattr(notifier, '_channels', None) is None and not notifier.list_channels():
+            if getattr(notifier, "_channels", None) is None and not notifier.list_channels():
                 pass  # no channels configured, skip
             else:
                 # Alert notifications
                 for alert in result.alerts:
                     sev_lookup = {"info": "low", "warning": "medium", "critical": "high"}
                     sev = sev_lookup.get(alert.get("severity", ""), "medium")
-                    notifier.send_event_async(NotificationManager.build_event(
-                        event_type="alert",
-                        severity=sev,
-                        title=alert.get("message", "Alert triggered"),
-                        body=alert.get("message", ""),
-                        entity_id=alert.get("entity_id", ""),
-                        metadata={"alert_id": alert.get("alert_id", ""), "category": alert.get("category", "")},
-                    ))
+                    notifier.send_event_async(
+                        NotificationManager.build_event(
+                            event_type="alert",
+                            severity=sev,
+                            title=alert.get("message", "Alert triggered"),
+                            body=alert.get("message", ""),
+                            entity_id=alert.get("entity_id", ""),
+                            metadata={
+                                "alert_id": alert.get("alert_id", ""),
+                                "category": alert.get("category", ""),
+                            },
+                        )
+                    )
 
                 # Incident notifications
                 for inc in result.incidents:
                     sev = inc.get("severity", "medium")
-                    notifier.send_event_async(NotificationManager.build_event(
-                        event_type="incident",
-                        severity=sev if sev in ("low", "medium", "high", "critical") else "medium",
-                        title=inc.get("message", "Incident created"),
-                        body=inc.get("message", ""),
-                        entity_id=inc.get("entity_id", ""),
-                        metadata={"alert_id": inc.get("alert_id", ""), "confirmed": inc.get("confirmed", False)},
-                    ))
+                    notifier.send_event_async(
+                        NotificationManager.build_event(
+                            event_type="incident",
+                            severity=(
+                                sev if sev in ("low", "medium", "high", "critical") else "medium"
+                            ),
+                            title=inc.get("message", "Incident created"),
+                            body=inc.get("message", ""),
+                            entity_id=inc.get("entity_id", ""),
+                            metadata={
+                                "alert_id": inc.get("alert_id", ""),
+                                "confirmed": inc.get("confirmed", False),
+                            },
+                        )
+                    )
 
                 # Threat score exceeded notifications
                 if entity_ctx.get("max_threat_entity"):
                     max_ts = entity_metrics.get("max_threat_score", 0)
-                    notifier.send_event_async(NotificationManager.build_event(
-                        event_type="threat_score_exceeded",
-                        severity="critical",
-                        title=f"Threat score threshold exceeded: {max_ts:.1f}",
-                        body=f"Entity {entity_ctx['max_threat_entity']} has threat score {max_ts:.1f} (threshold: 75)",
-                        entity_id=entity_ctx["max_threat_entity"],
-                        metadata={"threat_score": max_ts, "threshold": 75},
-                    ))
+                    notifier.send_event_async(
+                        NotificationManager.build_event(
+                            event_type="threat_score_exceeded",
+                            severity="critical",
+                            title=f"Threat score threshold exceeded: {max_ts:.1f}",
+                            body=f"Entity {entity_ctx['max_threat_entity']} has threat score {max_ts:.1f} (threshold: 75)",
+                            entity_id=entity_ctx["max_threat_entity"],
+                            metadata={"threat_score": max_ts, "threshold": 75},
+                        )
+                    )
 
                 # Playbook steps requiring human intervention
                 for inc_id, pb_status in result.playbook_statuses.items():
                     for step in pb_status.get("steps", []):
                         if not step.get("automated", True) and not step.get("completed", False):
-                            notifier.send_event_async(NotificationManager.build_event(
-                                event_type="playbook_step",
-                                severity="high",
-                                title=f"Human review needed: {step.get('description', 'Playbook step')}",
-                                body=f"Playbook {pb_status.get('playbook_name', '')} step '{step.get('description', '')}' requires human intervention",
-                                entity_id=inc_id,
-                                metadata={"playbook_id": pb_status.get("playbook_id", ""), "step_id": step.get("step_id", "")},
-                            ))
+                            notifier.send_event_async(
+                                NotificationManager.build_event(
+                                    event_type="playbook_step",
+                                    severity="high",
+                                    title=f"Human review needed: {step.get('description', 'Playbook step')}",
+                                    body=f"Playbook {pb_status.get('playbook_name', '')} step '{step.get('description', '')}' requires human intervention",
+                                    entity_id=inc_id,
+                                    metadata={
+                                        "playbook_id": pb_status.get("playbook_id", ""),
+                                        "step_id": step.get("step_id", ""),
+                                    },
+                                )
+                            )
         except Exception as exc:
             result.errors.append(f"Notification dispatch error: {exc}")
 
         # Record pipeline performance metrics
         try:
             from intelgraph.core.enterprise import get_performance_collector
+
             perf = get_performance_collector()
             duration_ms = (time.time() - _start_time) * 1000
             perf.record_pipeline_run(
@@ -927,10 +997,19 @@ class Pipeline:
                 source_count=len(sources),
             )
             # Register known components
-            for comp in ("DataSourceManager", "NEREngine", "TextClassifier",
-                         "RelationshipExtractor", "ContradictionDetector",
-                         "UnifiedTruthEngine", "ChainManager", "ReasoningEngine",
-                         "UnifiedAlertingCore", "ThreatScorer", "AnomalyDetector"):
+            for comp in (
+                "DataSourceManager",
+                "NEREngine",
+                "TextClassifier",
+                "RelationshipExtractor",
+                "ContradictionDetector",
+                "UnifiedTruthEngine",
+                "ChainManager",
+                "ReasoningEngine",
+                "UnifiedAlertingCore",
+                "ThreatScorer",
+                "AnomalyDetector",
+            ):
                 perf.register_component(comp)
                 perf.record_component_run(comp, success=True)
         except Exception:
@@ -952,11 +1031,13 @@ class Pipeline:
         vt_client = None
         try:
             from intelgraph.core.source.shodan import ShodanClient
+
             shodan_client = ShodanClient()
         except (ValueError, ImportError) as exc:
             result.errors.append(f"Shodan enrichment skipped: {exc}")
         try:
             from intelgraph.core.source.virustotal import VirusTotalClient
+
             vt_client = VirusTotalClient()
         except (ValueError, ImportError) as exc:
             result.errors.append(f"VirusTotal enrichment skipped: {exc}")
@@ -983,7 +1064,7 @@ class Pipeline:
                             id=f"ev_shodan_{entity.ip}",
                             source="shodan",
                             content=info.to_evidence_content(),
-                            collected_at=datetime.now(timezone.utc),
+                            collected_at=datetime.now(UTC),
                             source_tier=2,
                             trust_score=70,
                             reliability_score=75,
@@ -1007,7 +1088,7 @@ class Pipeline:
                             id=f"ev_vt_{entity.ip}",
                             source="virustotal",
                             content=rpt.to_evidence_content(),
-                            collected_at=datetime.now(timezone.utc),
+                            collected_at=datetime.now(UTC),
                             source_tier=2,
                             trust_score=trust,
                             reliability_score=80,
@@ -1025,14 +1106,16 @@ class Pipeline:
                             id=f"ev_vt_{entity.domain_name}",
                             source="virustotal",
                             content=rpt.to_evidence_content(),
-                            collected_at=datetime.now(timezone.utc),
+                            collected_at=datetime.now(UTC),
                             source_tier=2,
                             trust_score=trust,
                             reliability_score=80,
                         )
                         new_evidence.append(ev)
                 except Exception as exc:
-                    result.errors.append(f"VirusTotal enrichment error ({entity.domain_name}): {exc}")
+                    result.errors.append(
+                        f"VirusTotal enrichment error ({entity.domain_name}): {exc}"
+                    )
 
             if new_evidence:
                 # Add enriched entity — EntityMatcher merges with existing node
@@ -1059,4 +1142,5 @@ class Pipeline:
 
         if enriched:
             from structlog import get_logger
+
             get_logger(__name__).info("Enrichment complete", enriched_nodes=enriched)

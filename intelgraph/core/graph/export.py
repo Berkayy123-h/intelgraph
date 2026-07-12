@@ -5,8 +5,9 @@ import gzip
 import io
 import json
 import time
-from datetime import datetime, timezone
-from typing import Any, Callable, Iterator
+from collections.abc import Callable, Iterator
+from datetime import datetime
+from typing import Any
 
 from intelgraph import __version__
 from intelgraph.core.graph.graph import IntelligenceGraph
@@ -100,22 +101,37 @@ class GraphExporter:
         until_ts = self._parse_time_filter(self._settings.until)
         for nid, node in self._working_graph.nodes.items():
             et = node.entity_type
-            if self._settings.include_entity_types is not None and et not in self._settings.include_entity_types:
+            if (
+                self._settings.include_entity_types is not None
+                and et not in self._settings.include_entity_types
+            ):
                 continue
-            if self._settings.exclude_entity_types is not None and et in self._settings.exclude_entity_types:
+            if (
+                self._settings.exclude_entity_types is not None
+                and et in self._settings.exclude_entity_types
+            ):
                 continue
             entity = node.entity
             # threat_score filter
             if self._settings.min_threat_score > 0:
                 from intelgraph.core.graph.anomaly import _THREAT_SCORE_CACHE
+
                 ts = _THREAT_SCORE_CACHE.get(str(nid), 0.0)
                 if ts < self._settings.min_threat_score:
                     continue
             # temporal filter
             if since_ts is not None or until_ts is not None:
                 try:
-                    last_seen = entity.last_seen.timestamp() if hasattr(entity, "last_seen") and entity.last_seen else 0
-                    first_seen = entity.first_seen.timestamp() if hasattr(entity, "first_seen") and entity.first_seen else 0
+                    last_seen = (
+                        entity.last_seen.timestamp()
+                        if hasattr(entity, "last_seen") and entity.last_seen
+                        else 0
+                    )
+                    first_seen = (
+                        entity.first_seen.timestamp()
+                        if hasattr(entity, "first_seen") and entity.first_seen
+                        else 0
+                    )
                 except (AttributeError, ValueError):
                     last_seen = 0
                     first_seen = 0
@@ -133,9 +149,15 @@ class GraphExporter:
         for eid, edge in self._working_graph.edges.items():
             rel = edge.relationship
             rt = rel.type.type_name
-            if self._settings.include_relationship_types is not None and rt not in self._settings.include_relationship_types:
+            if (
+                self._settings.include_relationship_types is not None
+                and rt not in self._settings.include_relationship_types
+            ):
                 continue
-            if self._settings.exclude_relationship_types is not None and rt in self._settings.exclude_relationship_types:
+            if (
+                self._settings.exclude_relationship_types is not None
+                and rt in self._settings.exclude_relationship_types
+            ):
                 continue
             if rel.confidence_score < self._settings.min_confidence:
                 continue
@@ -144,8 +166,16 @@ class GraphExporter:
             # temporal filter
             if since_ts is not None or until_ts is not None:
                 try:
-                    last_seen = rel.last_seen.timestamp() if hasattr(rel, "last_seen") and rel.last_seen else 0
-                    first_seen = rel.first_seen.timestamp() if hasattr(rel, "first_seen") and rel.first_seen else 0
+                    last_seen = (
+                        rel.last_seen.timestamp()
+                        if hasattr(rel, "last_seen") and rel.last_seen
+                        else 0
+                    )
+                    first_seen = (
+                        rel.first_seen.timestamp()
+                        if hasattr(rel, "first_seen") and rel.first_seen
+                        else 0
+                    )
                 except (AttributeError, ValueError):
                     last_seen = 0
                     first_seen = 0
@@ -174,7 +204,9 @@ class GraphExporter:
         if value is None:
             return ""
         s = str(value)
-        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+        return (
+            s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+        )
 
     def _dot_id(self, node_id: str) -> str:
         return '"' + node_id.replace("\\", "\\\\").replace('"', '\\"') + '"'
@@ -200,14 +232,32 @@ class GraphExporter:
                 "average_degree": round(avg_deg, 4),
             },
             "filtering": {
-                "include_entity_types": sorted(self._settings.include_entity_types) if self._settings.include_entity_types else None,
-                "exclude_entity_types": sorted(self._settings.exclude_entity_types) if self._settings.exclude_entity_types else None,
-                "include_relationship_types": sorted(self._settings.include_relationship_types) if self._settings.include_relationship_types else None,
-                "exclude_relationship_types": sorted(self._settings.exclude_relationship_types) if self._settings.exclude_relationship_types else None,
+                "include_entity_types": (
+                    sorted(self._settings.include_entity_types)
+                    if self._settings.include_entity_types
+                    else None
+                ),
+                "exclude_entity_types": (
+                    sorted(self._settings.exclude_entity_types)
+                    if self._settings.exclude_entity_types
+                    else None
+                ),
+                "include_relationship_types": (
+                    sorted(self._settings.include_relationship_types)
+                    if self._settings.include_relationship_types
+                    else None
+                ),
+                "exclude_relationship_types": (
+                    sorted(self._settings.exclude_relationship_types)
+                    if self._settings.exclude_relationship_types
+                    else None
+                ),
                 "min_confidence": self._settings.min_confidence,
                 "min_trust_weight": self._settings.min_trust_weight,
                 "subgraph_node_id": self._settings.subgraph_node_id,
-                "subgraph_depth": self._settings.subgraph_depth if self._settings.subgraph_node_id else None,
+                "subgraph_depth": (
+                    self._settings.subgraph_depth if self._settings.subgraph_node_id else None
+                ),
             },
             "annotations": {
                 "communities": self._settings.communities is not None,
@@ -248,18 +298,29 @@ class GraphExporter:
     def _build_node_attrs(self, node: Any) -> dict[str, Any]:
         entity = node.entity
         attrs: dict[str, Any] = {
-            "label": getattr(entity, "name", None) or getattr(entity, "domain_name", None) or node.id[:8],
+            "label": getattr(entity, "name", None)
+            or getattr(entity, "domain_name", None)
+            or node.id[:8],
             "entity_type": node.entity_type,
         }
         try:
             attrs["confidence_score"] = entity.confidence_score
             attrs["trust_score"] = entity.trust_score
-            attrs["first_seen"] = entity.first_seen.isoformat() if hasattr(entity, "first_seen") and entity.first_seen else ""
-            attrs["last_seen"] = entity.last_seen.isoformat() if hasattr(entity, "last_seen") and entity.last_seen else ""
+            attrs["first_seen"] = (
+                entity.first_seen.isoformat()
+                if hasattr(entity, "first_seen") and entity.first_seen
+                else ""
+            )
+            attrs["last_seen"] = (
+                entity.last_seen.isoformat()
+                if hasattr(entity, "last_seen") and entity.last_seen
+                else ""
+            )
         except AttributeError:
             pass
         # threat_score from cache
         from intelgraph.core.graph.anomaly import _THREAT_SCORE_CACHE
+
         ts = _THREAT_SCORE_CACHE.get(str(node.id))
         if ts is not None:
             attrs["threat_score"] = round(ts, 2)
@@ -307,7 +368,7 @@ class GraphExporter:
                         yield f'      <data key="centrality">{key[11:]}:{val}</data>\n'
                     else:
                         yield f'      <data key="{key}">{self._safe(val)}</data>\n'
-            yield f'    </node>\n'
+            yield "    </node>\n"
             done += 1
             if self._settings.progress_callback:
                 self._settings.progress_callback(done, total)
@@ -318,20 +379,20 @@ class GraphExporter:
             yield f'      <data key="edge_label">{self._safe(attrs["label"])}</data>\n'
             yield f'      <data key="edge_confidence">{attrs["confidence_score"]}</data>\n'
             yield f'      <data key="edge_trust">{attrs["trust_weight"]}</data>\n'
-            yield f'    </edge>\n'
+            yield "    </edge>\n"
             done += 1
             if self._settings.progress_callback:
                 self._settings.progress_callback(done, total)
 
-        yield '  </graph>\n'
+        yield "  </graph>\n"
 
         if self._settings.include_metadata:
             meta = self._metadata_dict()
             yield '  <data key="metadata">\n'
-            yield f'    <![CDATA[{json.dumps(meta, indent=2)}]]>\n'
-            yield '  </data>\n'
+            yield f"    <![CDATA[{json.dumps(meta, indent=2)}]]>\n"
+            yield "  </data>\n"
 
-        yield '</graphml>\n'
+        yield "</graphml>\n"
 
     def _dot_iter(self) -> Iterator[str]:
         nodes = self._get_node_list()
@@ -341,7 +402,7 @@ class GraphExporter:
         indent = "  "
 
         yield "graph G {\n"
-        yield f"{indent}graph [label=\"IntelGraph Export\"];\n"
+        yield f'{indent}graph [label="IntelGraph Export"];\n'
         yield f"{indent}node [shape=box, style=rounded];\n"
 
         for nid, node in nodes:
@@ -404,7 +465,7 @@ class GraphExporter:
             if self._settings.progress_callback:
                 self._settings.progress_callback(done, total)
 
-        yield f'{sp}{sp}],' + nl
+        yield f"{sp}{sp}]," + nl
         yield f'{sp}{sp}"edges": [' + nl
 
         for i, (eid, edge, src, tgt) in enumerate(edges):
@@ -421,13 +482,13 @@ class GraphExporter:
             if self._settings.progress_callback:
                 self._settings.progress_callback(done, total)
 
-        yield f'{sp}{sp}]' + nl
+        yield f"{sp}{sp}]" + nl
         meta = self._metadata_dict()
         if meta:
-            yield f'{sp}}},' + nl
+            yield f"{sp}}}," + nl
             yield f'{sp}"metadata": {json.dumps(meta, indent=2 if p else None)}' + nl
         else:
-            yield f'{sp}}}' + nl
+            yield f"{sp}}}" + nl
         yield "}" + nl
 
     def _gexf_iter(self) -> Iterator[str]:
@@ -439,9 +500,9 @@ class GraphExporter:
         yield '<?xml version="1.0" encoding="UTF-8"?>\n'
         yield '<gexf xmlns="http://gexf.net/1.3" version="1.3">\n'
         yield '  <meta lastmodifieddate="' + time.strftime("%Y-%m-%d") + '">\n'
-        yield '    <creator>IntelGraph</creator>\n'
-        yield '    <description>Intelligence Graph Export</description>\n'
-        yield '  </meta>\n'
+        yield "    <creator>IntelGraph</creator>\n"
+        yield "    <description>Intelligence Graph Export</description>\n"
+        yield "  </meta>\n"
         yield '  <graph mode="static" defaultedgetype="undirected">\n'
 
         # Attribute definitions
@@ -453,22 +514,29 @@ class GraphExporter:
         yield '      <attribute id="threat_score" title="Threat Score" type="float"/>\n'
         yield '      <attribute id="first_seen" title="First Seen" type="string"/>\n'
         yield '      <attribute id="last_seen" title="Last Seen" type="string"/>\n'
-        yield '    </attributes>\n'
+        yield "    </attributes>\n"
         yield '    <attributes class="edge">\n'
         yield '      <attribute id="edge_label" title="Label" type="string"/>\n'
         yield '      <attribute id="edge_confidence" title="Confidence" type="integer"/>\n'
         yield '      <attribute id="edge_trust" title="Trust Weight" type="integer"/>\n'
-        yield '    </attributes>\n'
+        yield "    </attributes>\n"
 
-        yield '    <nodes>\n'
+        yield "    <nodes>\n"
         for nid, node in nodes:
             attrs = self._build_node_attrs(node)
             yield f'      <node id="{self._safe(nid)}" label="{self._safe(attrs.get("label", nid[:8]))}">\n'
-            yield '        <attvalues>\n'
-            for key in ("entity_type", "confidence_score", "trust_score", "threat_score", "first_seen", "last_seen"):
+            yield "        <attvalues>\n"
+            for key in (
+                "entity_type",
+                "confidence_score",
+                "trust_score",
+                "threat_score",
+                "first_seen",
+                "last_seen",
+            ):
                 if key in attrs and attrs[key] is not None and attrs[key] != "":
                     yield f'          <attvalue for="{key}" value="{self._safe(str(attrs[key]))}"/>\n'
-            yield '        </attvalues>\n'
+            yield "        </attvalues>\n"
             # Temporal (spell) support for Gephi timeline
             try:
                 last_seen = node.entity.last_seen
@@ -479,29 +547,29 @@ class GraphExporter:
                     yield '        <spell start="' + first_seen.isoformat() + '"/>\n'
             except AttributeError:
                 pass
-            yield '      </node>\n'
+            yield "      </node>\n"
             done += 1
             if self._settings.progress_callback:
                 self._settings.progress_callback(done, total)
 
-        yield '    </nodes>\n'
-        yield '    <edges>\n'
+        yield "    </nodes>\n"
+        yield "    <edges>\n"
 
         for i, (eid, edge, src, tgt) in enumerate(edges):
             attrs = self._build_edge_attrs(edge)
             yield f'      <edge id="{self._safe(eid)}" source="{self._safe(src)}" target="{self._safe(tgt)}" label="{self._safe(attrs.get("label", ""))}">\n'
-            yield '        <attvalues>\n'
+            yield "        <attvalues>\n"
             yield f'          <attvalue for="edge_confidence" value="{attrs.get("confidence_score", 0)}"/>\n'
             yield f'          <attvalue for="edge_trust" value="{attrs.get("trust_weight", 0)}"/>\n'
-            yield '        </attvalues>\n'
-            yield '      </edge>\n'
+            yield "        </attvalues>\n"
+            yield "      </edge>\n"
             done += 1
             if self._settings.progress_callback:
                 self._settings.progress_callback(done, total)
 
-        yield '    </edges>\n'
-        yield '  </graph>\n'
-        yield '</gexf>\n'
+        yield "    </edges>\n"
+        yield "  </graph>\n"
+        yield "</gexf>\n"
 
     def _csv_iter(self) -> Iterator[str]:
         nodes = self._get_node_list()
@@ -510,20 +578,32 @@ class GraphExporter:
         # Nodes CSV
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(["node_id", "label", "entity_type", "confidence_score", "trust_score",
-                         "threat_score", "first_seen", "last_seen"])
+        writer.writerow(
+            [
+                "node_id",
+                "label",
+                "entity_type",
+                "confidence_score",
+                "trust_score",
+                "threat_score",
+                "first_seen",
+                "last_seen",
+            ]
+        )
         for nid, node in nodes:
             attrs = self._build_node_attrs(node)
-            writer.writerow([
-                nid,
-                attrs.get("label", ""),
-                attrs.get("entity_type", ""),
-                attrs.get("confidence_score", ""),
-                attrs.get("trust_score", ""),
-                attrs.get("threat_score", ""),
-                attrs.get("first_seen", ""),
-                attrs.get("last_seen", ""),
-            ])
+            writer.writerow(
+                [
+                    nid,
+                    attrs.get("label", ""),
+                    attrs.get("entity_type", ""),
+                    attrs.get("confidence_score", ""),
+                    attrs.get("trust_score", ""),
+                    attrs.get("threat_score", ""),
+                    attrs.get("first_seen", ""),
+                    attrs.get("last_seen", ""),
+                ]
+            )
         yield output.getvalue()
 
         yield "\n--- EDGES ---\n"
@@ -531,15 +611,19 @@ class GraphExporter:
         # Edges CSV
         output2 = io.StringIO()
         writer2 = csv.writer(output2)
-        writer2.writerow(["edge_id", "source", "target", "relationship_type", "confidence_score", "trust_weight"])
+        writer2.writerow(
+            ["edge_id", "source", "target", "relationship_type", "confidence_score", "trust_weight"]
+        )
         for eid, edge, src, tgt in edges:
             rel = edge.relationship
-            writer2.writerow([
-                eid,
-                src,
-                tgt,
-                rel.type.type_name if hasattr(rel, "type") else "",
-                rel.confidence_score,
-                rel.trust_weight,
-            ])
+            writer2.writerow(
+                [
+                    eid,
+                    src,
+                    tgt,
+                    rel.type.type_name if hasattr(rel, "type") else "",
+                    rel.confidence_score,
+                    rel.trust_weight,
+                ]
+            )
         yield output2.getvalue()

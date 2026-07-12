@@ -12,11 +12,13 @@ class TestAlertEngine:
         m = MetricsCollector()
         m.record_request("/test", 0.1, 500)
         m.record_request("/test", 0.1, 500)
-        engine = AlertEngine({
-            "thresholds": {
-                "error_rate": {"enabled": True, "max": 1, "severity": "warning"},
-            },
-        })
+        engine = AlertEngine(
+            {
+                "thresholds": {
+                    "error_rate": {"enabled": True, "max": 1, "severity": "warning"},
+                },
+            }
+        )
         engine._metrics = m
         alerts = engine.evaluate()
         assert len(alerts) == 1
@@ -28,11 +30,13 @@ class TestAlertEngine:
         m = MetricsCollector()
         for _ in range(3):
             m.record_request("/slow", 2.0, 200)
-        engine = AlertEngine({
-            "thresholds": {
-                "request_latency": {"enabled": True, "max_ms": 500.0, "severity": "critical"},
-            },
-        })
+        engine = AlertEngine(
+            {
+                "thresholds": {
+                    "request_latency": {"enabled": True, "max_ms": 500.0, "severity": "critical"},
+                },
+            }
+        )
         engine._metrics = m
         alerts = engine.evaluate()
         assert len(alerts) == 1
@@ -43,12 +47,14 @@ class TestAlertEngine:
         m = MetricsCollector()
         m.record_request("/test", 0.1, 500)
         m.record_request("/test", 0.1, 500)
-        engine = AlertEngine({
-            "thresholds": {
-                "error_rate": {"enabled": True, "max": 1, "severity": "warning"},
-            },
-            "cooldown_seconds": 3600,
-        })
+        engine = AlertEngine(
+            {
+                "thresholds": {
+                    "error_rate": {"enabled": True, "max": 1, "severity": "warning"},
+                },
+                "cooldown_seconds": 3600,
+            }
+        )
         engine._metrics = m
         alerts1 = engine.evaluate()
         assert len(alerts1) == 1
@@ -58,11 +64,13 @@ class TestAlertEngine:
     def test_get_alerts(self):
         m = MetricsCollector()
         m.record_request("/x", 0.1, 500)
-        engine = AlertEngine({
-            "thresholds": {
-                "error_rate": {"enabled": True, "max": 0, "severity": "warning"},
-            },
-        })
+        engine = AlertEngine(
+            {
+                "thresholds": {
+                    "error_rate": {"enabled": True, "max": 0, "severity": "warning"},
+                },
+            }
+        )
         engine._metrics = m
         engine.evaluate()
         history = engine.get_alerts()

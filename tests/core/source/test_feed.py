@@ -1,4 +1,3 @@
-import pytest
 
 from intelgraph.core.source.feed import DeduplicationEngine, FeedSchema, FeedValidator
 
@@ -41,11 +40,13 @@ class TestFeedValidator:
     def test_validates_all_entries(self):
         schema = FeedSchema({"required_fields": ["name"]})
         validator = FeedValidator(schema)
-        valid = validator.validate([
-            {"name": "Alice", "type": "person"},
-            {"name": "Bob"},
-            {"type": "person"},
-        ])
+        valid = validator.validate(
+            [
+                {"name": "Alice", "type": "person"},
+                {"name": "Bob"},
+                {"type": "person"},
+            ]
+        )
         assert len(valid) == 2
         assert valid[0]["name"] == "Alice"
         assert valid[1]["name"] == "Bob"
@@ -53,19 +54,23 @@ class TestFeedValidator:
     def test_validate_with_errors(self):
         schema = FeedSchema({"required_fields": ["name"]})
         validator = FeedValidator(schema)
-        results = validator.validate_with_errors([
-            {"name": "Alice"},
-            {"type": "person"},
-        ])
+        results = validator.validate_with_errors(
+            [
+                {"name": "Alice"},
+                {"type": "person"},
+            ]
+        )
         assert len(results) == 2
         assert len(results[0][1]) == 0
         assert len(results[1][1]) == 1
 
     def test_applies_defaults(self):
-        schema = FeedSchema({
-            "required_fields": ["name"],
-            "field_defaults": {"active": True},
-        })
+        schema = FeedSchema(
+            {
+                "required_fields": ["name"],
+                "field_defaults": {"active": True},
+            }
+        )
         validator = FeedValidator(schema)
         valid = validator.validate([{"name": "Alice"}])
         assert valid[0]["active"] is True

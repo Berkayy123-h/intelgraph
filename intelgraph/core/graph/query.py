@@ -1,5 +1,6 @@
 from collections import deque
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.graph.node import Node
@@ -37,11 +38,17 @@ class GraphQueryEngine:
     ) -> bool:
         if entity_type is not None and node.entity_type != entity_type:
             return False
-        if any(v is not None for v in [verification_state, confidence_min, confidence_max, source_trust_min]):
+        if any(
+            v is not None
+            for v in [verification_state, confidence_min, confidence_max, source_trust_min]
+        ):
             vrec = self._get_verification(node.id)
             if vrec is None:
                 return False
-            if verification_state is not None and vrec.get("verification_state") != verification_state:
+            if (
+                verification_state is not None
+                and vrec.get("verification_state") != verification_state
+            ):
                 return False
             if confidence_min is not None and vrec.get("confidence", 0) < confidence_min:
                 return False
@@ -71,7 +78,14 @@ class GraphQueryEngine:
     ) -> list[Node]:
         result: list[Node] = []
         for node in self._graph.nodes.values():
-            if self._matches_filters(node, entity_type, verification_state, confidence_min, confidence_max, source_trust_min):
+            if self._matches_filters(
+                node,
+                entity_type,
+                verification_state,
+                confidence_min,
+                confidence_max,
+                source_trust_min,
+            ):
                 result.append(node)
         if offset > 0:
             result = result[offset:]
@@ -81,9 +95,13 @@ class GraphQueryEngine:
 
     def find_path(self, start_id: str, end_id: str) -> list[dict[str, Any]]:
         nodes = self._graph.shortest_path(start_id, end_id)
-        return [{"id": n.id, "entity_type": n.entity_type, "name": self._node_name(n)} for n in nodes]
+        return [
+            {"id": n.id, "entity_type": n.entity_type, "name": self._node_name(n)} for n in nodes
+        ]
 
-    def enumerate_paths(self, start_id: str, end_id: str, max_depth: int = 5) -> list[list[dict[str, Any]]]:
+    def enumerate_paths(
+        self, start_id: str, end_id: str, max_depth: int = 5
+    ) -> list[list[dict[str, Any]]]:
         if start_id not in self._graph.nodes or end_id not in self._graph.nodes:
             return []
         if max_depth < 1:
@@ -104,10 +122,16 @@ class GraphQueryEngine:
                     stack.append((neighbor_id, new_path))
         result: list[list[dict[str, Any]]] = []
         for p in paths:
-            result.append([
-                {"id": nid, "entity_type": self._graph.nodes[nid].entity_type, "name": self._node_name(self._graph.nodes[nid])}
-                for nid in p
-            ])
+            result.append(
+                [
+                    {
+                        "id": nid,
+                        "entity_type": self._graph.nodes[nid].entity_type,
+                        "name": self._node_name(self._graph.nodes[nid]),
+                    }
+                    for nid in p
+                ]
+            )
         return result
 
     def bfs_query(
@@ -133,7 +157,14 @@ class GraphQueryEngine:
             node = self._graph.nodes.get(current)
             if node is None:
                 continue
-            if self._matches_filters(node, entity_type, verification_state, confidence_min, confidence_max, source_trust_min):
+            if self._matches_filters(
+                node,
+                entity_type,
+                verification_state,
+                confidence_min,
+                confidence_max,
+                source_trust_min,
+            ):
                 result.append(node)
             for neighbor_id in self._graph.adjacency.get(current, set()):
                 if neighbor_id not in visited:
@@ -169,7 +200,14 @@ class GraphQueryEngine:
             node = self._graph.nodes.get(current)
             if node is None:
                 continue
-            if self._matches_filters(node, entity_type, verification_state, confidence_min, confidence_max, source_trust_min):
+            if self._matches_filters(
+                node,
+                entity_type,
+                verification_state,
+                confidence_min,
+                confidence_max,
+                source_trust_min,
+            ):
                 result.append(node)
             for neighbor_id in sorted(self._graph.adjacency.get(current, set()), reverse=True):
                 if neighbor_id not in visited:
@@ -205,7 +243,14 @@ class GraphQueryEngine:
             node = self._graph.nodes.get(current)
             if node is None:
                 continue
-            if self._matches_filters(node, entity_type, verification_state, confidence_min, confidence_max, source_trust_min):
+            if self._matches_filters(
+                node,
+                entity_type,
+                verification_state,
+                confidence_min,
+                confidence_max,
+                source_trust_min,
+            ):
                 result.append(node)
             if depth < max_depth:
                 for neighbor_id in self._graph.adjacency.get(current, set()):

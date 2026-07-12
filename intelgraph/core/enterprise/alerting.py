@@ -71,14 +71,17 @@ def _check_thresholds() -> None:
 def _send_alert(messages: list[str]) -> None:
     try:
         from intelgraph.core.notification.manager import NotificationManager
+
         notifier = NotificationManager()
-        notifier.send_event_async(NotificationManager.build_event(
-            event_type="performance_alert",
-            severity="high",
-            title="Performance threshold exceeded",
-            body=" | ".join(messages),
-            metadata={"alerts": messages},
-        ))
+        notifier.send_event_async(
+            NotificationManager.build_event(
+                event_type="performance_alert",
+                severity="high",
+                title="Performance threshold exceeded",
+                body=" | ".join(messages),
+                metadata={"alerts": messages},
+            )
+        )
     except Exception:
         pass
 

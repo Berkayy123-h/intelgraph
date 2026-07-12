@@ -1,17 +1,13 @@
 from __future__ import annotations
 
 import csv
-import io
 import json
 import random
 import sqlite3
 import time
-import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Callable
-from urllib.parse import urlparse
+from typing import Any
 
 from intelgraph.core.enterprise.observability import get_metrics
 
@@ -83,7 +79,7 @@ class ConnectorConfig:
 
 
 def _backoff_delay(attempt: int, base: float, max_delay: float) -> float:
-    delay = base * (2 ** attempt) + random.uniform(0, 0.1)
+    delay = base * (2**attempt) + random.uniform(0, 0.1)
     return min(delay, max_delay)
 
 
@@ -106,12 +102,10 @@ class Connector(ABC):
         self._metrics.set_gauge(f"source_{name}_success", 1.0 if success else 0.0)
 
     @abstractmethod
-    def connect(self) -> bool:
-        ...
+    def connect(self) -> bool: ...
 
     @abstractmethod
-    def poll(self) -> PollResult:
-        ...
+    def poll(self) -> PollResult: ...
 
     def disconnect(self) -> None:
         self._connected = False
@@ -135,7 +129,9 @@ class Connector(ABC):
                 last_error = str(exc)
                 self._record_metrics(self._config.connector_type + "_error", 0, False)
             if attempt < self._config.retry_max_attempts - 1:
-                delay = _backoff_delay(attempt, self._config.retry_base_delay, self._config.retry_max_delay)
+                delay = _backoff_delay(
+                    attempt, self._config.retry_base_delay, self._config.retry_max_delay
+                )
                 time.sleep(delay)
         return PollResult(success=False, error_message=f"All retries exhausted: {last_error}")
 
@@ -168,6 +164,7 @@ class HttpConnector(Connector):
         endpoint = self._config.endpoint_url or ""
         try:
             import urllib.request
+
             req = urllib.request.Request(endpoint)
             if self._config.headers:
                 for k, v in self._config.headers.items():
@@ -190,6 +187,7 @@ class HttpConnector(Connector):
             return False
         try:
             import urllib.request
+
             req = urllib.request.Request(self._config.endpoint_url)
             resp = urllib.request.urlopen(req, timeout=10)
             return resp.status == 200
@@ -209,15 +207,15 @@ class FileConnector(Connector):
         try:
             entries: list[dict[str, Any]] = []
             if path.endswith(".json"):
-                with open(path, "r") as f:
+                with open(path) as f:
                     data = json.load(f)
                     entries = data if isinstance(data, list) else [data]
             elif path.endswith(".csv"):
-                with open(path, "r") as f:
+                with open(path) as f:
                     reader = csv.DictReader(f)
                     entries = list(reader)
             else:
-                with open(path, "r") as f:
+                with open(path) as f:
                     content = f.read()
                     try:
                         data = json.loads(content)
@@ -231,6 +229,7 @@ class FileConnector(Connector):
 
     def health_check(self) -> bool:
         import os
+
         return bool(self._config.file_path and os.path.isfile(self._config.file_path))
 
 

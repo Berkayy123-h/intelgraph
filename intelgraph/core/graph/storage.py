@@ -9,13 +9,14 @@ Schema:
   graph_edges       — one row per relationship
   previous_versions — version history for merged/overwritten nodes
 """
+
 from __future__ import annotations
 
 import json
 import re
 import sqlite3
 from dataclasses import fields, is_dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -106,10 +107,12 @@ def serialize_relationship(rel: Relationship) -> dict[str, Any]:
 
 # --- Deserialization ---
 
+
 def _is_datetime_field(cls: type, fname: str) -> bool:
     # Heuristic: probe default
     try:
         import inspect
+
         sig = inspect.signature(cls.__init__)
         param = sig.parameters.get(fname)
         if param and param.annotation is not inspect.Parameter.empty:
@@ -158,7 +161,7 @@ def _deserialize(obj: Any, cls: type) -> Any:
             val = obj[fname]
             if fname in ("collected_at",):
                 d = _coerce_datetime(val)
-                kwargs[fname] = d if d else datetime.now(timezone.utc)
+                kwargs[fname] = d if d else datetime.now(UTC)
             else:
                 kwargs[fname] = val
         return Evidence(**kwargs)
@@ -171,7 +174,7 @@ def _deserialize(obj: Any, cls: type) -> Any:
             val = obj[fname]
             if fname == "collected_at":
                 d = _coerce_datetime(val)
-                kwargs[fname] = d if d else datetime.now(timezone.utc)
+                kwargs[fname] = d if d else datetime.now(UTC)
             elif fname == "source_lineage" and isinstance(val, list):
                 kwargs[fname] = tuple(_deserialize(v, SourceLineage) for v in val)
             else:
@@ -200,7 +203,7 @@ def _deserialize(obj: Any, cls: type) -> Any:
                 kwargs[fname] = _str_to_enum(RelationshipType, val)
             elif fname in ("created_at", "first_seen", "last_seen") and isinstance(val, str):
                 d = _coerce_datetime(val)
-                kwargs[fname] = d if d else datetime.now(timezone.utc)
+                kwargs[fname] = d if d else datetime.now(UTC)
             elif fname in ("evidence_chain", "provenance") and isinstance(val, list):
                 inner_cls = Evidence if fname == "evidence_chain" else Provenance
                 kwargs[fname] = tuple(_deserialize(v, inner_cls) for v in val)
@@ -210,6 +213,7 @@ def _deserialize(obj: Any, cls: type) -> Any:
     if is_dataclass(cls) and isinstance(obj, dict):
         kwargs: dict[str, Any] = {}
         import inspect
+
         sig = inspect.signature(cls.__init__)
         for fname, param in sig.parameters.items():
             if fname == "self":
@@ -217,13 +221,28 @@ def _deserialize(obj: Any, cls: type) -> Any:
             if fname not in obj:
                 continue
             val = obj[fname]
-            ann = param.annotation if param.annotation is not inspect.Parameter.empty else type(None)
+            ann = (
+                param.annotation if param.annotation is not inspect.Parameter.empty else type(None)
+            )
             # datetime field?
             if isinstance(ann, type) and issubclass(ann, datetime):
-                d = _coerce_datetime(val if isinstance(val, str) else val.get("isoformat",("") if isinstance(val, dict) else ""))
-                kwargs[fname] = d if d is not None else datetime.now(timezone.utc)
-            elif fname in ("evidence", "provenance", "aliases", "open_ports", "evidence_chain",
-                           "nameservers", "ip_addresses", "technologies", "intermediate_sources"):
+                d = _coerce_datetime(
+                    val
+                    if isinstance(val, str)
+                    else val.get("isoformat", ("") if isinstance(val, dict) else "")
+                )
+                kwargs[fname] = d if d is not None else datetime.now(UTC)
+            elif fname in (
+                "evidence",
+                "provenance",
+                "aliases",
+                "open_ports",
+                "evidence_chain",
+                "nameservers",
+                "ip_addresses",
+                "technologies",
+                "intermediate_sources",
+            ):
                 if isinstance(val, list):
                     inner_cls = None
                     if fname == "evidence":
@@ -270,8 +289,7 @@ class GraphStorage:
 
     def _ensure_schema(self) -> None:
         cur = self._conn.cursor()
-        cur.executescript(
-            """
+        cur.executescript("""
             CREATE TABLE IF NOT EXISTS graph_nodes (
                 node_id         TEXT PRIMARY KEY,
                 entity_type     TEXT NOT NULL,
@@ -309,8 +327,7 @@ class GraphStorage:
                 content='',
                 tokenize='unicode61 remove_diacritics 2'
             );
-            """
-        )
+            """)
         self._conn.commit()
 
     # ── Node operations ──
@@ -319,7 +336,7 @@ class GraphStorage:
         entity = node.entity
         entity_type_name = entity.entity_type.name.lower()
         entity_data = json.dumps(serialize_entity(entity), ensure_ascii=False)
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         cur = self._conn.cursor()
         cur.execute(
             """
@@ -336,7 +353,9 @@ class GraphStorage:
         self._sync_fts_node(node.id, entity_type_name, entity, entity_data)
         self._conn.commit()
 
-    def _sync_fts_node(self, node_id: str, entity_type_name: str, entity: BaseEntity, entity_data_json: str) -> None:
+    def _sync_fts_node(
+        self, node_id: str, entity_type_name: str, entity: BaseEntity, entity_data_json: str
+    ) -> None:
         identifier = _entity_identifier(entity)
         search_content = _build_fts_content(entity, entity_data_json)
         cur = self._conn.cursor()
@@ -348,7 +367,10 @@ class GraphStorage:
     def delete_node(self, node_id: str) -> None:
         cur = self._conn.cursor()
         cur.execute("DELETE FROM graph_nodes WHERE node_id = ?", (node_id,))
-        cur.execute("DELETE FROM graph_edges WHERE source_node_id = ? OR target_node_id = ?", (node_id, node_id))
+        cur.execute(
+            "DELETE FROM graph_edges WHERE source_node_id = ? OR target_node_id = ?",
+            (node_id, node_id),
+        )
         cur.execute("DELETE FROM previous_versions WHERE node_id = ?", (node_id,))
         cur.execute("DELETE FROM search_index WHERE node_id = ?", (node_id,))
         self._conn.commit()
@@ -357,7 +379,7 @@ class GraphStorage:
         entity = node.entity
         entity_type_name = entity.entity_type.name.lower()
         version_data = json.dumps(serialize_entity(entity), ensure_ascii=False)
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         cur = self._conn.cursor()
         cur.execute(
             """
@@ -397,7 +419,7 @@ class GraphStorage:
         rel = edge.relationship
         rel_type = rel.type.name
         edge_data = json.dumps(serialize_relationship(rel), ensure_ascii=False)
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         cur = self._conn.cursor()
         cur.execute(
             """
@@ -410,7 +432,15 @@ class GraphStorage:
                 confidence = excluded.confidence,
                 edge_data = excluded.edge_data
             """,
-            (edge.id, edge.source_id, edge.target_id, rel_type, rel.confidence_score, edge_data, now),
+            (
+                edge.id,
+                edge.source_id,
+                edge.target_id,
+                rel_type,
+                rel.confidence_score,
+                edge_data,
+                now,
+            ),
         )
         self._conn.commit()
 
@@ -445,7 +475,10 @@ class GraphStorage:
     # ── FTS5 Search ──
 
     def search_fts(
-        self, query: str, type_filter: str = "all", limit: int = 20,
+        self,
+        query: str,
+        type_filter: str = "all",
+        limit: int = 20,
     ) -> list[dict[str, Any]]:
         """Full-text search over entities using FTS5.
 
@@ -491,7 +524,10 @@ class GraphStorage:
         ]
 
     def _search_like(
-        self, query: str, type_filter: str = "all", limit: int = 20,
+        self,
+        query: str,
+        type_filter: str = "all",
+        limit: int = 20,
     ) -> list[dict[str, Any]]:
         """Fallback LIKE-based search when FTS5 query fails."""
         cur = self._conn.cursor()
@@ -525,9 +561,7 @@ class GraphStorage:
         """Rebuild the entire FTS index from graph_nodes."""
         cur = self._conn.cursor()
         cur.execute("DELETE FROM search_index")
-        rows = cur.execute(
-            "SELECT node_id, entity_type, entity_data FROM graph_nodes"
-        ).fetchall()
+        rows = cur.execute("SELECT node_id, entity_type, entity_data FROM graph_nodes").fetchall()
         for row in rows:
             node_id = row["node_id"]
             entity_type = row["entity_type"]
@@ -610,8 +644,8 @@ def _fts_sanitize(query: str) -> str:
     if not query:
         return ""
     # Escape FTS5 special characters and add prefix wildcard
-    escaped = re.sub(r'[^\w\s.]', ' ', query)
-    escaped = re.sub(r'\s+', ' ', escaped).strip()
+    escaped = re.sub(r"[^\w\s.]", " ", query)
+    escaped = re.sub(r"\s+", " ", escaped).strip()
     if not escaped:
         return ""
     # Add prefix matching for each term

@@ -14,9 +14,27 @@ def _make_graph() -> IntelligenceGraph:
     g.add_entity(bob)
     g.add_entity(carol)
     g.add_entity(dave)
-    r1 = Relationship(source_id=alice.id, target_id=bob.id, type=RelationshipType.RELATED_TO, confidence_score=80, trust_weight=70)
-    r2 = Relationship(source_id=bob.id, target_id=carol.id, type=RelationshipType.RELATED_TO, confidence_score=80, trust_weight=70)
-    r3 = Relationship(source_id=bob.id, target_id=dave.id, type=RelationshipType.RELATED_TO, confidence_score=80, trust_weight=70)
+    r1 = Relationship(
+        source_id=alice.id,
+        target_id=bob.id,
+        type=RelationshipType.RELATED_TO,
+        confidence_score=80,
+        trust_weight=70,
+    )
+    r2 = Relationship(
+        source_id=bob.id,
+        target_id=carol.id,
+        type=RelationshipType.RELATED_TO,
+        confidence_score=80,
+        trust_weight=70,
+    )
+    r3 = Relationship(
+        source_id=bob.id,
+        target_id=dave.id,
+        type=RelationshipType.RELATED_TO,
+        confidence_score=80,
+        trust_weight=70,
+    )
     g.add_relationship(r1)
     g.add_relationship(r2)
     g.add_relationship(r3)
@@ -42,7 +60,13 @@ class TestGraphDataModel:
         b = Person(name="B")
         g.add_entity(a)
         g.add_entity(b)
-        r = Relationship(source_id=a.id, target_id=b.id, type=RelationshipType.RELATED_TO, confidence_score=80, trust_weight=70)
+        r = Relationship(
+            source_id=a.id,
+            target_id=b.id,
+            type=RelationshipType.RELATED_TO,
+            confidence_score=80,
+            trust_weight=70,
+        )
         e = g.add_relationship(r)
         assert e.id == r.id
         assert g.edge_count == 1

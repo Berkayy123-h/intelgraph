@@ -8,9 +8,14 @@ from intelgraph.api.main import create_app
 def _admin_token():
     app = create_app({"storage": {"path": ":memory:"}})
     with TestClient(app) as c:
-        resp = c.post("/auth/register", json={
-            "username": "admin", "password": "admin123", "role": "admin",
-        })
+        resp = c.post(
+            "/auth/register",
+            json={
+                "username": "admin",
+                "password": "admin123",
+                "role": "admin",
+            },
+        )
         assert resp.status_code == 200
         return resp.json()["access_token"]
 

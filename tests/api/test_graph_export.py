@@ -10,9 +10,14 @@ from intelgraph.api.main import create_app
 def _admin_token():
     app = create_app({"storage": {"path": ":memory:"}})
     with TestClient(app) as c:
-        resp = c.post("/auth/register", json={
-            "username": "admin", "password": "admin123", "role": "admin",
-        })
+        resp = c.post(
+            "/auth/register",
+            json={
+                "username": "admin",
+                "password": "admin123",
+                "role": "admin",
+            },
+        )
         assert resp.status_code == 200
         return resp.json()["access_token"]
 
@@ -27,22 +32,48 @@ def client():
 @pytest.fixture
 def seeded_client(client, _admin_token):
     client.headers["Authorization"] = f"Bearer {_admin_token}"
-    alice = client.post("/entities", json={"entity_type": "person", "attributes": {"name": "Alice"}}).json()["id"]
-    bob = client.post("/entities", json={"entity_type": "person", "attributes": {"name": "Bob"}}).json()["id"]
-    carol = client.post("/entities", json={"entity_type": "person", "attributes": {"name": "Carol"}}).json()["id"]
-    dave = client.post("/entities", json={"entity_type": "person", "attributes": {"name": "Dave"}}).json()["id"]
-    client.post("/relationships", json={
-        "type": "RELATED_TO", "source_id": alice, "target_id": bob,
-        "confidence_score": 80, "trust_weight": 70,
-    }).raise_for_status()
-    client.post("/relationships", json={
-        "type": "RELATED_TO", "source_id": bob, "target_id": carol,
-        "confidence_score": 90, "trust_weight": 80,
-    }).raise_for_status()
-    client.post("/relationships", json={
-        "type": "RELATED_TO", "source_id": carol, "target_id": dave,
-        "confidence_score": 70, "trust_weight": 60,
-    }).raise_for_status()
+    alice = client.post(
+        "/entities", json={"entity_type": "person", "attributes": {"name": "Alice"}}
+    ).json()["id"]
+    bob = client.post(
+        "/entities", json={"entity_type": "person", "attributes": {"name": "Bob"}}
+    ).json()["id"]
+    carol = client.post(
+        "/entities", json={"entity_type": "person", "attributes": {"name": "Carol"}}
+    ).json()["id"]
+    dave = client.post(
+        "/entities", json={"entity_type": "person", "attributes": {"name": "Dave"}}
+    ).json()["id"]
+    client.post(
+        "/relationships",
+        json={
+            "type": "RELATED_TO",
+            "source_id": alice,
+            "target_id": bob,
+            "confidence_score": 80,
+            "trust_weight": 70,
+        },
+    ).raise_for_status()
+    client.post(
+        "/relationships",
+        json={
+            "type": "RELATED_TO",
+            "source_id": bob,
+            "target_id": carol,
+            "confidence_score": 90,
+            "trust_weight": 80,
+        },
+    ).raise_for_status()
+    client.post(
+        "/relationships",
+        json={
+            "type": "RELATED_TO",
+            "source_id": carol,
+            "target_id": dave,
+            "confidence_score": 70,
+            "trust_weight": 60,
+        },
+    ).raise_for_status()
     return client, alice, bob, carol, dave
 
 

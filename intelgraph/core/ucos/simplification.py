@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import time
-import uuid
 from collections import defaultdict
 from typing import Any
 
@@ -15,8 +14,11 @@ class SimplificationEngine:
 
     def register_module(self, module_id: str, function: str, owner: str) -> None:
         self._modules[module_id] = {
-            "module_id": module_id, "function": function,
-            "owner": owner, "status": "active", "registered_at": time.time(),
+            "module_id": module_id,
+            "function": function,
+            "owner": owner,
+            "status": "active",
+            "registered_at": time.time(),
         }
 
     def check_no_duplicates(self) -> list[dict[str, Any]]:
@@ -26,13 +28,15 @@ class SimplificationEngine:
         violations = []
         for fn, mids in by_function.items():
             if len(mids) > 1:
-                violations.append({
-                    "rule": "no_duplicate_modules",
-                    "function": fn,
-                    "modules": mids,
-                    "count": len(mids),
-                    "severity": "high",
-                })
+                violations.append(
+                    {
+                        "rule": "no_duplicate_modules",
+                        "function": fn,
+                        "modules": mids,
+                        "count": len(mids),
+                        "severity": "high",
+                    }
+                )
         self._violations.extend(violations)
         return violations
 
@@ -43,12 +47,14 @@ class SimplificationEngine:
         violations = []
         for owner, mids in by_owner.items():
             if len(mids) > 5:
-                violations.append({
-                    "rule": "single_responsibility",
-                    "owner": owner,
-                    "module_count": len(mids),
-                    "severity": "medium",
-                })
+                violations.append(
+                    {
+                        "rule": "single_responsibility",
+                        "owner": owner,
+                        "module_count": len(mids),
+                        "severity": "medium",
+                    }
+                )
         return violations
 
     def compute_system_complexity(self) -> float:

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from fastapi import APIRouter, Depends, HTTPException
 
 from intelgraph.core.graph.analytics import GraphAnalytics
@@ -15,6 +13,7 @@ _VALID_ALGORITHMS = frozenset({"degree", "pagerank", "betweenness", "closeness"}
 
 def _build_graph() -> IntelligenceGraph:
     from intelgraph.api.main import _container
+
     g = IntelligenceGraph()
     for entity in _container.backend.list_entities():
         eid = entity.id
@@ -45,7 +44,9 @@ def get_centrality(
 ):
     if algorithm not in _VALID_ALGORITHMS:
         algs = ", ".join(sorted(_VALID_ALGORITHMS))
-        raise HTTPException(status_code=400, detail=f"Unknown algorithm: {algorithm}. Use one of: {algs}.")
+        raise HTTPException(
+            status_code=400, detail=f"Unknown algorithm: {algorithm}. Use one of: {algs}."
+        )
     try:
         if algorithm == "pagerank":
             result = analytics.page_rank(node_id)

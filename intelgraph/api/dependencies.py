@@ -16,6 +16,7 @@ def _create_backend(config: dict[str, Any]) -> StorageBackend:
     backend_name = storage_cfg.get("backend", "sqlite")
     if backend_name == "postgres":
         from intelgraph.core.storage.postgres_backend import PostgresBackend
+
         backend = PostgresBackend(
             host=storage_cfg.get("host", "localhost"),
             port=int(storage_cfg.get("port", 5432)),

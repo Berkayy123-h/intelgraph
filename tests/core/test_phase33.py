@@ -2,24 +2,20 @@
 
 import os
 import sys
-import json
 import time
-import threading
-from datetime import datetime, timezone, timedelta
-from unittest.mock import patch, MagicMock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 
 import pytest
 
-from intelgraph.core.reporting.models import Report, ReportType, ReportFormat
+from intelgraph.core.reporting.models import Report, ReportFormat, ReportType
 from intelgraph.core.reporting.reporters import generate_report
-from intelgraph.core.reporting.scheduler import ReportScheduler, REPORT_DIR
-
+from intelgraph.core.reporting.scheduler import ReportScheduler
 
 # ---------------------------------------------------------------------------
 # Test data fixture
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def pipeline_data():
@@ -34,33 +30,84 @@ def pipeline_data():
         "source_count": 4,
         "chain_stats": {"total_chain_count": 8},
         "graph_nodes_summary": [
-            {"node_id": "n1", "entity_type": "IPAddress", "entity_identifier": "107.172.135.60",
-             "confidence": 85, "evidence_count": 4, "threat_score": 82.5,
-             "first_seen": "2025-01-15T10:00:00", "last_seen": "2025-01-22T10:00:00"},
-            {"node_id": "n2", "entity_type": "Domain", "entity_identifier": "evil.example.com",
-             "confidence": 72, "evidence_count": 3, "threat_score": 65.0,
-             "first_seen": "2025-01-10T10:00:00", "last_seen": "2025-01-22T10:00:00"},
-            {"node_id": "n3", "entity_type": "CveEntity", "entity_identifier": "CVE-2024-1234",
-             "confidence": 95, "evidence_count": 5, "threat_score": 91.0,
-             "first_seen": "2025-01-05T10:00:00", "last_seen": "2025-01-22T10:00:00"},
-            {"node_id": "n4", "entity_type": "IPAddress", "entity_identifier": "8.8.8.8",
-             "confidence": 10, "evidence_count": 0, "threat_score": 0,
-             "first_seen": "2025-01-01T10:00:00", "last_seen": "2025-01-02T10:00:00"},
+            {
+                "node_id": "n1",
+                "entity_type": "IPAddress",
+                "entity_identifier": "107.172.135.60",
+                "confidence": 85,
+                "evidence_count": 4,
+                "threat_score": 82.5,
+                "first_seen": "2025-01-15T10:00:00",
+                "last_seen": "2025-01-22T10:00:00",
+            },
+            {
+                "node_id": "n2",
+                "entity_type": "Domain",
+                "entity_identifier": "evil.example.com",
+                "confidence": 72,
+                "evidence_count": 3,
+                "threat_score": 65.0,
+                "first_seen": "2025-01-10T10:00:00",
+                "last_seen": "2025-01-22T10:00:00",
+            },
+            {
+                "node_id": "n3",
+                "entity_type": "CveEntity",
+                "entity_identifier": "CVE-2024-1234",
+                "confidence": 95,
+                "evidence_count": 5,
+                "threat_score": 91.0,
+                "first_seen": "2025-01-05T10:00:00",
+                "last_seen": "2025-01-22T10:00:00",
+            },
+            {
+                "node_id": "n4",
+                "entity_type": "IPAddress",
+                "entity_identifier": "8.8.8.8",
+                "confidence": 10,
+                "evidence_count": 0,
+                "threat_score": 0,
+                "first_seen": "2025-01-01T10:00:00",
+                "last_seen": "2025-01-02T10:00:00",
+            },
         ],
         "graph_edges_summary": [
             {"source": "n1", "target": "n2", "type": "resolves"},
             {"source": "n1", "target": "n3", "type": "related"},
         ],
         "alerts": [
-            {"alert_id": "alert_001", "severity": "critical", "message": "C2 IP detected", "category": "c2_detection"},
-            {"alert_id": "alert_002", "severity": "high", "message": "Ransomware CVE", "category": "ransomware_cve"},
-            {"alert_id": "alert_003", "severity": "medium", "message": "Suspicious domain", "category": "domain_alert"},
+            {
+                "alert_id": "alert_001",
+                "severity": "critical",
+                "message": "C2 IP detected",
+                "category": "c2_detection",
+            },
+            {
+                "alert_id": "alert_002",
+                "severity": "high",
+                "message": "Ransomware CVE",
+                "category": "ransomware_cve",
+            },
+            {
+                "alert_id": "alert_003",
+                "severity": "medium",
+                "message": "Suspicious domain",
+                "category": "domain_alert",
+            },
         ],
         "incidents": [
-            {"alert_id": "inc_001", "severity": "critical", "message": "C2 incident", "confirmed": True},
+            {
+                "alert_id": "inc_001",
+                "severity": "critical",
+                "message": "C2 incident",
+                "confirmed": True,
+            },
         ],
         "truth_entries": [
-            {"source": "urlhaus"}, {"source": "urlhaus"}, {"source": "otx"}, {"source": "kev"},
+            {"source": "urlhaus"},
+            {"source": "urlhaus"},
+            {"source": "otx"},
+            {"source": "kev"},
         ],
         "errors": [],
         "playbook_statuses": {
@@ -68,10 +115,20 @@ def pipeline_data():
                 "playbook_name": "C2 IP Response",
                 "matched_at": "2025-01-22T10:00:00",
                 "steps": [
-                    {"step_id": "s1", "action_type": "block", "description": "Block IP on firewall",
-                     "automated": True, "completed": True},
-                    {"step_id": "s2", "action_type": "notify", "description": "Notify SOC team",
-                     "automated": False, "completed": False},
+                    {
+                        "step_id": "s1",
+                        "action_type": "block",
+                        "description": "Block IP on firewall",
+                        "automated": True,
+                        "completed": True,
+                    },
+                    {
+                        "step_id": "s2",
+                        "action_type": "notify",
+                        "description": "Notify SOC team",
+                        "automated": False,
+                        "completed": False,
+                    },
                 ],
             },
         },
@@ -81,6 +138,7 @@ def pipeline_data():
 # ---------------------------------------------------------------------------
 # Model tests
 # ---------------------------------------------------------------------------
+
 
 class TestModels:
     def test_report_creation(self):
@@ -92,8 +150,13 @@ class TestModels:
         assert d["report_type"] == "threat_summary"
 
     def test_report_roundtrip(self):
-        r = Report(report_id="rpt_2", report_type="entity_detail", html_content="<p>test</p>",
-                   time_range_start="2025-01-01", time_range_end="2025-01-22")
+        r = Report(
+            report_id="rpt_2",
+            report_type="entity_detail",
+            html_content="<p>test</p>",
+            time_range_start="2025-01-01",
+            time_range_end="2025-01-22",
+        )
         d = r.to_dict()
         r2 = Report.from_dict(d)
         assert r2.report_id == "rpt_2"
@@ -111,6 +174,7 @@ class TestModels:
 # ---------------------------------------------------------------------------
 # Reporter tests
 # ---------------------------------------------------------------------------
+
 
 class TestReportGenerators:
     def test_threat_summary_html(self, pipeline_data):
@@ -160,12 +224,22 @@ class TestReportGenerators:
             "confidence": 85,
             "threat_score": 82.5,
             "evidence_list": [
-                {"source": "urlhaus", "content": "malicious payload", "collected_at": "2025-01-22T10:00:00",
-                 "trust_score": 90, "reliability_score": 85},
+                {
+                    "source": "urlhaus",
+                    "content": "malicious payload",
+                    "collected_at": "2025-01-22T10:00:00",
+                    "trust_score": 90,
+                    "reliability_score": 85,
+                },
             ],
             "relationships": [
-                {"source_id": "n1", "target_id": "n2", "type": "resolves",
-                 "first_seen": "2025-01-15T10:00:00", "last_seen": "2025-01-22T10:00:00"},
+                {
+                    "source_id": "n1",
+                    "target_id": "n2",
+                    "type": "resolves",
+                    "first_seen": "2025-01-15T10:00:00",
+                    "last_seen": "2025-01-22T10:00:00",
+                },
             ],
             "chain": {
                 "verification_status": "confirmed",
@@ -174,8 +248,14 @@ class TestReportGenerators:
             },
             "playbook_status": {
                 "playbook_name": "C2 IP Response",
-                "steps": [{"description": "Block IP", "action_type": "block",
-                          "automated": True, "completed": True}],
+                "steps": [
+                    {
+                        "description": "Block IP",
+                        "action_type": "block",
+                        "automated": True,
+                        "completed": True,
+                    }
+                ],
             },
         }
         report = generate_report("entity_detail", detail_data)
@@ -192,6 +272,7 @@ class TestReportGenerators:
 # ---------------------------------------------------------------------------
 # Scheduler tests
 # ---------------------------------------------------------------------------
+
 
 class TestScheduler:
     def test_init(self):
@@ -288,11 +369,16 @@ class TestScheduler:
 # Template integrity tests
 # ---------------------------------------------------------------------------
 
+
 class TestTemplates:
     def test_base_template_renders(self):
-        from jinja2 import Environment, FileSystemLoader
         import os
-        tmpl_dir = os.path.join(os.path.dirname(__file__), "../../intelgraph/core/reporting/templates")
+
+        from jinja2 import Environment, FileSystemLoader
+
+        tmpl_dir = os.path.join(
+            os.path.dirname(__file__), "../../intelgraph/core/reporting/templates"
+        )
         env = Environment(loader=FileSystemLoader(tmpl_dir))
         tmpl = env.get_template("base.html")
         html = tmpl.render(title="Test", generated_at="2025-01-22T10:00:00")
@@ -319,6 +405,7 @@ class TestTemplates:
 # ---------------------------------------------------------------------------
 # Cleanup
 # ---------------------------------------------------------------------------
+
 
 def teardown_module():
     for f in os.listdir("/tmp/opencode/"):

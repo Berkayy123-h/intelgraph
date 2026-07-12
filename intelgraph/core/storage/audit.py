@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
 import ulid
@@ -33,14 +33,12 @@ class AuditLogger:
             "new_data": _serialize_json(entry.new_data),
             "actor": entry.actor,
             "correlation_id": entry.correlation_id,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
         self._backend.write_audit(record)
         return record
 
-    def query(
-        self, entity_id: str | None = None, limit: int = 100
-    ) -> list[dict[str, Any]]:
+    def query(self, entity_id: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
         return self._backend.query_audit(entity_id=entity_id, limit=limit)
 
 
@@ -48,4 +46,5 @@ def _serialize_json(obj: object) -> str | None:
     if obj is None:
         return None
     import json
+
     return json.dumps(obj, default=str)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from intelgraph.core.playbook import DEFAULT_PLAYBOOKS, PlaybookEngine
 
@@ -11,6 +11,7 @@ router = APIRouter(prefix="/playbooks", tags=["playbooks"])
 
 def _get_engine() -> PlaybookEngine:
     from intelgraph.api.routers.dashboard import dashboard_state
+
     engine = PlaybookEngine()
     r = dashboard_state.result
     if r and hasattr(r, "playbook_statuses") and r.playbook_statuses:

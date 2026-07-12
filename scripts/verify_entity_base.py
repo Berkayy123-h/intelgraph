@@ -4,16 +4,25 @@ entity.base Gerçek Davranış Doğrulaması
 
 Mock'suz, gerçek veriyle, bağımsız.
 """
+
 from __future__ import annotations
 
+import copy
 import inspect
 import json
-import copy
-from dataclasses import fields, FrozenInstanceError
+from dataclasses import FrozenInstanceError, fields
 
 from intelgraph.core.entity import (
-    BaseEntity, EntityType,
-    IPAddress, Domain, Person, Company, Email, Username, Technology, Certificate,
+    BaseEntity,
+    Certificate,
+    Company,
+    Domain,
+    Email,
+    EntityType,
+    IPAddress,
+    Person,
+    Technology,
+    Username,
 )
 
 print("=" * 72)
@@ -27,12 +36,25 @@ print("-" * 72)
 print("1a. Farklı alt sınıflardan gerçek obje oluşturma")
 print("-" * 72)
 
-ip = IPAddress(ip="10.0.0.1", rdns="host.example.com", asn="AS15169",
-               organization="Example Inc", open_ports=(22, 80, 443))
-domain = Domain(domain_name="example.com", registrant="John Doe",
-                registrar="GoDaddy", nameservers=("ns1.example.com",))
-person = Person(name="Alice", email_addresses=("alice@example.com",),
-                title="Analyst", company_affiliations=("Example Inc",))
+ip = IPAddress(
+    ip="10.0.0.1",
+    rdns="host.example.com",
+    asn="AS15169",
+    organization="Example Inc",
+    open_ports=(22, 80, 443),
+)
+domain = Domain(
+    domain_name="example.com",
+    registrant="John Doe",
+    registrar="GoDaddy",
+    nameservers=("ns1.example.com",),
+)
+person = Person(
+    name="Alice",
+    email_addresses=("alice@example.com",),
+    title="Analyst",
+    company_affiliations=("Example Inc",),
+)
 company = Company(name="Example Inc", domain="example.com", industry="Technology")
 
 print(f"IPAddress:    id={ip.id[:12]}... type={ip.entity_type} ip={ip.ip}")
@@ -100,8 +122,8 @@ print("-" * 72)
 try:
     ip.ip = "1.2.3.4"
     print("❌ Frozen değil! Mutasyon mümkün.")
-except FrozenInstanceError as e:
-    print(f"ip.ip = '1.2.3.4' → FrozenInstanceError ✓ (immutable)")
+except FrozenInstanceError:
+    print("ip.ip = '1.2.3.4' → FrozenInstanceError ✓ (immutable)")
 try:
     ip.entity_type = EntityType.DOMAIN
     print("❌ entity_type değiştirilebildi!")
@@ -141,20 +163,25 @@ print("✅ İki farklı instance asla == değil — çünkü ID'ler farklı.")
 # created_at/updated_at default_factory olduğu için her seferinde farklı timestamp alırız
 # Bu yüzden aynı ID + aynı veriyle bile objeler eşit olmaz (çünkü timestamp'ler farklı)
 # Test etmek için aynı timestamp'leri kullanmalıyız
-from datetime import datetime, timezone
-fixed_ts = datetime(2025, 1, 1, tzinfo=timezone.utc)
-a4 = IPAddress(id=a1.id, ip="10.0.0.1", rdns="test.example.com",
-               created_at=fixed_ts, updated_at=fixed_ts)
-a4b = IPAddress(id=a1.id, ip="10.0.0.1", rdns="test.example.com",
-                created_at=fixed_ts, updated_at=fixed_ts)
-a1_with_fixed_ts = IPAddress(id=a1.id, ip="10.0.0.1", rdns="test.example.com",
-                              created_at=fixed_ts, updated_at=fixed_ts)
+from datetime import UTC, datetime
+
+fixed_ts = datetime(2025, 1, 1, tzinfo=UTC)
+a4 = IPAddress(
+    id=a1.id, ip="10.0.0.1", rdns="test.example.com", created_at=fixed_ts, updated_at=fixed_ts
+)
+a4b = IPAddress(
+    id=a1.id, ip="10.0.0.1", rdns="test.example.com", created_at=fixed_ts, updated_at=fixed_ts
+)
+a1_with_fixed_ts = IPAddress(
+    id=a1.id, ip="10.0.0.1", rdns="test.example.com", created_at=fixed_ts, updated_at=fixed_ts
+)
 print(f"\na4 == a4b (aynı ID + aynı veri + aynı timestamp): {a4 == a4b}")
 assert a4 == a4b, "Her şey aynıysa eşit olmalı!"
 print("✅ Aynı ID + aynı field'lar + aynı timestamp == True.")
 
-a5 = IPAddress(id=a1.id, ip="10.0.0.2", rdns="other.example.com",
-               created_at=fixed_ts, updated_at=fixed_ts)
+a5 = IPAddress(
+    id=a1.id, ip="10.0.0.2", rdns="other.example.com", created_at=fixed_ts, updated_at=fixed_ts
+)
 print(f"a4 == a5 (aynı ID, farklı veri, aynı timestamp): {a4 == a5}")
 assert a4 != a5, "Aynı ID ama farklı field'lar != olmalı!"
 print("✅ Aynı ID ama farklı field'lar == False.")
@@ -179,7 +206,7 @@ print("  ULID: timestamp (48-bit) + random (80-bit) — her çağrıda farklı I
 ids = set()
 for _ in range(100):
     ids.add(IPAddress(ip="10.0.0.1").id)
-print(f"\n100 tane IPAddress(ip='10.0.0.1') üretildi.")
+print("\n100 tane IPAddress(ip='10.0.0.1') üretildi.")
 print(f"Benzersiz ID sayısı: {len(ids)}")
 print(f"Hiç duplicate var mı? {'HAYIR' if len(ids) == 100 else 'EVET'}")
 assert len(ids) == 100, "ULID her seferinde farklı olmalı!"
@@ -228,7 +255,9 @@ for method_name in ["to_dict", "from_dict", "to_json", "from_json", "asdict"]:
 print("\nIPAddress alanları (BaseEntity + kendisi):")
 for f in fields(IPAddress):
     inherited = f.name in {ff.name for ff in fields(BaseEntity)}
-    print(f"  {f.name:20s} type={f.type.__name__:15s} default={f.default!r:30s} {'(inherited)' if inherited else ''}")
+    print(
+        f"  {f.name:20s} type={f.type.__name__:15s} default={f.default!r:30s} {'(inherited)' if inherited else ''}"
+    )
 
 # =====================================================================
 # 3b. Manuel round-trip — dict → entity
@@ -250,7 +279,7 @@ ip_orig = IPAddress(
 )
 
 # Entity → dict (sadece init=True olan alanlar)
-from dataclasses import MISSING
+
 ip_dict = {
     f.name: getattr(ip_orig, f.name)
     for f in fields(IPAddress)
@@ -305,7 +334,9 @@ json_loaded["evidence"] = tuple(json_loaded["evidence"])
 json_loaded["provenance"] = tuple(json_loaded["provenance"])
 
 ip_restored2 = IPAddress(**json_loaded)
-print(f"Tip doğru mu? {type(ip_restored2).__name__} == IPAddress, entity_type={ip_restored2.entity_type}")
+print(
+    f"Tip doğru mu? {type(ip_restored2).__name__} == IPAddress, entity_type={ip_restored2.entity_type}"
+)
 assert isinstance(ip_restored2, IPAddress)
 assert ip_restored2.entity_type == EntityType.IP_ADDRESS
 assert ip_restored2.ip == "192.168.1.1"

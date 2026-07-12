@@ -6,17 +6,16 @@ import os
 import threading
 import time
 import uuid
-from datetime import datetime, timezone
 from typing import Any
 
+from intelgraph.core.notification.channels import CHANNEL_DISPATCH
 from intelgraph.core.notification.models import (
     NotificationChannel,
     NotificationEvent,
+    NotificationHistoryEntry,
     NotificationSeverity,
     NotificationStatus,
-    NotificationHistoryEntry,
 )
-from intelgraph.core.notification.channels import CHANNEL_DISPATCH
 
 logger = logging.getLogger(__name__)
 
@@ -72,25 +71,39 @@ class NotificationManager:
             with self._lock:
                 self._history.append(entry)
                 if len(self._history) > self._history_max:
-                    self._history = self._history[-self._history_max:]
+                    self._history = self._history[-self._history_max :]
                 self._save()
             entries.append(entry)
             if entry.status == NotificationStatus.SENT.value:
-                logger.info("Notification sent: %s -> %s (%s)", event.event_id, channel.channel_id, channel.channel_type)
+                logger.info(
+                    "Notification sent: %s -> %s (%s)",
+                    event.event_id,
+                    channel.channel_id,
+                    channel.channel_type,
+                )
             else:
-                logger.warning("Notification failed: %s -> %s: %s", event.event_id, channel.channel_id, entry.error)
+                logger.warning(
+                    "Notification failed: %s -> %s: %s",
+                    event.event_id,
+                    channel.channel_id,
+                    entry.error,
+                )
         return entries
 
     def send_event_async(self, event: NotificationEvent) -> None:
         t = threading.Thread(target=self.send_event, args=(event,), daemon=True)
         t.start()
 
-    def _dispatch_with_retry(self, channel: NotificationChannel, event: NotificationEvent) -> NotificationHistoryEntry:
+    def _dispatch_with_retry(
+        self, channel: NotificationChannel, event: NotificationEvent
+    ) -> NotificationHistoryEntry:
         last_error = ""
         for attempt in range(1, MAX_RETRIES + 1):
             if attempt > 1:
                 delay = RETRY_DELAYS[min(attempt - 2, len(RETRY_DELAYS) - 1)]
-                logger.info("Retry %d/%d for %s in %.1fs", attempt, MAX_RETRIES, channel.channel_id, delay)
+                logger.info(
+                    "Retry %d/%d for %s in %.1fs", attempt, MAX_RETRIES, channel.channel_id, delay
+                )
                 time.sleep(delay)
 
             send_fn = CHANNEL_DISPATCH.get(channel.channel_type)

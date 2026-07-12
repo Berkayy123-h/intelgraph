@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from fastapi import APIRouter, HTTPException
 
 from intelgraph.core.graph.algorithms import GraphAlgorithms
@@ -13,6 +11,7 @@ router = APIRouter(prefix="/graph/algorithms", tags=["graph"])
 
 def _build_graph() -> IntelligenceGraph:
     from intelgraph.api.main import _container
+
     g = IntelligenceGraph()
     for entity in _container.backend.list_entities():
         eid = entity.id
@@ -33,7 +32,7 @@ def _build_graph() -> IntelligenceGraph:
             g.node_edges.setdefault(tgt, set()).add(rel.id)
             g.edge_node_map[rel.id] = (src, tgt)
             from intelgraph.core.graph.edge import Edge
-            from intelgraph.core.relationship import Relationship
+
             g.edges[rel.id] = Edge(relationship=rel)
     return g
 
@@ -42,10 +41,16 @@ def _get_algorithms() -> GraphAlgorithms:
     return GraphAlgorithms(_build_graph())
 
 
-@router.post("/mst", summary="Minimum Spanning Tree", description="Compute the minimum spanning tree using Kruskal or Prim algorithm.")
+@router.post(
+    "/mst",
+    summary="Minimum Spanning Tree",
+    description="Compute the minimum spanning tree using Kruskal or Prim algorithm.",
+)
 def compute_mst(algorithm: str = "kruskal"):
     if algorithm not in ("kruskal", "prim"):
-        raise HTTPException(status_code=400, detail=f"Unknown algorithm: {algorithm}. Use 'kruskal' or 'prim'.")
+        raise HTTPException(
+            status_code=400, detail=f"Unknown algorithm: {algorithm}. Use 'kruskal' or 'prim'."
+        )
     algs = _get_algorithms()
     g = _build_graph()
     if g.node_count == 0:
@@ -55,7 +60,11 @@ def compute_mst(algorithm: str = "kruskal"):
     return algs.mst_kruskal()
 
 
-@router.post("/scc", summary="Strongly Connected Components", description="Find strongly connected components using Tarjan's algorithm.")
+@router.post(
+    "/scc",
+    summary="Strongly Connected Components",
+    description="Find strongly connected components using Tarjan's algorithm.",
+)
 def compute_scc():
     algs = _get_algorithms()
     g = _build_graph()
@@ -64,7 +73,11 @@ def compute_scc():
     return algs.scc_tarjan()
 
 
-@router.post("/diameter", summary="Graph Diameter", description="Compute the graph diameter (longest shortest path) using double BFS.")
+@router.post(
+    "/diameter",
+    summary="Graph Diameter",
+    description="Compute the graph diameter (longest shortest path) using double BFS.",
+)
 def compute_diameter():
     algs = _get_algorithms()
     g = _build_graph()
@@ -73,14 +86,20 @@ def compute_diameter():
     return algs.diameter()
 
 
-@router.post("/shortest-path", summary="Shortest Path (A*)", description="Compute shortest path between two nodes using A* search with configurable heuristic.")
+@router.post(
+    "/shortest-path",
+    summary="Shortest Path (A*)",
+    description="Compute shortest path between two nodes using A* search with configurable heuristic.",
+)
 def compute_shortest_path(
     source_id: str,
     target_id: str,
     heuristic_type: str = "zero",
 ):
     if heuristic_type not in ("zero",):
-        raise HTTPException(status_code=400, detail=f"Unknown heuristic: {heuristic_type}. Use 'zero'.")
+        raise HTTPException(
+            status_code=400, detail=f"Unknown heuristic: {heuristic_type}. Use 'zero'."
+        )
     algs = _get_algorithms()
     g = _build_graph()
     if source_id not in g.nodes:
@@ -90,7 +109,11 @@ def compute_shortest_path(
     return algs.astar(source_id, target_id)
 
 
-@router.post("/analytics", summary="Graph Algorithm Analytics", description="Compute algorithm analytics including path statistics, component distribution, and connectivity metrics.")
+@router.post(
+    "/analytics",
+    summary="Graph Algorithm Analytics",
+    description="Compute algorithm analytics including path statistics, component distribution, and connectivity metrics.",
+)
 def compute_analytics():
     algs = _get_algorithms()
     g = _build_graph()

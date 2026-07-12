@@ -3,8 +3,8 @@ import json
 
 import pytest
 
-from intelgraph.core.entity import Person, Company, Domain
-from intelgraph.core.graph.export import ExportSettings, GraphExportError, GraphExporter
+from intelgraph.core.entity import Company, Domain, Person
+from intelgraph.core.graph.export import ExportSettings, GraphExporter, GraphExportError
 from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.relationship import Relationship
 from intelgraph.core.relationship.types import RelationshipType
@@ -23,20 +23,32 @@ def _make_graph() -> IntelligenceGraph:
     g.add_entity(acme)
     g.add_entity(example)
     r1 = Relationship(
-        source_id=alice.id, target_id=bob.id,
-        type=RelationshipType.RELATED_TO, confidence_score=80, trust_weight=70,
+        source_id=alice.id,
+        target_id=bob.id,
+        type=RelationshipType.RELATED_TO,
+        confidence_score=80,
+        trust_weight=70,
     )
     r2 = Relationship(
-        source_id=bob.id, target_id=carol.id,
-        type=RelationshipType.RELATED_TO, confidence_score=90, trust_weight=80,
+        source_id=bob.id,
+        target_id=carol.id,
+        type=RelationshipType.RELATED_TO,
+        confidence_score=90,
+        trust_weight=80,
     )
     r3 = Relationship(
-        source_id=alice.id, target_id=acme.id,
-        type=RelationshipType.WORKS_FOR, confidence_score=95, trust_weight=90,
+        source_id=alice.id,
+        target_id=acme.id,
+        type=RelationshipType.WORKS_FOR,
+        confidence_score=95,
+        trust_weight=90,
     )
     r4 = Relationship(
-        source_id=acme.id, target_id=example.id,
-        type=RelationshipType.OWNS, confidence_score=70, trust_weight=60,
+        source_id=acme.id,
+        target_id=example.id,
+        type=RelationshipType.OWNS,
+        confidence_score=70,
+        trust_weight=60,
     )
     g.add_relationship(r1)
     g.add_relationship(r2)
@@ -52,8 +64,11 @@ def _two_node_graph() -> IntelligenceGraph:
     g.add_entity(a)
     g.add_entity(b)
     r = Relationship(
-        source_id=a.id, target_id=b.id,
-        type=RelationshipType.RELATED_TO, confidence_score=80, trust_weight=70,
+        source_id=a.id,
+        target_id=b.id,
+        type=RelationshipType.RELATED_TO,
+        confidence_score=80,
+        trust_weight=70,
     )
     g.add_relationship(r)
     return g
@@ -352,7 +367,7 @@ class TestExportCommunityAnnotations:
         exp = GraphExporter(g, settings)
         xml = exp.export("graphml")
         first_id = list(g.nodes.keys())[0]
-        assert f'community_id' in xml
+        assert "community_id" in xml
 
     def test_community_in_json(self):
         g = _two_node_graph()
@@ -414,9 +429,11 @@ class TestExportProgressCallback:
         g = _make_graph()
         calls: list[int] = []
         total_calls: list[int] = []
+
         def cb(done: int, total: int) -> None:
             calls.append(done)
             total_calls.append(total)
+
         settings = ExportSettings(progress_callback=cb)
         exp = GraphExporter(g, settings)
         exp.export("json")
@@ -478,11 +495,14 @@ class TestExportEdgeCases:
 
     def test_special_characters(self):
         g = IntelligenceGraph()
-        p = Person(name='Alice & Bob <test>')
+        p = Person(name="Alice & Bob <test>")
         g.add_entity(p)
         r = Relationship(
-            source_id=p.id, target_id=p.id,
-            type=RelationshipType.RELATED_TO, confidence_score=80, trust_weight=70,
+            source_id=p.id,
+            target_id=p.id,
+            type=RelationshipType.RELATED_TO,
+            confidence_score=80,
+            trust_weight=70,
         )
         g.add_relationship(r)
         exp = GraphExporter(g)
@@ -490,4 +510,4 @@ class TestExportEdgeCases:
         assert "&amp;" in xml
         assert "&lt;" in xml
         data = json.loads(exp.export("json"))
-        assert 'Alice & Bob <test>' in json.dumps(data)
+        assert "Alice & Bob <test>" in json.dumps(data)

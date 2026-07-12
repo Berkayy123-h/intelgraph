@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-import os
 import threading
 import time
 from collections import defaultdict, deque
@@ -78,7 +77,9 @@ class PerformanceCollector:
         #                           "last_error": "", "run_count": int}}
         self._components: dict[str, dict[str, Any]] = {}
         # System metric snapshots for trend: deque of (timestamp, cpu, mem, disk)
-        self._system_history: deque[tuple[float, float, float, float]] = deque(maxlen=720)  # 5sn * 720 = 1h
+        self._system_history: deque[tuple[float, float, float, float]] = deque(
+            maxlen=720
+        )  # 5sn * 720 = 1h
         # Pipeline run counts for alert thresholds
         self._pipeline_avg_duration: float = 0.0
         self._pipeline_run_count: int = 0

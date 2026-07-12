@@ -17,7 +17,13 @@ class GraphAnalytics:
         degree = len(self._graph.adjacency.get(node_id, set()))
         return degree / (node_count - 1)
 
-    def page_rank(self, node_id: str, damping: float = 0.85, max_iterations: int = 100, tolerance: float = 1e-8) -> float:
+    def page_rank(
+        self,
+        node_id: str,
+        damping: float = 0.85,
+        max_iterations: int = 100,
+        tolerance: float = 1e-8,
+    ) -> float:
         n = self._graph.node_count
         if n == 0:
             return 0.0
@@ -57,14 +63,14 @@ class GraphAnalytics:
             return 0.0
         if node_id not in self._graph.nodes:
             return 0.0
-        cb = {nid: 0.0 for nid in self._graph.nodes}
+        cb = dict.fromkeys(self._graph.nodes, 0.0)
         node_ids_sorted = sorted(self._graph.nodes.keys())
         for s in node_ids_sorted:
             stack: list[str] = []
             pred: dict[str, list[str]] = {v: [] for v in node_ids_sorted}
-            sigma: dict[str, float] = {v: 0.0 for v in node_ids_sorted}
+            sigma: dict[str, float] = dict.fromkeys(node_ids_sorted, 0.0)
             sigma[s] = 1.0
-            dist: dict[str, int] = {v: -1 for v in node_ids_sorted}
+            dist: dict[str, int] = dict.fromkeys(node_ids_sorted, -1)
             dist[s] = 0
             q: deque[str] = deque([s])
             while q:
@@ -77,7 +83,7 @@ class GraphAnalytics:
                     if dist[w] == dist[v] + 1:
                         sigma[w] += sigma[v]
                         pred[w].append(v)
-            delta: dict[str, float] = {v: 0.0 for v in node_ids_sorted}
+            delta: dict[str, float] = dict.fromkeys(node_ids_sorted, 0.0)
             while stack:
                 w = stack.pop()
                 for v in pred[w]:

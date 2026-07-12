@@ -31,10 +31,19 @@ _DYNAMIC_WRITE_PREFIXES: list[tuple[str, str, str]] = [
 ]
 
 _PUBLIC_PREFIXES: tuple[str, ...] = (
-    "/health", "/auth", "/docs", "/redoc", "/openapi.json",
-    "/web/dashboard.html", "/web/", "/static/",
-    "/tenants/login", "/dashboard/", "/metrics/",
-    "/export/", "/reports/",
+    "/health",
+    "/auth",
+    "/docs",
+    "/redoc",
+    "/openapi.json",
+    "/web/dashboard.html",
+    "/web/",
+    "/static/",
+    "/tenants/login",
+    "/dashboard/",
+    "/metrics/",
+    "/export/",
+    "/reports/",
 )
 
 

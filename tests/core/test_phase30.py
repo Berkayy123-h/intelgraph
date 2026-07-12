@@ -2,29 +2,24 @@ from __future__ import annotations
 
 import json
 import tempfile
-from pathlib import Path
 
-import pytest
-
+from intelgraph.api.auth import (
+    decode_token,
+    login_user,
+    login_with_api_key,
+    register_user,
+)
 from intelgraph.core.multitenant import (
-    MULTITENANT_SCHEMA_VERSION,
     MultiTenantRouter,
     Tenant,
     TenantManager,
-    get_tenant_manager,
     reset_tenant_manager,
-)
-from intelgraph.api.auth import (
-    login_with_api_key,
-    register_user,
-    login_user,
-    decode_token,
 )
 
 
 def _fresh_tm() -> TenantManager:
     """Create a TenantManager with a temporary DB to avoid cross-test pollution."""
-    import tempfile
+
     tmp = tempfile.mktemp(suffix=".db")
     return TenantManager(db_path=tmp)
 
@@ -32,6 +27,7 @@ def _fresh_tm() -> TenantManager:
 # ===================================================================
 # Tenant Manager Tests
 # ===================================================================
+
 
 class TestTenantManager:
     def test_create_tenant(self) -> None:
@@ -124,6 +120,7 @@ class TestTenantManager:
 # Tenant Isolation Tests
 # ===================================================================
 
+
 class TestTenantIsolation:
     def test_separate_tenants_have_different_ids(self) -> None:
         tm = _fresh_tm()
@@ -179,6 +176,7 @@ class TestTenantIsolationSameIP:
 # MultiTenantRouter Tests
 # ===================================================================
 
+
 class TestMultiTenantRouter:
     def test_register_route(self) -> None:
         r = MultiTenantRouter()
@@ -195,10 +193,11 @@ class TestMultiTenantRouter:
 # Auth Integration Tests
 # ===================================================================
 
+
 class TestAuthIntegration:
     def test_login_with_api_key(self) -> None:
-        import tempfile
         from intelgraph.core.multitenant import manager as mtm
+
         db = tempfile.mktemp(suffix=".db")
         tm = TenantManager(db_path=db)
         mtm._tenant_manager = tm  # replace global singleton
@@ -207,6 +206,7 @@ class TestAuthIntegration:
         assert result is not None
         assert "access_token" in result
         import jwt
+
         token = result["access_token"]
         payload = jwt.decode(token, options={"verify_signature": False})
         assert payload["tenant_id"] == tenant.tenant_id
@@ -214,13 +214,14 @@ class TestAuthIntegration:
 
     def test_login_with_invalid_api_key_fails(self) -> None:
         from intelgraph.core.multitenant import manager as mtm
+
         mtm._tenant_manager = None
         result = login_with_api_key("invalid_key_12345")
         assert result is None
 
     def test_token_contains_tenant_id(self) -> None:
-        import tempfile
         from intelgraph.core.multitenant import manager as mtm
+
         db = tempfile.mktemp(suffix=".db")
         tm = TenantManager(db_path=db)
         mtm._tenant_manager = tm
@@ -234,6 +235,7 @@ class TestAuthIntegration:
 
     def test_user_registration_with_tenant(self) -> None:
         from intelgraph.core.multitenant import manager as mtm
+
         mtm._tenant_manager = None
         result = register_user("testuser2", "testpass", role="user", tenant_id="tnt_custom")
         assert "access_token" in result
@@ -242,6 +244,7 @@ class TestAuthIntegration:
 
     def test_login_preserves_tenant(self) -> None:
         from intelgraph.core.multitenant import manager as mtm
+
         mtm._tenant_manager = None
         register_user("user_login2", "pass1", role="user", tenant_id="tnt_custom")
         result = login_user("user_login2", "pass1")
@@ -253,6 +256,7 @@ class TestAuthIntegration:
 # ===================================================================
 # Tenant.to_dict / from_dict round-trip
 # ===================================================================
+
 
 class TestTenantSerialization:
     def test_to_dict(self) -> None:

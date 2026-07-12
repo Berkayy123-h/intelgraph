@@ -4,7 +4,7 @@ import random
 import time
 import uuid
 from dataclasses import dataclass, field
-from enum import Enum, auto
+from enum import Enum
 from typing import Any
 
 
@@ -52,8 +52,12 @@ class SimulationEngine:
         self._max_depth = self._cfg.get("propagation_max_depth", 3)
         self._risk_threshold = self._cfg.get("safe_mode_risk_threshold", 0.7)
 
-    def simulate(self, goal: str, plan: dict[str, Any] | None = None,
-                 what_if: list[dict[str, Any]] | None = None) -> SimulationResult:
+    def simulate(
+        self,
+        goal: str,
+        plan: dict[str, Any] | None = None,
+        what_if: list[dict[str, Any]] | None = None,
+    ) -> SimulationResult:
         result = SimulationResult(
             simulation_id=f"sim_{uuid.uuid4().hex[:12]}",
             goal=goal,
@@ -84,7 +88,7 @@ class SimulationEngine:
         steps = len(plan.get("sub_tasks", []))
         if steps == 0:
             return 0.5
-        base = 0.85 ** steps
+        base = 0.85**steps
         return max(0.05, min(0.99, base + random.uniform(-0.1, 0.1)))
 
     def _predict_outcome(self, plan: dict[str, Any] | None) -> str:
@@ -143,6 +147,7 @@ class ChaosInjector:
         if not self._enabled:
             return {"injected": False, "reason": "Chaos disabled"}
         import random as rnd
+
         failures = []
         for fail_type, prob in self._failure_prob.items():
             if rnd.random() < prob:

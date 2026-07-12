@@ -1,30 +1,30 @@
 from __future__ import annotations
 
-import time
 import uuid
-
-import pytest
-
 
 # ===================================================================
 # Consolidation Engine Tests
 # ===================================================================
 
+
 class TestConsolidationEngine:
     def test_scan_engines(self):
         from intelgraph.core.ucos.consolidation import ConsolidationEngine
+
         eng = ConsolidationEngine()
         engines = eng.get_engines()
         assert len(engines) > 0
 
     def test_detect_duplicates(self):
         from intelgraph.core.ucos.consolidation import ConsolidationEngine
+
         eng = ConsolidationEngine()
         dups = eng.detect_duplicates()
         assert isinstance(dups, list)
 
     def test_consolidation_plan(self):
         from intelgraph.core.ucos.consolidation import ConsolidationEngine
+
         eng = ConsolidationEngine()
         plan = eng.consolidation_plan()
         assert "duplicates_found" in plan
@@ -35,9 +35,11 @@ class TestConsolidationEngine:
 # Unified Cognitive Core Tests
 # ===================================================================
 
+
 class TestUnifiedCognitiveCore:
     def test_reason_multi_hop(self):
         from intelgraph.core.ucos.cognitive import UnifiedCognitiveCore
+
         cog = UnifiedCognitiveCore()
         result = cog.reason("A->B", {"graph": {"adjacency": {"A": {"B"}, "B": set()}}})
         assert result.total_confidence > 0
@@ -45,18 +47,29 @@ class TestUnifiedCognitiveCore:
 
     def test_reason_no_graph(self):
         from intelgraph.core.ucos.cognitive import UnifiedCognitiveCore
+
         cog = UnifiedCognitiveCore()
         result = cog.reason("test query")
         assert result.query == "test query"
 
     def test_causal_inference(self):
         from intelgraph.core.ucos.cognitive import UnifiedCognitiveCore
+
         cog = UnifiedCognitiveCore()
-        result = cog.reason("X", {"graph": {"adjacency": {"X": {"Y"}, "Y": {"Z"}}, "forward_adjacency": {"X": {"Y"}, "Y": {"Z"}}}})
+        result = cog.reason(
+            "X",
+            {
+                "graph": {
+                    "adjacency": {"X": {"Y"}, "Y": {"Z"}},
+                    "forward_adjacency": {"X": {"Y"}, "Y": {"Z"}},
+                }
+            },
+        )
         assert len(result.paths) >= 0
 
     def test_temporal_reason(self):
         from intelgraph.core.ucos.cognitive import UnifiedCognitiveCore
+
         cog = UnifiedCognitiveCore()
         events = [
             {"entity": "A", "timestamp": "2024-01-01T00:00:00Z"},
@@ -67,6 +80,7 @@ class TestUnifiedCognitiveCore:
 
     def test_probabilistic_reason(self):
         from intelgraph.core.ucos.cognitive import UnifiedCognitiveCore
+
         cog = UnifiedCognitiveCore()
         result = cog.probabilistic_reason([{"confidence": 0.8}, {"confidence": 0.7}])
         assert abs(result["confidence"] - 0.56) < 1e-6
@@ -76,16 +90,33 @@ class TestUnifiedCognitiveCore:
 # Closed-Loop Intelligence System Tests
 # ===================================================================
 
+
 class TestClosedLoopIntelligenceSystem:
     def test_run_cycle(self):
         from intelgraph.core.ucos.closed_loop import ClosedLoopIntelligenceSystem
+
         loop = ClosedLoopIntelligenceSystem()
         entry = loop.run_cycle(
             {"summary": "test"},
-            {"result_id": "r1", "paths": [], "contradictions": [], "hypotheses": [],
-             "total_confidence": 0.8, "duration_ms": 100, "query": "test", "reasoning_type": "multi_hop"},
-            {"execution_id": "e1", "success": True, "steps": [], "outputs": {}, "duration_ms": 50,
-             "goal": "test", "error": ""},
+            {
+                "result_id": "r1",
+                "paths": [],
+                "contradictions": [],
+                "hypotheses": [],
+                "total_confidence": 0.8,
+                "duration_ms": 100,
+                "query": "test",
+                "reasoning_type": "multi_hop",
+            },
+            {
+                "execution_id": "e1",
+                "success": True,
+                "steps": [],
+                "outputs": {},
+                "duration_ms": 50,
+                "goal": "test",
+                "error": "",
+            },
             {"latency_ms": 100},
         )
         assert entry.success
@@ -93,9 +124,14 @@ class TestClosedLoopIntelligenceSystem:
 
     def test_drift_detection(self):
         from intelgraph.core.ucos.closed_loop import ClosedLoopIntelligenceSystem
+
         loop = ClosedLoopIntelligenceSystem()
-        loop.run_cycle({"summary": "t"}, {"total_confidence": 0.8}, {"success": True}, {"accuracy": 1.0})
-        entry = loop.run_cycle({"summary": "t"}, {"total_confidence": 0.8}, {"success": True}, {"accuracy": 0.5})
+        loop.run_cycle(
+            {"summary": "t"}, {"total_confidence": 0.8}, {"success": True}, {"accuracy": 1.0}
+        )
+        entry = loop.run_cycle(
+            {"summary": "t"}, {"total_confidence": 0.8}, {"success": True}, {"accuracy": 0.5}
+        )
         assert entry.success or not entry.success  # May or may not exceed drift threshold
 
 
@@ -103,27 +139,32 @@ class TestClosedLoopIntelligenceSystem:
 # Unified Policy Control Plane Tests
 # ===================================================================
 
+
 class TestUnifiedPolicyControlPlane:
     def test_evaluate_allows(self):
         from intelgraph.core.ucos.policy import UnifiedPolicyControlPlane
+
         p = UnifiedPolicyControlPlane()
         decision = p.evaluate("read", 0.3)
         assert decision.allowed
 
     def test_evaluate_denies_high_risk(self):
         from intelgraph.core.ucos.policy import UnifiedPolicyControlPlane
+
         p = UnifiedPolicyControlPlane()
         decision = p.evaluate("delete", 0.9)
         assert not decision.allowed
 
     def test_evaluate_forbidden_action(self):
         from intelgraph.core.ucos.policy import UnifiedPolicyControlPlane
+
         p = UnifiedPolicyControlPlane()
         decision = p.evaluate("shutdown", 0.3)
         assert not decision.allowed
 
     def test_add_rule(self):
         from intelgraph.core.ucos.policy import UnifiedPolicyControlPlane
+
         p = UnifiedPolicyControlPlane()
         count = len(p.get_rules())
         p.add_rule({"name": "custom", "action": "deny", "max_risk": 0.5})
@@ -131,6 +172,7 @@ class TestUnifiedPolicyControlPlane:
 
     def test_override_decision(self):
         from intelgraph.core.ucos.policy import UnifiedPolicyControlPlane
+
         p = UnifiedPolicyControlPlane()
         decision = p.evaluate("shutdown", 0.3)
         assert not decision.allowed
@@ -142,9 +184,11 @@ class TestUnifiedPolicyControlPlane:
 # Unified Truth Engine Tests
 # ===================================================================
 
+
 class TestUnifiedTruthEngine:
     def test_write_and_read(self):
         from intelgraph.core.ucos.truth import UnifiedTruthEngine
+
         t = UnifiedTruthEngine()
         t.write("key1", "value1", "test", 0.8)
         entry = t.read("key1")
@@ -152,6 +196,7 @@ class TestUnifiedTruthEngine:
 
     def test_reject_lower_confidence(self):
         from intelgraph.core.ucos.truth import UnifiedTruthEngine
+
         t = UnifiedTruthEngine()
         t.write("key", "first", "s1", 0.9)
         result = t.write("key", "second", "s2", 0.3)
@@ -159,6 +204,7 @@ class TestUnifiedTruthEngine:
 
     def test_overwrite_higher_confidence(self):
         from intelgraph.core.ucos.truth import UnifiedTruthEngine
+
         t = UnifiedTruthEngine()
         t.write("key", "first", "s1", 0.3)
         result = t.write("key", "second", "s2", 0.9)
@@ -166,6 +212,7 @@ class TestUnifiedTruthEngine:
 
     def test_query(self):
         from intelgraph.core.ucos.truth import UnifiedTruthEngine
+
         t = UnifiedTruthEngine()
         t.write("target_ip", "1.1.1.1", "s1", 0.8)
         t.write("source_ip", "2.2.2.2", "s1", 0.7)
@@ -174,6 +221,7 @@ class TestUnifiedTruthEngine:
 
     def test_snapshot(self):
         from intelgraph.core.ucos.truth import UnifiedTruthEngine
+
         t = UnifiedTruthEngine()
         t.write("a", 1, "s1")
         snap = t.snapshot()
@@ -181,11 +229,14 @@ class TestUnifiedTruthEngine:
 
     def test_reconcile(self):
         from intelgraph.core.ucos.truth import UnifiedTruthEngine
+
         t = UnifiedTruthEngine()
-        result = t.reconcile([
-            {"k1": {"value": "a", "confidence": 0.9}},
-            {"k1": {"value": "b", "confidence": 0.5}},
-        ])
+        result = t.reconcile(
+            [
+                {"k1": {"value": "a", "confidence": 0.9}},
+                {"k1": {"value": "b", "confidence": 0.5}},
+            ]
+        )
         assert result["k1"]["value"] == "a"
 
 
@@ -193,9 +244,11 @@ class TestUnifiedTruthEngine:
 # Unified Execution Runtime Tests
 # ===================================================================
 
+
 class TestUnifiedExecutionRuntime:
     def test_execute(self):
         from intelgraph.core.ucos.runtime import UnifiedExecutionRuntime
+
         r = UnifiedExecutionRuntime()
         result = r.execute("test goal")
         assert result.goal == "test goal"
@@ -203,6 +256,7 @@ class TestUnifiedExecutionRuntime:
 
     def test_execute_with_steps(self):
         from intelgraph.core.ucos.runtime import UnifiedExecutionRuntime
+
         r = UnifiedExecutionRuntime()
         result = r.execute("analyze", [{"action": "tool_call", "params": {"tool": "scanner"}}])
         assert result.success
@@ -210,6 +264,7 @@ class TestUnifiedExecutionRuntime:
 
     def test_rollback(self):
         from intelgraph.core.ucos.runtime import UnifiedExecutionRuntime
+
         r = UnifiedExecutionRuntime()
         result = r.execute("rollback_test")
         assert r.rollback(result.execution_id)
@@ -217,6 +272,7 @@ class TestUnifiedExecutionRuntime:
 
     def test_task_queue(self):
         from intelgraph.core.ucos.runtime import UnifiedExecutionRuntime
+
         r = UnifiedExecutionRuntime()
         tid = r.enqueue({"action": "scan"})
         assert tid is not None
@@ -226,6 +282,7 @@ class TestUnifiedExecutionRuntime:
 
     def test_audit(self):
         from intelgraph.core.ucos.runtime import UnifiedExecutionRuntime
+
         r = UnifiedExecutionRuntime()
         r.execute("test", [{"action": "tool_call", "params": {}}])
         audit = r.get_audit()
@@ -236,9 +293,11 @@ class TestUnifiedExecutionRuntime:
 # Unified Telemetry Core Tests
 # ===================================================================
 
+
 class TestUnifiedTelemetryCore:
     def test_record(self):
         from intelgraph.core.ucos.telemetry import UnifiedTelemetryCore
+
         tel = UnifiedTelemetryCore()
         snap = tel.record(reasoning_quality=0.9, execution_success=True, latency_ms=100)
         assert 0.0 <= snap.health_index <= 1.0
@@ -246,6 +305,7 @@ class TestUnifiedTelemetryCore:
 
     def test_get_latest(self):
         from intelgraph.core.ucos.telemetry import UnifiedTelemetryCore
+
         tel = UnifiedTelemetryCore()
         assert tel.get_latest() is None
         tel.record(reasoning_quality=0.5)
@@ -253,6 +313,7 @@ class TestUnifiedTelemetryCore:
 
     def test_get_trend(self):
         from intelgraph.core.ucos.telemetry import UnifiedTelemetryCore
+
         tel = UnifiedTelemetryCore()
         for v in [0.5, 0.6, 0.7]:
             tel.record(reasoning_quality=v)
@@ -264,15 +325,18 @@ class TestUnifiedTelemetryCore:
 # Unified Safety Layer Tests
 # ===================================================================
 
+
 class TestUnifiedSafetyLayer:
     def test_check_safe(self):
         from intelgraph.core.ucos.safety import UnifiedSafetyLayer
+
         s = UnifiedSafetyLayer()
         result = s.check_safety({"type": "read", "risk": 0.3})
         assert result["safe"]
 
     def test_kill_switch_blocks(self):
         from intelgraph.core.ucos.safety import UnifiedSafetyLayer
+
         s = UnifiedSafetyLayer()
         s.engage_kill_switch()
         result = s.check_safety({"type": "read", "risk": 0.1})
@@ -280,6 +344,7 @@ class TestUnifiedSafetyLayer:
 
     def test_quarantine_blocks_high_risk(self):
         from intelgraph.core.ucos.safety import UnifiedSafetyLayer
+
         s = UnifiedSafetyLayer()
         s.enter_quarantine()
         result = s.check_safety({"type": "write", "risk": 0.5})
@@ -287,6 +352,7 @@ class TestUnifiedSafetyLayer:
 
     def test_safe_degradation(self):
         from intelgraph.core.ucos.safety import UnifiedSafetyLayer
+
         s = UnifiedSafetyLayer()
         s.enable_safe_degradation()
         result = s.check_safety({"type": "write", "risk": 0.7})
@@ -294,6 +360,7 @@ class TestUnifiedSafetyLayer:
 
     def test_runaway_loop_detection(self):
         from intelgraph.core.ucos.safety import UnifiedSafetyLayer
+
         s = UnifiedSafetyLayer()
         actions = [{"type": "repeat"}] * 5
         assert s.detect_runaway_loop(actions)
@@ -303,9 +370,11 @@ class TestUnifiedSafetyLayer:
 # Self-Stabilizing Meta Control Tests
 # ===================================================================
 
+
 class TestSelfStabilizingMetaControl:
     def test_propose_change(self):
         from intelgraph.core.ucos.meta_control import SelfStabilizingMetaControl
+
         mc = SelfStabilizingMetaControl()
         prop = mc.propose_change("Update model", "nlp", "config_update", 0.3)
         assert prop["status"] == "pending"
@@ -313,6 +382,7 @@ class TestSelfStabilizingMetaControl:
 
     def test_approve_change(self):
         from intelgraph.core.ucos.meta_control import SelfStabilizingMetaControl
+
         mc = SelfStabilizingMetaControl()
         prop = mc.propose_change("test", "t1", "config", 0.1)
         assert mc.approve_change(prop["proposal_id"])
@@ -320,6 +390,7 @@ class TestSelfStabilizingMetaControl:
 
     def test_reject_change(self):
         from intelgraph.core.ucos.meta_control import SelfStabilizingMetaControl
+
         mc = SelfStabilizingMetaControl()
         prop = mc.propose_change("test", "t1", "config", 0.1)
         assert mc.reject_change(prop["proposal_id"], "not needed")
@@ -327,6 +398,7 @@ class TestSelfStabilizingMetaControl:
 
     def test_validate_regression(self):
         from intelgraph.core.ucos.meta_control import SelfStabilizingMetaControl
+
         mc = SelfStabilizingMetaControl()
         result = mc.validate_regression({"accuracy": 0.9}, {"accuracy": 0.5})
         assert result["has_regression"]
@@ -336,9 +408,11 @@ class TestSelfStabilizingMetaControl:
 # Simplification Engine Tests
 # ===================================================================
 
+
 class TestSimplificationEngine:
     def test_register_module(self):
         from intelgraph.core.ucos.simplification import SimplificationEngine
+
         sim = SimplificationEngine()
         sim.register_module("m1", "extraction", "nlp_team")
         modules = sim.get_modules()
@@ -346,6 +420,7 @@ class TestSimplificationEngine:
 
     def test_check_no_duplicates(self):
         from intelgraph.core.ucos.simplification import SimplificationEngine
+
         sim = SimplificationEngine()
         sim.register_module("m1", "extraction", "t1")
         sim.register_module("m2", "extraction", "t2")
@@ -354,6 +429,7 @@ class TestSimplificationEngine:
 
     def test_compute_complexity(self):
         from intelgraph.core.ucos.simplification import SimplificationEngine
+
         sim = SimplificationEngine()
         sim.register_module("m1", "a", "t1")
         c = sim.compute_system_complexity()
@@ -364,9 +440,11 @@ class TestSimplificationEngine:
 # Global Health Index Tests
 # ===================================================================
 
+
 class TestGlobalHealthIndex:
     def test_compute(self):
         from intelgraph.core.ucos.health import GlobalHealthIndex
+
         h = GlobalHealthIndex()
         result = h.compute(cognitive=0.9, execution=0.8, knowledge=0.7, policy=0.8, complexity=0.2)
         assert 0.0 <= result["overall_health"] <= 1.0
@@ -374,6 +452,7 @@ class TestGlobalHealthIndex:
 
     def test_get_trend(self):
         from intelgraph.core.ucos.health import GlobalHealthIndex
+
         h = GlobalHealthIndex()
         h.compute(cognitive=0.8)
         h.compute(cognitive=0.7)
@@ -385,29 +464,47 @@ class TestGlobalHealthIndex:
 # Unified Alerting Core Tests
 # ===================================================================
 
+
 class TestUnifiedAlertingCore:
     def test_evaluate_triggers(self):
         from intelgraph.core.ucos.alerting import UnifiedAlertingCore
+
         ac = UnifiedAlertingCore({"cooldown_seconds": 0})
-        alerts = ac.evaluate({"error_rate": 0.9}, {
-            "high_error": {"enabled": True, "max": 0.5, "severity": "critical", "metric_key": "error_rate"},
-        })
+        alerts = ac.evaluate(
+            {"error_rate": 0.9},
+            {
+                "high_error": {
+                    "enabled": True,
+                    "max": 0.5,
+                    "severity": "critical",
+                    "metric_key": "error_rate",
+                },
+            },
+        )
         assert len(alerts) >= 1
 
     def test_no_alert_below(self):
         from intelgraph.core.ucos.alerting import UnifiedAlertingCore
+
         ac = UnifiedAlertingCore({"cooldown_seconds": 0})
-        alerts = ac.evaluate({"error_rate": 0.2}, {
-            "high_error": {"enabled": True, "max": 0.5, "metric_key": "error_rate"},
-        })
+        alerts = ac.evaluate(
+            {"error_rate": 0.2},
+            {
+                "high_error": {"enabled": True, "max": 0.5, "metric_key": "error_rate"},
+            },
+        )
         assert len(alerts) == 0
 
     def test_resolve_alert(self):
         from intelgraph.core.ucos.alerting import UnifiedAlertingCore
+
         ac = UnifiedAlertingCore({"cooldown_seconds": 0})
-        alerts = ac.evaluate({"error_rate": 0.9}, {
-            "high_error": {"enabled": True, "max": 0.5, "metric_key": "error_rate"},
-        })
+        alerts = ac.evaluate(
+            {"error_rate": 0.9},
+            {
+                "high_error": {"enabled": True, "max": 0.5, "metric_key": "error_rate"},
+            },
+        )
         assert ac.resolve_alert(alerts[0]["alert_id"])
         assert alerts[0]["resolved"]
 
@@ -416,9 +513,11 @@ class TestUnifiedAlertingCore:
 # Dependency Validator Tests
 # ===================================================================
 
+
 class TestDependencyValidator:
     def test_no_cycle(self):
         from intelgraph.core.ucos.boundary import DependencyValidator
+
         dv = DependencyValidator()
         dv.register_module("a", ["b"])
         dv.register_module("b", ["c"])
@@ -428,6 +527,7 @@ class TestDependencyValidator:
 
     def test_cycle_detected(self):
         from intelgraph.core.ucos.boundary import DependencyValidator
+
         dv = DependencyValidator()
         dv.register_module("a", ["b"])
         dv.register_module("b", ["c"])
@@ -437,12 +537,14 @@ class TestDependencyValidator:
 
     def test_self_dependency_blocked(self):
         from intelgraph.core.ucos.boundary import DependencyValidator
+
         dv = DependencyValidator()
         dv.register_module("a", [])
         assert not dv.validate_no_unsafe_injection("a", "a")
 
     def test_unsafe_injection_blocked(self):
         from intelgraph.core.ucos.boundary import DependencyValidator
+
         dv = DependencyValidator()
         dv.register_module("a", ["b"])
         dv.register_module("b", ["a"])
@@ -454,9 +556,11 @@ class TestDependencyValidator:
 # Single Source of Truth Tests
 # ===================================================================
 
+
 class TestSingleSourceOfTruth:
     def test_set_and_get(self):
         from intelgraph.core.ucos.state import SingleSourceOfTruth
+
         s = SingleSourceOfTruth()
         s.set("key1", "value1", "test", 0.9)
         entry = s.get("key1")
@@ -465,6 +569,7 @@ class TestSingleSourceOfTruth:
 
     def test_reject_lower_confidence(self):
         from intelgraph.core.ucos.state import SingleSourceOfTruth
+
         s = SingleSourceOfTruth()
         s.set("k", "first", "s1", 0.9)
         result = s.set("k", "second", "s2", 0.3)
@@ -472,6 +577,7 @@ class TestSingleSourceOfTruth:
 
     def test_reconcile_higher_confidence(self):
         from intelgraph.core.ucos.state import SingleSourceOfTruth
+
         s = SingleSourceOfTruth()
         s.set("k", "first", "s1", 0.3)
         result = s.set("k", "second", "s2", 0.9)
@@ -479,6 +585,7 @@ class TestSingleSourceOfTruth:
 
     def test_snapshot(self):
         from intelgraph.core.ucos.state import SingleSourceOfTruth
+
         s = SingleSourceOfTruth()
         s.set("a", 1, "s1")
         snap = s.snapshot()
@@ -489,30 +596,49 @@ class TestSingleSourceOfTruth:
 # CLI UCOS Tests
 # ===================================================================
 
+
 class TestCLIUCOS:
     def test_command_names(self):
         from intelgraph.cli.ucos import ucos_group
+
         assert ucos_group.name == "ucos"
         commands = [cmd.name for cmd in ucos_group.commands.values()]
-        expected = ["query", "reason", "act", "observe", "policy", "health",
-                     "consolidate", "simplify", "closed-loop", "safety",
-                     "alerts", "dependency", "state"]
+        expected = [
+            "query",
+            "reason",
+            "act",
+            "observe",
+            "policy",
+            "health",
+            "consolidate",
+            "simplify",
+            "closed-loop",
+            "safety",
+            "alerts",
+            "dependency",
+            "state",
+        ]
         for cmd in expected:
             assert cmd in commands, f"Missing: {cmd}"
 
     def test_reason_command(self):
-        from intelgraph.cli.ucos import reason
         from click.testing import CliRunner
+
+        from intelgraph.cli.ucos import reason
+
         runner = CliRunner()
         result = runner.invoke(reason, ["A->B"])
         assert result.exit_code == 0
         import json
+
         data = json.loads(result.output)
         assert "result_id" in data
 
     def test_health_command(self):
-        from intelgraph.cli.ucos import health
         from click.testing import CliRunner
+
+        from intelgraph.cli.ucos import health
+
         runner = CliRunner()
         result = runner.invoke(health)
         assert result.exit_code == 0
@@ -522,18 +648,24 @@ class TestCLIUCOS:
 # API UCOS Tests
 # ===================================================================
 
+
 class TestAPIUCOS:
     def setup_method(self):
         from fastapi.testclient import TestClient
+
         from intelgraph.api.main import create_app
+
         self.client = TestClient(create_app({"storage": {"path": ":memory:"}}))
 
     def _auth_headers(self, role: str = "analyst"):
-        resp = self.client.post("/auth/register", json={
-            "username": f"ucos_{role}_{uuid.uuid4().hex[:8]}",
-            "password": "test123",
-            "role": role,
-        })
+        resp = self.client.post(
+            "/auth/register",
+            json={
+                "username": f"ucos_{role}_{uuid.uuid4().hex[:8]}",
+                "password": "test123",
+                "role": role,
+            },
+        )
         assert resp.status_code == 200, resp.text
         token = resp.json()["access_token"]
         return {"Authorization": f"Bearer {token}"}
@@ -545,9 +677,14 @@ class TestAPIUCOS:
 
     def test_system_reason(self):
         headers = self._auth_headers()
-        resp = self.client.post("/system/reason", json={
-            "query": "A->B", "context": {"graph": {"adjacency": {"A": ["B"], "B": []}}},
-        }, headers=headers)
+        resp = self.client.post(
+            "/system/reason",
+            json={
+                "query": "A->B",
+                "context": {"graph": {"adjacency": {"A": ["B"], "B": []}}},
+            },
+            headers=headers,
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert "result_id" in data
@@ -564,31 +701,53 @@ class TestAPIUCOS:
 
     def test_system_act_policy_denied(self):
         headers = self._auth_headers()
-        resp = self.client.post("/system/act", json={"goal": "destroy", "risk": 0.9}, headers=headers)
+        resp = self.client.post(
+            "/system/act", json={"goal": "destroy", "risk": 0.9}, headers=headers
+        )
         assert resp.status_code == 403
 
     def test_system_observe(self):
         headers = self._auth_headers()
-        resp = self.client.post("/system/observe", json={
-            "reasoning_quality": 0.9, "execution_success": True, "latency_ms": 100,
-        }, headers=headers)
+        resp = self.client.post(
+            "/system/observe",
+            json={
+                "reasoning_quality": 0.9,
+                "execution_success": True,
+                "latency_ms": 100,
+            },
+            headers=headers,
+        )
         assert resp.status_code == 200
 
     def test_policy_evaluate(self):
         headers = self._auth_headers()
-        resp = self.client.post("/system/policy/evaluate", json={
-            "action_type": "read", "risk": 0.3,
-        }, headers=headers)
+        resp = self.client.post(
+            "/system/policy/evaluate",
+            json={
+                "action_type": "read",
+                "risk": 0.3,
+            },
+            headers=headers,
+        )
         assert resp.status_code == 200
 
     def test_policy_override_admin(self):
         headers = self._auth_headers("admin")
         # First create a decision
-        self.client.post("/system/policy/evaluate", json={"action_type": "shutdown", "risk": 0.3}, headers=headers)
+        self.client.post(
+            "/system/policy/evaluate",
+            json={"action_type": "shutdown", "risk": 0.3},
+            headers=headers,
+        )
         # Get the decision
-        resp = self.client.post("/system/policy/override", json={
-            "decision_id": "nonexistent", "reason": "override test",
-        }, headers=headers)
+        resp = self.client.post(
+            "/system/policy/override",
+            json={
+                "decision_id": "nonexistent",
+                "reason": "override test",
+            },
+            headers=headers,
+        )
         assert resp.status_code == 404  # nonexistent decision
 
     def test_state_get(self):
@@ -598,9 +757,16 @@ class TestAPIUCOS:
 
     def test_state_set(self):
         headers = self._auth_headers()
-        resp = self.client.post("/system/state/set", json={
-            "key": "test_key", "value": "test_value", "source": "test", "confidence": 0.8,
-        }, headers=headers)
+        resp = self.client.post(
+            "/system/state/set",
+            json={
+                "key": "test_key",
+                "value": "test_value",
+                "source": "test",
+                "confidence": 0.8,
+            },
+            headers=headers,
+        )
         assert resp.status_code == 200
 
     def test_state_snapshot_admin(self):
@@ -620,22 +786,33 @@ class TestAPIUCOS:
 
     def test_closed_loop(self):
         headers = self._auth_headers()
-        resp = self.client.post("/system/closed-loop", json={
-            "query": "A->B", "input": {"summary": "test"},
-            "context": {"graph": {"adjacency": {"A": ["B"], "B": []}}},
-        }, headers=headers)
+        resp = self.client.post(
+            "/system/closed-loop",
+            json={
+                "query": "A->B",
+                "input": {"summary": "test"},
+                "context": {"graph": {"adjacency": {"A": ["B"], "B": []}}},
+            },
+            headers=headers,
+        )
         assert resp.status_code == 200
 
     def test_safety_check(self):
         headers = self._auth_headers()
-        resp = self.client.post("/system/safety/check", json={
-            "action": {"type": "read", "risk": 0.3},
-        }, headers=headers)
+        resp = self.client.post(
+            "/system/safety/check",
+            json={
+                "action": {"type": "read", "risk": 0.3},
+            },
+            headers=headers,
+        )
         assert resp.status_code == 200
 
     def test_safety_kill_switch_admin(self):
         headers = self._auth_headers("admin")
-        resp = self.client.post("/system/safety/kill-switch", json={"disengage": False}, headers=headers)
+        resp = self.client.post(
+            "/system/safety/kill-switch", json={"disengage": False}, headers=headers
+        )
         assert resp.status_code == 200
         assert resp.json()["status"] == "kill_switch_engaged"
 
@@ -651,9 +828,14 @@ class TestAPIUCOS:
 
     def test_dependency_register(self):
         headers = self._auth_headers("admin")
-        resp = self.client.post("/system/dependency/register", json={
-            "module_id": "test_mod", "dependencies": ["dep1", "dep2"],
-        }, headers=headers)
+        resp = self.client.post(
+            "/system/dependency/register",
+            json={
+                "module_id": "test_mod",
+                "dependencies": ["dep1", "dep2"],
+            },
+            headers=headers,
+        )
         assert resp.status_code == 200
 
     def test_simplify_check(self):
@@ -663,16 +845,28 @@ class TestAPIUCOS:
 
     def test_meta_propose_admin(self):
         headers = self._auth_headers("admin")
-        resp = self.client.post("/system/meta-control/propose", json={
-            "description": "Update NLP", "target": "nlp", "change_type": "config", "risk": 0.3,
-        }, headers=headers)
+        resp = self.client.post(
+            "/system/meta-control/propose",
+            json={
+                "description": "Update NLP",
+                "target": "nlp",
+                "change_type": "config",
+                "risk": 0.3,
+            },
+            headers=headers,
+        )
         assert resp.status_code == 200
 
     def test_meta_propose_unauthorized(self):
         headers = self._auth_headers("user")
-        resp = self.client.post("/system/meta-control/propose", json={
-            "description": "test", "target": "test",
-        }, headers=headers)
+        resp = self.client.post(
+            "/system/meta-control/propose",
+            json={
+                "description": "test",
+                "target": "test",
+            },
+            headers=headers,
+        )
         assert resp.status_code == 403
 
     def test_consolidation_apply(self):

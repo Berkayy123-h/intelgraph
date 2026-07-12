@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from intelgraph.core.orchestrator import TaskManager, Task, TaskStatus, TaskType
+from intelgraph.core.orchestrator import Task, TaskManager, TaskStatus, TaskType
 from intelgraph.core.orchestrator.dispatcher import TaskDispatcher
 from intelgraph.core.orchestrator.queue import InMemoryTaskQueue
 from intelgraph.core.orchestrator.worker import TaskWorker

@@ -3,19 +3,20 @@
 AIOS Bağımlılık Haritası v2 — hassas fan-in
 Sadece EXACT modül eşleşmesi ile fan-in hesaplar.
 """
+
 from __future__ import annotations
 
 import ast
-import os
-import sys
 from collections import defaultdict
 from pathlib import Path
 
 PROJECT_ROOT = Path("/home/berkay/intelgraph")
 SOURCE_DIR = PROJECT_ROOT / "intelgraph"
 
+
 def get_all_py_files(root: Path) -> list[Path]:
     return [p for p in root.rglob("*.py") if "__pycache__" not in str(p)]
+
 
 def extract_module_name(filepath: Path, root: Path) -> str:
     rel = filepath.relative_to(root.parent)
@@ -24,6 +25,7 @@ def extract_module_name(filepath: Path, root: Path) -> str:
     if parts[-1] == "__init__":
         parts = parts[:-1]
     return ".".join(parts)
+
 
 def get_imports_from_file(filepath: Path) -> set[str]:
     imports: set[str] = set()
@@ -40,6 +42,7 @@ def get_imports_from_file(filepath: Path) -> set[str]:
             if node.module and node.module.startswith("intelgraph"):
                 imports.add(node.module)
     return imports
+
 
 py_files = get_all_py_files(SOURCE_DIR)
 all_modules: dict[str, Path] = {}
@@ -82,6 +85,7 @@ print("\n" + "=" * 72)
 print("PROJE ÇAPINDA DÖNGÜSEL BAĞIMLILIK TARAMASI")
 print("=" * 72)
 
+
 def find_cycles(dep_graph: dict[str, set[str]]) -> list[list[str]]:
     visited: set[str] = set()
     in_stack: set[str] = set()
@@ -108,6 +112,7 @@ def find_cycles(dep_graph: dict[str, set[str]]) -> list[list[str]]:
             _dfs(node)
     return cycles
 
+
 cycles = find_cycles(deps)
 if cycles:
     print(f"\n⚠️  {len(cycles)} adet döngü BULUNDU:")
@@ -115,7 +120,8 @@ if cycles:
         print(f"  #{i}: {' → '.join(c)}")
         for m in c:
             f = all_modules.get(m)
-            if f: print(f"      {f.relative_to(PROJECT_ROOT)}")
+            if f:
+                print(f"      {f.relative_to(PROJECT_ROOT)}")
 else:
     print("\n✅ Döngü bulunamadı — tüm bağımlılıklar DAG.")
 
@@ -148,16 +154,16 @@ for rank, (mod, count) in enumerate(sorted_fi, 1):
                 break
         if test_found:
             break
-    
+
     status = "✅ Test var" if test_found else "⚠️  Test YOK"
-    
+
     # Check if previously verified
     verified = mod in [
         "intelgraph.core.metaintel.architecture",
     ]
     if verified:
         status = "✅ Doğrulandı"
-    
+
     print(f"{rank:3d} {mod:55s} {count:7d} {status:25s}")
 
 print("\n" + "=" * 72)
@@ -171,8 +177,7 @@ for rank, (mod, count) in enumerate(sorted_fi, 1):
     if count < 3 or mod.endswith(("__init__",)):
         continue
     has_test = any(
-        f"test_{mod.split('.')[-1]}" in p.name
-        for p in (PROJECT_ROOT / "tests").rglob("*.py")
+        f"test_{mod.split('.')[-1]}" in p.name for p in (PROJECT_ROOT / "tests").rglob("*.py")
     )
     if has_test:
         prio = "🔵 Düşük (test var)"

@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import time
 import uuid
-from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from enum import Enum, auto
-from typing import Any, Callable
+from enum import Enum
+from typing import Any
 
 AGENT_SCHEMA_VERSION = "1.0"
 
@@ -93,7 +92,9 @@ class TaskNode:
             "sub_task_count": len(self.sub_tasks),
             "dependencies": self.dependencies,
             "error": self.error,
-            "task_duration_ms": round((self.completed_at - self.created_at) * 1000, 2) if self.completed_at else 0,
+            "task_duration_ms": (
+                round((self.completed_at - self.created_at) * 1000, 2) if self.completed_at else 0
+            ),
         }
 
 
@@ -129,15 +130,31 @@ class AgentOrchestrator:
         self._deadlock_detector = DeadlockDetector()
         self._conflict_resolver = ConflictResolver()
         self._priority_arbiter = PriorityArbiter()
-        self._master = self._create_agent(AgentRole.MASTER, "master_orchestrator", ["plan", "delegate", "monitor", "terminate"])
+        self._master = self._create_agent(
+            AgentRole.MASTER, "master_orchestrator", ["plan", "delegate", "monitor", "terminate"]
+        )
 
-    def _create_agent(self, role: AgentRole, agent_id: str | None = None, capabilities: list[str] | None = None, parent_id: str = "") -> Agent:
+    def _create_agent(
+        self,
+        role: AgentRole,
+        agent_id: str | None = None,
+        capabilities: list[str] | None = None,
+        parent_id: str = "",
+    ) -> Agent:
         aid = agent_id or f"agent_{uuid.uuid4().hex[:12]}"
-        agent = Agent(agent_id=aid, role=role, capabilities=capabilities or [], parent_id=parent_id, created_at=time.time())
+        agent = Agent(
+            agent_id=aid,
+            role=role,
+            capabilities=capabilities or [],
+            parent_id=parent_id,
+            created_at=time.time(),
+        )
         self._agents[aid] = agent
         return agent
 
-    def spawn_agent(self, role: AgentRole, parent_id: str = "", capabilities: list[str] | None = None) -> Agent:
+    def spawn_agent(
+        self, role: AgentRole, parent_id: str = "", capabilities: list[str] | None = None
+    ) -> Agent:
         return self._create_agent(role, parent_id=parent_id, capabilities=capabilities)
 
     def terminate_agent(self, agent_id: str) -> bool:
@@ -175,7 +192,12 @@ class AgentOrchestrator:
             "analyze": ["collect_data", "process_data", "evaluate_results"],
             "investigate": ["gather_evidence", "correlate_facts", "draw_conclusions"],
             "execute": ["validate_inputs", "perform_action", "verify_outcome"],
-            "respond": ["assess_situation", "select_response", "execute_response", "monitor_effect"],
+            "respond": [
+                "assess_situation",
+                "select_response",
+                "execute_response",
+                "monitor_effect",
+            ],
         }
         for key, subs in templates.items():
             if key in description.lower():
@@ -194,18 +216,25 @@ class AgentOrchestrator:
     def create_plan(self, goal: str) -> ExecutionPlan:
         root = self.decompose_task(goal)
         plan_id = f"plan_{uuid.uuid4().hex[:12]}"
-        agents = [self.spawn_agent(AgentRole.PLANNER, self._master.agent_id, ["plan"]),
-                  self.spawn_agent(AgentRole.EXECUTOR, self._master.agent_id, ["execute"]),
-                  self.spawn_agent(AgentRole.VERIFIER, self._master.agent_id, ["verify"]),
-                  self.spawn_agent(AgentRole.MONITOR, self._master.agent_id, ["monitor"])]
+        agents = [
+            self.spawn_agent(AgentRole.PLANNER, self._master.agent_id, ["plan"]),
+            self.spawn_agent(AgentRole.EXECUTOR, self._master.agent_id, ["execute"]),
+            self.spawn_agent(AgentRole.VERIFIER, self._master.agent_id, ["verify"]),
+            self.spawn_agent(AgentRole.MONITOR, self._master.agent_id, ["monitor"]),
+        ]
         assignments = {}
         for i, sub in enumerate(root.sub_tasks):
             if i < len(agents):
                 self.assign_agent(sub.task_id, agents[i].agent_id)
                 assignments[sub.task_id] = agents[i].agent_id
-        plan = ExecutionPlan(plan_id=plan_id, goal=goal, root_task=root,
-                             agent_assignments=assignments, estimated_cost=len(root.sub_tasks) * 0.5,
-                             created_at=time.time())
+        plan = ExecutionPlan(
+            plan_id=plan_id,
+            goal=goal,
+            root_task=root,
+            agent_assignments=assignments,
+            estimated_cost=len(root.sub_tasks) * 0.5,
+            created_at=time.time(),
+        )
         self._plans.append(plan)
         return plan
 
@@ -216,7 +245,9 @@ class AgentOrchestrator:
         return self._conflict_resolver.resolve(task_a, task_b)
 
     def arbitrate_priority(self, task_ids: list[str]) -> list[str]:
-        return self._priority_arbiter.sort([self._tasks[tid] for tid in task_ids if tid in self._tasks])
+        return self._priority_arbiter.sort(
+            [self._tasks[tid] for tid in task_ids if tid in self._tasks]
+        )
 
     def get_agent(self, agent_id: str) -> Agent | None:
         return self._agents.get(agent_id)

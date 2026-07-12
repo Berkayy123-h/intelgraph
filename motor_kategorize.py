@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 40 Yüzeysel Motoru E-IOS Ürün Değerine Göre Kategorize Et
 
 E-IOS = Autonomous Threat Intelligence & Data Fusion Platform
 (SIEM + Threat Intel + Knowledge Graph + SOAR)
 """
+
 from __future__ import annotations
 
 # fmt: off

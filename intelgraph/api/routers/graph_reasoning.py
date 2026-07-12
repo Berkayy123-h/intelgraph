@@ -5,14 +5,15 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 
 from intelgraph.core.graph.graph import IntelligenceGraph
-from intelgraph.core.graph.reasoning import CausalReasoner
 from intelgraph.core.graph.node import Node
+from intelgraph.core.graph.reasoning import CausalReasoner
 
 router = APIRouter(prefix="/graph/reasoning", tags=["graph"])
 
 
 def _build_graph() -> IntelligenceGraph:
     from intelgraph.api.main import _container
+
     g = IntelligenceGraph()
     for entity in _container.backend.list_entities():
         eid = entity.id
@@ -26,6 +27,7 @@ def _build_graph() -> IntelligenceGraph:
         tgt = rel.target_id
         if src in g.nodes and tgt in g.nodes:
             from intelgraph.core.graph.edge import Edge
+
             g.adjacency.setdefault(src, set()).add(tgt)
             g.adjacency.setdefault(tgt, set()).add(src)
             g.forward_adjacency.setdefault(src, set()).add(tgt)

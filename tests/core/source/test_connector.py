@@ -1,15 +1,12 @@
 import json
 import tempfile
-from pathlib import Path
-
-import pytest
 
 from intelgraph.core.source.connector import (
     ConnectorConfig,
     ConnectorRegistry,
+    DatabaseConnector,
     FileConnector,
     HttpConnector,
-    DatabaseConnector,
     PollResult,
     _backoff_delay,
 )
@@ -24,7 +21,9 @@ class TestConnectorConfig:
 
     def test_to_dict_masks_credentials(self):
         cfg = ConnectorConfig(
-            id="x", name="test", connector_type="http",
+            id="x",
+            name="test",
+            connector_type="http",
             auth_credentials={"api_key": "secret123", "username": "admin"},
         )
         d = cfg.to_dict()
@@ -54,7 +53,9 @@ class TestConnectorRegistry:
         assert cls is HttpConnector
 
     def test_create_http(self):
-        cfg = ConnectorConfig(id="x", name="t", connector_type="http", endpoint_url="https://example.com/data")
+        cfg = ConnectorConfig(
+            id="x", name="t", connector_type="http", endpoint_url="https://example.com/data"
+        )
         connector = ConnectorRegistry.create(cfg)
         assert isinstance(connector, HttpConnector)
 
@@ -104,7 +105,9 @@ class TestFileConnector:
             assert result.raw_data[0]["name"] == "Alice"
 
     def test_poll_file_not_found(self):
-        cfg = ConnectorConfig(id="x", name="t", connector_type="file", file_path="/nonexistent/file.json")
+        cfg = ConnectorConfig(
+            id="x", name="t", connector_type="file", file_path="/nonexistent/file.json"
+        )
         c = FileConnector(cfg)
         c.connect()
         result = c.poll()
@@ -132,7 +135,9 @@ class TestDatabaseConnector:
 
     def test_connect_and_poll(self):
         cfg = ConnectorConfig(
-            id="x", name="t", connector_type="database",
+            id="x",
+            name="t",
+            connector_type="database",
         )
         c = DatabaseConnector(cfg)
         assert c.connect() is False
@@ -145,14 +150,18 @@ class TestHttpConnector:
         assert c.connect() is False
 
     def test_poll_invalid_url(self):
-        cfg = ConnectorConfig(id="x", name="t", connector_type="http", endpoint_url="https://nonexistent.invalid/data")
+        cfg = ConnectorConfig(
+            id="x", name="t", connector_type="http", endpoint_url="https://nonexistent.invalid/data"
+        )
         c = HttpConnector(cfg)
         c.connect()
         result = c.poll()
         assert result.success is False
 
     def test_health_check_invalid(self):
-        cfg = ConnectorConfig(id="x", name="t", connector_type="http", endpoint_url="https://nonexistent.invalid")
+        cfg = ConnectorConfig(
+            id="x", name="t", connector_type="http", endpoint_url="https://nonexistent.invalid"
+        )
         c = HttpConnector(cfg)
         assert c.health_check() is False
 
@@ -163,7 +172,9 @@ class TestConnectorRetry:
             def poll(self) -> PollResult:
                 return PollResult(success=True, nodes_ingested=5)
 
-        cfg = ConnectorConfig(id="x", name="t", connector_type="file", file_path="/tmp/x.json", retry_max_attempts=3)
+        cfg = ConnectorConfig(
+            id="x", name="t", connector_type="file", file_path="/tmp/x.json", retry_max_attempts=3
+        )
         c = AlwaysOkConnector(cfg)
         result = c.poll_with_retry()
         assert result.success is True
@@ -174,7 +185,14 @@ class TestConnectorRetry:
             def poll(self) -> PollResult:
                 return PollResult(success=False, error_message="fail")
 
-        cfg = ConnectorConfig(id="x", name="t", connector_type="file", file_path="/tmp/x.json", retry_max_attempts=2, retry_base_delay=0.01)
+        cfg = ConnectorConfig(
+            id="x",
+            name="t",
+            connector_type="file",
+            file_path="/tmp/x.json",
+            retry_max_attempts=2,
+            retry_base_delay=0.01,
+        )
         c = AlwaysFailConnector(cfg)
         result = c.poll_with_retry()
         assert result.success is False
@@ -182,7 +200,9 @@ class TestConnectorRetry:
 
     def test_validate_data_required_fields(self):
         cfg = ConnectorConfig(
-            id="x", name="t", connector_type="file",
+            id="x",
+            name="t",
+            connector_type="file",
             file_path="/tmp/x.json",
             feed_schema={"required_fields": ["name", "type"]},
         )

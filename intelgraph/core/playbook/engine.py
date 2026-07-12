@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from intelgraph.core.playbook.defaults import DEFAULT_PLAYBOOKS
 from intelgraph.core.playbook.models import (
     Playbook,
     PlaybookStatus,
-    PlaybookStepStatus,
-    step_to_status,
     status_from_dict,
+    step_to_status,
 )
 
 
@@ -65,7 +64,11 @@ class PlaybookEngine:
                 score += 10.0
 
             # Confidence
-            confidence = incident.get("confidence", 0) if isinstance(incident.get("confidence"), (int, float)) else 0.5
+            confidence = (
+                incident.get("confidence", 0)
+                if isinstance(incident.get("confidence"), (int, float))
+                else 0.5
+            )
             if confidence >= tc.confidence_min:
                 score += 15.0
 
@@ -81,7 +84,7 @@ class PlaybookEngine:
             playbook_id=playbook.playbook_id,
             playbook_name=playbook.name,
             incident_id=incident_id,
-            matched_at=datetime.now(timezone.utc).isoformat(),
+            matched_at=datetime.now(UTC).isoformat(),
             steps=[step_to_status(s) for s in sorted(playbook.steps, key=lambda s: s.order)],
         )
         self._statuses[incident_id] = status
@@ -92,8 +95,11 @@ class PlaybookEngine:
         return self._statuses.get(incident_id)
 
     def complete_step(
-        self, incident_id: str, step_id: str,
-        completed_by: str = "system", notes: str = "",
+        self,
+        incident_id: str,
+        step_id: str,
+        completed_by: str = "system",
+        notes: str = "",
     ) -> PlaybookStatus | None:
         """Mark a step as completed."""
         status = self._statuses.get(incident_id)
@@ -102,14 +108,14 @@ class PlaybookEngine:
         for step in status.steps:
             if step.step_id == step_id and not step.completed:
                 step.completed = True
-                step.completed_at = datetime.now(timezone.utc).isoformat()
+                step.completed_at = datetime.now(UTC).isoformat()
                 step.completed_by = completed_by
                 step.notes = notes
                 break
         # Check if all required steps are done
         if all(s.completed for s in status.steps if s.required):
             status.all_completed = True
-            status.completed_at = datetime.now(timezone.utc).isoformat()
+            status.completed_at = datetime.now(UTC).isoformat()
         return status
 
     def apply_automated_steps(self, incident_id: str, playbook: Playbook) -> PlaybookStatus:
@@ -117,8 +123,12 @@ class PlaybookEngine:
         status = self.start_playbook(incident_id, playbook)
         for step in playbook.steps:
             if step.automated:
-                self.complete_step(incident_id, step.step_id, completed_by="system",
-                                   notes=f"Automated: {step.description}")
+                self.complete_step(
+                    incident_id,
+                    step.step_id,
+                    completed_by="system",
+                    notes=f"Automated: {step.description}",
+                )
         return status
 
     def to_dicts(self) -> dict[str, dict[str, Any]]:

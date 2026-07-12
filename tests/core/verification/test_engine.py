@@ -1,4 +1,4 @@
-from intelgraph.core.verification.base import VerificationState, OperationalState
+from intelgraph.core.verification.base import OperationalState, VerificationState
 from intelgraph.core.verification.engine import VerificationEngine
 
 

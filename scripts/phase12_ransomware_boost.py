@@ -8,22 +8,24 @@ Verifies:
 3. Evidence reliability_score is boosted for ransomware-known CVEs (90→100)
 4. CveEntity confidence_score is higher for ransomware-known than unknown
 """
+
 from __future__ import annotations
 
 import json
 import os
 import sys
 import time
-from collections import Counter
 
 KEV_PATH = "/tmp/opencode/phase10/kev.json"
 REPORT_PATH = "/tmp/opencode/phase12/phase12_report.json"
 os.makedirs("/tmp/opencode/phase12", exist_ok=True)
 
+
 def section(t):
     print(f"\n{'='*72}")
     print(f"  {t}")
     print(f"{'='*72}")
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 0. Load KEV
@@ -58,8 +60,10 @@ for v in test_unknown:
     )
 
 combined_text = "\n".join(known_lines + unknown_lines)
-print(f"  Test metni: {len(test_known)} Known + {len(test_unknown)} Unknown = "
-      f"{len(known_lines)+len(unknown_lines)} kayit, {len(combined_text)/1024:.1f} KB")
+print(
+    f"  Test metni: {len(test_known)} Known + {len(test_unknown)} Unknown = "
+    f"{len(known_lines)+len(unknown_lines)} kayit, {len(combined_text)/1024:.1f} KB"
+)
 
 # CVE IDs in lowercase (NER normalizes to lowercase)
 known_cve_ids = {v["cveID"].lower() for v in test_known}
@@ -70,19 +74,21 @@ unknown_cve_ids = {v["cveID"].lower() for v in test_unknown}
 # ═══════════════════════════════════════════════════════════════════════════
 section("Faz 12.1 — Pipeline Calistirma")
 
-from intelgraph.core.pipeline.chain import Pipeline
 from intelgraph.core.entity.cve import CveEntity
+from intelgraph.core.pipeline.chain import Pipeline
 
 pipeline = Pipeline()
 
 t0 = time.perf_counter()
 result = pipeline.run(
-    sources=[{
-        "id": "cisa_kev",
-        "name": "CISA KEV Catalog",
-        "text": combined_text,
-        "value": 90,
-    }],
+    sources=[
+        {
+            "id": "cisa_kev",
+            "name": "CISA KEV Catalog",
+            "text": combined_text,
+            "value": 90,
+        }
+    ],
     thresholds={},
     query_ip="",
     query_target="",
@@ -105,8 +111,7 @@ if not result.graph:
     print("  ✗ Graph bos!")
     sys.exit(1)
 
-cve_nodes = [n for n in result.graph.nodes.values()
-             if isinstance(n.entity, CveEntity)]
+cve_nodes = [n for n in result.graph.nodes.values() if isinstance(n.entity, CveEntity)]
 
 # Classify by known_ransomware_use flag on the entity itself
 known_entities = [n.entity for n in cve_nodes if n.entity.known_ransomware_use]
@@ -120,10 +125,18 @@ print(f"  known_ransomware_use=False: {len(unknown_entities)}")
 known_confs = [e.confidence_score for e in known_entities]
 unknown_confs = [e.confidence_score for e in unknown_entities]
 
-print(f"\n  Known confidence_score:   avg={sum(known_confs)/len(known_confs):.1f}  "
-      f"min={min(known_confs)} max={max(known_confs)}" if known_confs else "  Known: (empty)")
-print(f"  Unknown confidence_score: avg={sum(unknown_confs)/len(unknown_confs):.1f}  "
-      f"min={min(unknown_confs)} max={max(unknown_confs)}" if unknown_confs else "  Unknown: (empty)")
+print(
+    f"\n  Known confidence_score:   avg={sum(known_confs)/len(known_confs):.1f}  "
+    f"min={min(known_confs)} max={max(known_confs)}"
+    if known_confs
+    else "  Known: (empty)"
+)
+print(
+    f"  Unknown confidence_score: avg={sum(unknown_confs)/len(unknown_confs):.1f}  "
+    f"min={min(unknown_confs)} max={max(unknown_confs)}"
+    if unknown_confs
+    else "  Unknown: (empty)"
+)
 
 # Key assertion: Known CVEs have STRICTLY HIGHER confidence than Unknown
 known_avg = sum(known_confs) / len(known_confs) if known_confs else 0
@@ -152,10 +165,18 @@ unknown_trust = [ev.trust_score for ev in unknown_evidence]
 known_rel = [ev.reliability_score for ev in known_evidence]
 unknown_rel = [ev.reliability_score for ev in unknown_evidence]
 
-print(f"  Known evidence trust_score:     {known_trust[:5]}... (avg={sum(known_trust)/max(len(known_trust),1):.1f})")
-print(f"  Unknown evidence trust_score:   {unknown_trust[:5]}... (avg={sum(unknown_trust)/max(len(unknown_trust),1):.1f})")
-print(f"  Known evidence reliability_score: {known_rel[:5]}... (avg={sum(known_rel)/max(len(known_rel),1):.1f})")
-print(f"  Unknown evidence reliability_score: {unknown_rel[:5]}... (avg={sum(unknown_rel)/max(len(unknown_rel),1):.1f})")
+print(
+    f"  Known evidence trust_score:     {known_trust[:5]}... (avg={sum(known_trust)/max(len(known_trust),1):.1f})"
+)
+print(
+    f"  Unknown evidence trust_score:   {unknown_trust[:5]}... (avg={sum(unknown_trust)/max(len(unknown_trust),1):.1f})"
+)
+print(
+    f"  Known evidence reliability_score: {known_rel[:5]}... (avg={sum(known_rel)/max(len(known_rel),1):.1f})"
+)
+print(
+    f"  Unknown evidence reliability_score: {unknown_rel[:5]}... (avg={sum(unknown_rel)/max(len(unknown_rel),1):.1f})"
+)
 
 # Check that at least some known evidence has trust_score=100 (boosted)
 known_has_boosted_trust = any(t >= 100 for t in known_trust)
@@ -188,15 +209,17 @@ if result_dict.get("safety_result"):
 
 if result.incidents:
     for inc in result.incidents[:3]:
-        i = inc.to_dict() if hasattr(inc, 'to_dict') else inc
-        print(f"  Incident: {i.get('alert_id','?')[:20]} severity={i.get('severity','?')} "
-              f"entity_id={i.get('entity_id','?')[:40]}")
+        i = inc.to_dict() if hasattr(inc, "to_dict") else inc
+        print(
+            f"  Incident: {i.get('alert_id','?')[:20]} severity={i.get('severity','?')} "
+            f"entity_id={i.get('entity_id','?')[:40]}"
+        )
 
 # Graph node summary
 gsummary = result_dict.get("graph_nodes_summary", [])
 cve_summaries = [gn for gn in gsummary if gn.get("entity_type") == "CveEntity"]
 if cve_summaries:
-    print(f"\n  Graph node summary — CveEntity (ilk 10):")
+    print("\n  Graph node summary — CveEntity (ilk 10):")
     for gs in cve_summaries[:10]:
         print(f"    {gs['node_id'][:30]} conf={gs['confidence']} evidence={gs['evidence_count']}")
 
@@ -212,8 +235,14 @@ section("Faz 12.5 — Rapor")
 # 4. Known evidence has boosted reliability_score (>=100)
 
 all_criteria = [
-    ("known_ransomware_flag", len(known_entities) > 0 and all(e.known_ransomware_use for e in known_entities)),
-    ("unknown_not_flagged", len(unknown_entities) > 0 and all(not e.known_ransomware_use for e in unknown_entities)),
+    (
+        "known_ransomware_flag",
+        len(known_entities) > 0 and all(e.known_ransomware_use for e in known_entities),
+    ),
+    (
+        "unknown_not_flagged",
+        len(unknown_entities) > 0 and all(not e.known_ransomware_use for e in unknown_entities),
+    ),
     ("known_conf_higher", known_higher),
     ("known_trust_boosted", known_has_boosted_trust),
     ("known_rel_boosted", known_has_boosted_rel),

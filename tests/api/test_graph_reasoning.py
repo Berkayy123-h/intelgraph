@@ -1,26 +1,38 @@
-import pytest
 
 
 class TestReasoningAPI:
     def _populate_graph(self, client):
         from intelgraph.api.main import _container
+
         backend = _container.backend
         from intelgraph.core.entity.person import Person
         from intelgraph.core.relationship import Relationship
         from intelgraph.core.relationship.types import RelationshipType
+
         for i in range(6):
-            p = Person(id=f"p{i}", name=f"Person {i}", confidence_score=min(50 + i * 5, 95), trust_score=min(40 + i * 5, 90))
+            p = Person(
+                id=f"p{i}",
+                name=f"Person {i}",
+                confidence_score=min(50 + i * 5, 95),
+                trust_score=min(40 + i * 5, 90),
+            )
             backend.put_entity(p)
         rels_data = [
-            ("p0", "p1", 80), ("p0", "p2", 60),
-            ("p1", "p3", 90), ("p1", "p4", 50),
-            ("p2", "p5", 70), ("p3", "p4", 75),
+            ("p0", "p1", 80),
+            ("p0", "p2", 60),
+            ("p1", "p3", 90),
+            ("p1", "p4", 50),
+            ("p2", "p5", 70),
+            ("p3", "p4", 75),
         ]
         for idx, (src, tgt, conf) in enumerate(rels_data):
             r = Relationship(
-                id=f"r{idx}", source_id=src, target_id=tgt,
+                id=f"r{idx}",
+                source_id=src,
+                target_id=tgt,
                 type=RelationshipType.RELATED_TO,
-                confidence_score=conf, trust_weight=conf,
+                confidence_score=conf,
+                trust_weight=conf,
             )
             backend.put_relationship(r)
 
@@ -28,7 +40,9 @@ class TestReasoningAPI:
 
     def test_root_cause(self, auth_client):
         self._populate_graph(auth_client)
-        resp = auth_client.post("/graph/reasoning/root-cause", json={"anomaly_node": "p3", "max_depth": 4})
+        resp = auth_client.post(
+            "/graph/reasoning/root-cause", json={"anomaly_node": "p3", "max_depth": 4}
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data.get("found") is True
@@ -48,7 +62,9 @@ class TestReasoningAPI:
 
     def test_causal_path(self, auth_client):
         self._populate_graph(auth_client)
-        resp = auth_client.post("/graph/reasoning/causal-path", json={"source": "p0", "target": "p3", "max_depth": 4})
+        resp = auth_client.post(
+            "/graph/reasoning/causal-path", json={"source": "p0", "target": "p3", "max_depth": 4}
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert "trace_id" in data
@@ -104,7 +120,9 @@ class TestReasoningAPI:
 
     def test_top_causes(self, auth_client):
         self._populate_graph(auth_client)
-        resp = auth_client.get("/graph/reasoning/top-causes/p3", params={"max_depth": 4, "top_n": 5})
+        resp = auth_client.get(
+            "/graph/reasoning/top-causes/p3", params={"max_depth": 4, "top_n": 5}
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data.get("found") is True
@@ -123,7 +141,9 @@ class TestReasoningAPI:
 
     def test_metrics_recorded(self, auth_client):
         self._populate_graph(auth_client)
-        resp = auth_client.post("/graph/reasoning/root-cause", json={"anomaly_node": "p3", "max_depth": 3})
+        resp = auth_client.post(
+            "/graph/reasoning/root-cause", json={"anomaly_node": "p3", "max_depth": 3}
+        )
         assert resp.status_code == 200
         metrics_resp = auth_client.get("/metrics")
         assert metrics_resp.status_code == 200

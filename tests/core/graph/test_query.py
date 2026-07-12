@@ -1,6 +1,6 @@
 from typing import Any
 
-from intelgraph.core.entity import Person, Company, Domain
+from intelgraph.core.entity import Company, Domain, Person
 from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.graph.query import GraphQueryEngine
 from intelgraph.core.relationship import Relationship
@@ -20,10 +20,34 @@ def _make_graph() -> tuple[IntelligenceGraph, dict[str, Any], dict[str, Any]]:
     g.add_entity(acme)
     g.add_entity(example)
 
-    r1 = Relationship(source_id=alice.id, target_id=bob.id, type=RelationshipType.RELATED_TO, confidence_score=80, trust_weight=70)
-    r2 = Relationship(source_id=bob.id, target_id=carol.id, type=RelationshipType.RELATED_TO, confidence_score=80, trust_weight=70)
-    r3 = Relationship(source_id=alice.id, target_id=acme.id, type=RelationshipType.WORKS_FOR, confidence_score=90, trust_weight=80)
-    r4 = Relationship(source_id=acme.id, target_id=example.id, type=RelationshipType.OWNS, confidence_score=70, trust_weight=60)
+    r1 = Relationship(
+        source_id=alice.id,
+        target_id=bob.id,
+        type=RelationshipType.RELATED_TO,
+        confidence_score=80,
+        trust_weight=70,
+    )
+    r2 = Relationship(
+        source_id=bob.id,
+        target_id=carol.id,
+        type=RelationshipType.RELATED_TO,
+        confidence_score=80,
+        trust_weight=70,
+    )
+    r3 = Relationship(
+        source_id=alice.id,
+        target_id=acme.id,
+        type=RelationshipType.WORKS_FOR,
+        confidence_score=90,
+        trust_weight=80,
+    )
+    r4 = Relationship(
+        source_id=acme.id,
+        target_id=example.id,
+        type=RelationshipType.OWNS,
+        confidence_score=70,
+        trust_weight=60,
+    )
     g.add_relationship(r1)
     g.add_relationship(r2)
     g.add_relationship(r3)
@@ -32,7 +56,11 @@ def _make_graph() -> tuple[IntelligenceGraph, dict[str, Any], dict[str, Any]]:
     vrecs: dict[str, dict[str, Any]] = {
         alice.id: {"verification_state": "confirmed", "confidence": 95.0, "entity_type": "person"},
         bob.id: {"verification_state": "probable", "confidence": 75.0, "entity_type": "person"},
-        carol.id: {"verification_state": "speculative", "confidence": 30.0, "entity_type": "person"},
+        carol.id: {
+            "verification_state": "speculative",
+            "confidence": 30.0,
+            "entity_type": "person",
+        },
         acme.id: {"verification_state": "confirmed", "confidence": 90.0, "entity_type": "company"},
         example.id: {"verification_state": "possible", "confidence": 55.0, "entity_type": "domain"},
     }
@@ -145,10 +173,42 @@ class TestPathQueries:
         g.add_entity(b)
         g.add_entity(c)
         g.add_entity(d)
-        g.add_relationship(Relationship(source_id=a.id, target_id=b.id, type=RelationshipType.RELATED_TO, confidence_score=50, trust_weight=50))
-        g.add_relationship(Relationship(source_id=a.id, target_id=c.id, type=RelationshipType.RELATED_TO, confidence_score=50, trust_weight=50))
-        g.add_relationship(Relationship(source_id=b.id, target_id=d.id, type=RelationshipType.RELATED_TO, confidence_score=50, trust_weight=50))
-        g.add_relationship(Relationship(source_id=c.id, target_id=d.id, type=RelationshipType.RELATED_TO, confidence_score=50, trust_weight=50))
+        g.add_relationship(
+            Relationship(
+                source_id=a.id,
+                target_id=b.id,
+                type=RelationshipType.RELATED_TO,
+                confidence_score=50,
+                trust_weight=50,
+            )
+        )
+        g.add_relationship(
+            Relationship(
+                source_id=a.id,
+                target_id=c.id,
+                type=RelationshipType.RELATED_TO,
+                confidence_score=50,
+                trust_weight=50,
+            )
+        )
+        g.add_relationship(
+            Relationship(
+                source_id=b.id,
+                target_id=d.id,
+                type=RelationshipType.RELATED_TO,
+                confidence_score=50,
+                trust_weight=50,
+            )
+        )
+        g.add_relationship(
+            Relationship(
+                source_id=c.id,
+                target_id=d.id,
+                type=RelationshipType.RELATED_TO,
+                confidence_score=50,
+                trust_weight=50,
+            )
+        )
         qe = GraphQueryEngine(g)
         paths = qe.enumerate_paths(a.id, d.id, max_depth=3)
         assert len(paths) == 2

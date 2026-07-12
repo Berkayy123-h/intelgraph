@@ -3,6 +3,7 @@ from typing import Any
 
 def format_json(data: Any) -> str:
     import json
+
     return json.dumps(data, indent=2, default=str, ensure_ascii=False)
 
 
@@ -43,6 +44,7 @@ def format_markdown(report_type: str, data: dict[str, Any]) -> str:
     else:
         lines.append("```json")
         import json
+
         lines.append(json.dumps(data, indent=2, default=str, ensure_ascii=False))
         lines.append("```")
 
@@ -62,13 +64,17 @@ def format_html(report_type: str, data: dict[str, Any]) -> str:
     lines.append("<head>")
     lines.append(f"<title>{_code_escape(report_type)} Report</title>")
     lines.append("<style>")
-    lines.append("body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 960px; margin: 0 auto; padding: 2rem; background: #fafafa; color: #333; }")
+    lines.append(
+        "body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 960px; margin: 0 auto; padding: 2rem; background: #fafafa; color: #333; }"
+    )
     lines.append("h1 { border-bottom: 2px solid #333; padding-bottom: 0.5rem; }")
     lines.append("h2 { margin-top: 2rem; color: #555; }")
     lines.append("table { border-collapse: collapse; width: 100%; margin: 1rem 0; }")
     lines.append("th, td { border: 1px solid #ddd; padding: 0.5rem; text-align: left; }")
     lines.append("th { background: #f0f0f0; }")
-    lines.append("pre { background: #f4f4f4; padding: 1rem; border-radius: 4px; overflow-x: auto; }")
+    lines.append(
+        "pre { background: #f4f4f4; padding: 1rem; border-radius: 4px; overflow-x: auto; }"
+    )
     lines.append("</style>")
     lines.append("</head>")
     lines.append("<body>")
@@ -78,7 +84,7 @@ def format_html(report_type: str, data: dict[str, Any]) -> str:
     for line in md.split("\n"):
         if line.startswith("```"):
             if in_code:
-                joined = '\n'.join(code_buf)
+                joined = "\n".join(code_buf)
                 lines.append(f"<pre>{_code_escape(joined)}</pre>")
                 code_buf = []
                 in_code = False
@@ -100,7 +106,7 @@ def format_html(report_type: str, data: dict[str, Any]) -> str:
             lines.append(f"<p>{_code_escape(line)}</p>")
 
     if code_buf:
-        joined = '\n'.join(code_buf)
+        joined = "\n".join(code_buf)
         lines.append(f"<pre>{_code_escape(joined)}</pre>")
 
     lines.append("</body>")

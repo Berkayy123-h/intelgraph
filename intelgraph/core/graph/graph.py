@@ -1,29 +1,57 @@
 import logging
 from collections import deque
+from collections.abc import Iterator
 from dataclasses import dataclass, field, fields, replace
-from datetime import datetime, timezone
-from typing import Any, Iterator
+from datetime import UTC, datetime
+from typing import Any
 
 from intelgraph.core.entity import BaseEntity
 from intelgraph.core.evidence import Evidence
-from intelgraph.core.evidence_chain import ChainManager, ContradictionDetector, ConfidenceComputer, EvidenceChain, EvidenceItem, SupportType
+from intelgraph.core.evidence_chain import (
+    ChainManager,
+    ConfidenceComputer,
+    ContradictionDetector,
+    EvidenceChain,
+    EvidenceItem,
+    SupportType,
+)
 from intelgraph.core.graph.edge import Edge
 from intelgraph.core.graph.node import Node
 from intelgraph.core.graph.storage import GraphStorage
 from intelgraph.core.relationship import Relationship
-from intelgraph.core.source.resolution import EntityMatcher, MergeEngine, ResolutionAudit
+from intelgraph.core.source.resolution import EntityMatcher, MergeEngine
 
 logger = logging.getLogger(__name__)
 
-_INFER_SUPPORTS = frozenset({
-    "zararsız", "benign", "clean", "safe", "legitimate",
-    "normal", "harmless", "authorized", "allowed",
-})
-_INFER_CONTRADICTS = frozenset({
-    "zararlı", "malicious", "c2", "threat", "attack",
-    "phishing", "malware", "exploit", "suspicious",
-    "harmful", "dangerous", "compromised",
-})
+_INFER_SUPPORTS = frozenset(
+    {
+        "zararsız",
+        "benign",
+        "clean",
+        "safe",
+        "legitimate",
+        "normal",
+        "harmless",
+        "authorized",
+        "allowed",
+    }
+)
+_INFER_CONTRADICTS = frozenset(
+    {
+        "zararlı",
+        "malicious",
+        "c2",
+        "threat",
+        "attack",
+        "phishing",
+        "malware",
+        "exploit",
+        "suspicious",
+        "harmful",
+        "dangerous",
+        "compromised",
+    }
+)
 
 
 @dataclass
@@ -48,7 +76,9 @@ class IntelligenceGraph:
     # Primary:   maps normalized exact-field values → node IDs (exact match)
     # Secondary: maps (etype, char-bag, length) → node IDs (name-similarity match)
     _entity_index: dict[str, set[str]] = field(default_factory=dict, repr=False)
-    _entity_sig_index: dict[tuple[str, frozenset[str], int], set[str]] = field(default_factory=dict, repr=False)
+    _entity_sig_index: dict[tuple[str, frozenset[str], int], set[str]] = field(
+        default_factory=dict, repr=False
+    )
 
     _storage: GraphStorage | None = field(default=None, init=False, repr=False)
 
@@ -88,7 +118,9 @@ class IntelligenceGraph:
         self.previous_versions = self._storage.load_previous_versions()
         logger.info(
             "Loaded %d nodes, %d edges, %d versioned entries from storage",
-            len(self.nodes), len(self.edges), len(self.previous_versions),
+            len(self.nodes),
+            len(self.edges),
+            len(self.previous_versions),
         )
 
     def add_entity(self, entity: BaseEntity, overwrite: bool = False) -> Node:
@@ -105,7 +137,9 @@ class IntelligenceGraph:
                     self._storage.save_previous_version(node.id, old_node)
                 logger.info("Entity %s already exists, merging (previous version saved)", node.id)
             else:
-                logger.info("Entity %s already exists, overwriting (previous version NOT saved)", node.id)
+                logger.info(
+                    "Entity %s already exists, overwriting (previous version NOT saved)", node.id
+                )
             self._index_remove(node.id, old_node.entity)
             self.nodes[node.id] = node
             self._index_add(node.id, entity)
@@ -127,11 +161,15 @@ class IntelligenceGraph:
                 score = self.entity_matcher.match(new_dict, existing_dict)
                 if score > 0:
                     merged_dict = self.merge_engine.merge(
-                        new_dict, existing_dict,
+                        new_dict,
+                        existing_dict,
                         strategy="most_confident",
                     )
                     merged_entity = self._entity_from_merged_dict(
-                        merged_dict, type(entity), existing_id, existing_node.entity,
+                        merged_dict,
+                        type(entity),
+                        existing_id,
+                        existing_node.entity,
                     )
 
                     # Concatenate tuple fields from both entities
@@ -164,7 +202,9 @@ class IntelligenceGraph:
                     self._index_add(existing_id, merged_entity)
                     logger.info(
                         "Entity %s fuzzy-matched existing %s (score=%.4f), merged",
-                        entity.id, existing_id, score,
+                        entity.id,
+                        existing_id,
+                        score,
                     )
                     if self._storage is not None:
                         self._storage.upsert_node(merged_node)
@@ -183,34 +223,55 @@ class IntelligenceGraph:
     @property
     def nodes_summary(self) -> list[dict[str, Any]]:
         from intelgraph.core.scoring.threat_score import _compute_node_scores
+
         scores = _compute_node_scores(self)
-        return [{
-            "node_id": n.id,
-            "entity_type": type(n.entity).__name__,
-            "entity_identifier": getattr(n.entity, 'ip', None) or getattr(n.entity, 'domain_name', None)
-                                or getattr(n.entity, 'cve_id', None) or n.id,
-            "confidence": getattr(n.entity, 'confidence_score', 0) or 0,
-            "evidence_count": len(getattr(n.entity, 'evidence', ())),
-            "first_seen": getattr(n.entity, 'first_seen', None).isoformat() if getattr(n.entity, 'first_seen', None) else None,
-            "last_seen": getattr(n.entity, 'last_seen', None).isoformat() if getattr(n.entity, 'last_seen', None) else None,
-            "threat_score": scores.get(n.id, 0.0),
-        } for n in self.nodes.values()]
+        return [
+            {
+                "node_id": n.id,
+                "entity_type": type(n.entity).__name__,
+                "entity_identifier": getattr(n.entity, "ip", None)
+                or getattr(n.entity, "domain_name", None)
+                or getattr(n.entity, "cve_id", None)
+                or n.id,
+                "confidence": getattr(n.entity, "confidence_score", 0) or 0,
+                "evidence_count": len(getattr(n.entity, "evidence", ())),
+                "first_seen": (
+                    getattr(n.entity, "first_seen", None).isoformat()
+                    if getattr(n.entity, "first_seen", None)
+                    else None
+                ),
+                "last_seen": (
+                    getattr(n.entity, "last_seen", None).isoformat()
+                    if getattr(n.entity, "last_seen", None)
+                    else None
+                ),
+                "threat_score": scores.get(n.id, 0.0),
+            }
+            for n in self.nodes.values()
+        ]
 
     @property
     def edges_summary(self) -> list[dict[str, Any]]:
-        return [{
-            "source": e.source_id,
-            "target": e.target_id,
-            "relationship_type": e.relationship.type.name.lower(),
-            "confidence": e.relationship.confidence_score,
-            "first_seen": e.relationship.first_seen.isoformat() if e.relationship.first_seen else None,
-            "last_seen": e.relationship.last_seen.isoformat() if e.relationship.last_seen else None,
-            "occurrence_count": e.relationship.occurrence_count,
-        } for e in self.edges.values()]
+        return [
+            {
+                "source": e.source_id,
+                "target": e.target_id,
+                "relationship_type": e.relationship.type.name.lower(),
+                "confidence": e.relationship.confidence_score,
+                "first_seen": (
+                    e.relationship.first_seen.isoformat() if e.relationship.first_seen else None
+                ),
+                "last_seen": (
+                    e.relationship.last_seen.isoformat() if e.relationship.last_seen else None
+                ),
+                "occurrence_count": e.relationship.occurrence_count,
+            }
+            for e in self.edges.values()
+        ]
 
     @property
     def merge_audit(self) -> list[dict[str, Any]]:
-        if self.merge_engine and hasattr(self.merge_engine, 'audit'):
+        if self.merge_engine and hasattr(self.merge_engine, "audit"):
             return self.merge_engine.audit.get_history()
         return []
 
@@ -223,16 +284,19 @@ class IntelligenceGraph:
             fs = getattr(node.entity, "first_seen", None)
             ls = getattr(node.entity, "last_seen", None)
             if fs and ls and fs <= end and ls >= start:
-                results.append({
-                    "node_id": nid,
-                    "entity_type": type(node.entity).__name__,
-                    "entity_identifier": getattr(node.entity, "ip", None)
+                results.append(
+                    {
+                        "node_id": nid,
+                        "entity_type": type(node.entity).__name__,
+                        "entity_identifier": getattr(node.entity, "ip", None)
                         or getattr(node.entity, "domain_name", None)
-                        or getattr(node.entity, "cve_id", None) or nid,
-                    "first_seen": fs.isoformat(),
-                    "last_seen": ls.isoformat(),
-                    "confidence": getattr(node.entity, "confidence_score", 0),
-                })
+                        or getattr(node.entity, "cve_id", None)
+                        or nid,
+                        "first_seen": fs.isoformat(),
+                        "last_seen": ls.isoformat(),
+                        "confidence": getattr(node.entity, "confidence_score", 0),
+                    }
+                )
         return results
 
     def relationship_timeline(self, entity_id: str) -> list[dict[str, Any]]:
@@ -243,34 +307,48 @@ class IntelligenceGraph:
             if not edge:
                 continue
             other = edge.target_id if edge.source_id == entity_id else edge.source_id
-            timeline.append({
-                "first_seen": edge.relationship.first_seen.isoformat() if edge.relationship.first_seen else "",
-                "last_seen": edge.relationship.last_seen.isoformat() if edge.relationship.last_seen else "",
-                "other_entity": other,
-                "relationship_type": edge.relationship.type.name.lower(),
-                "occurrence_count": edge.relationship.occurrence_count,
-                "confidence": edge.relationship.confidence_score,
-            })
+            timeline.append(
+                {
+                    "first_seen": (
+                        edge.relationship.first_seen.isoformat()
+                        if edge.relationship.first_seen
+                        else ""
+                    ),
+                    "last_seen": (
+                        edge.relationship.last_seen.isoformat()
+                        if edge.relationship.last_seen
+                        else ""
+                    ),
+                    "other_entity": other,
+                    "relationship_type": edge.relationship.type.name.lower(),
+                    "occurrence_count": edge.relationship.occurrence_count,
+                    "confidence": edge.relationship.confidence_score,
+                }
+            )
         timeline.sort(key=lambda r: r["first_seen"] or "")
         return timeline
 
     def trending_entities(self, days: int = 7) -> list[dict[str, Any]]:
         """Entities seen most recently (last N days), sorted by last_seen desc."""
         from datetime import timedelta
-        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+        cutoff = datetime.now(UTC) - timedelta(days=days)
         results: list[dict[str, Any]] = []
         for nid, node in self.nodes.items():
             ls = getattr(node.entity, "last_seen", None)
             if ls and ls >= cutoff:
-                results.append({
-                    "node_id": nid,
-                    "entity_type": type(node.entity).__name__,
-                    "entity_identifier": getattr(node.entity, "ip", None)
+                results.append(
+                    {
+                        "node_id": nid,
+                        "entity_type": type(node.entity).__name__,
+                        "entity_identifier": getattr(node.entity, "ip", None)
                         or getattr(node.entity, "domain_name", None)
-                        or getattr(node.entity, "cve_id", None) or nid,
-                    "last_seen": ls.isoformat(),
-                    "evidence_count": len(getattr(node.entity, "evidence", ())),
-                })
+                        or getattr(node.entity, "cve_id", None)
+                        or nid,
+                        "last_seen": ls.isoformat(),
+                        "evidence_count": len(getattr(node.entity, "evidence", ())),
+                    }
+                )
         results.sort(key=lambda r: r["last_seen"], reverse=True)
         return results
 
@@ -435,14 +513,16 @@ class IntelligenceGraph:
     def _evidence_to_items(self, evidence: tuple[Evidence, ...]) -> list[EvidenceItem]:
         items: list[EvidenceItem] = []
         for ev in evidence:
-            items.append(EvidenceItem(
-                evidence_id=ev.id,
-                source_id=ev.source,
-                document_id=ev.id,
-                claim=ev.content,
-                support_type=self._infer_support_type(ev.content),
-                confidence=float(ev.reliability_score),
-            ))
+            items.append(
+                EvidenceItem(
+                    evidence_id=ev.id,
+                    source_id=ev.source,
+                    document_id=ev.id,
+                    claim=ev.content,
+                    support_type=self._infer_support_type(ev.content),
+                    confidence=float(ev.reliability_score),
+                )
+            )
         return items
 
     def resolve_evidence_contradictions(self, node_id: str) -> dict[str, Any] | None:
@@ -458,10 +538,16 @@ class IntelligenceGraph:
             batch_items: list[tuple[str, str, str, str, float, dict[str, Any]]] = []
             for ev in entity.evidence:
                 st = self._infer_support_type(ev.content)
-                batch_items.append((
-                    ev.source, ev.id, ev.content,
-                    st.name.lower(), float(ev.trust_score), {},
-                ))
+                batch_items.append(
+                    (
+                        ev.source,
+                        ev.id,
+                        ev.content,
+                        st.name.lower(),
+                        float(ev.trust_score),
+                        {},
+                    )
+                )
 
             chain, records = self.chain_manager.add_evidence_batch(node_id, batch_items)
 
@@ -488,7 +574,10 @@ class IntelligenceGraph:
                 logger.warning(
                     "Evidence contradictions for %s: %d record(s) "
                     "(chain_manager), chain_confidence=%.2f, status=%s",
-                    node_id, len(records), chain.confidence, chain.status.name_lower,
+                    node_id,
+                    len(records),
+                    chain.confidence,
+                    chain.status.name_lower,
                 )
 
             return {
@@ -535,7 +624,10 @@ class IntelligenceGraph:
             logger.warning(
                 "Evidence contradictions for %s: %d record(s) "
                 "(in-memory), chain_confidence=%.2f, status=%s",
-                node_id, len(records), chain.confidence, chain.status.name_lower,
+                node_id,
+                len(records),
+                chain.confidence,
+                chain.status.name_lower,
             )
 
         return {
@@ -549,16 +641,21 @@ class IntelligenceGraph:
         # Check for existing edge with same source/target/type (temporal update)
         for eid in self.node_edges.get(relationship.source_id, set()):
             existing = self.edges.get(eid)
-            if existing and existing.source_id == relationship.source_id \
-                    and existing.target_id == relationship.target_id \
-                    and existing.relationship.type == relationship.type:
+            if (
+                existing
+                and existing.source_id == relationship.source_id
+                and existing.target_id == relationship.target_id
+                and existing.relationship.type == relationship.type
+            ):
                 # Update temporal fields on existing edge
                 updated_rel = replace(
                     existing.relationship,
                     last_seen=relationship.last_seen,
                     first_seen=min(existing.relationship.first_seen, relationship.first_seen),
                     occurrence_count=existing.relationship.occurrence_count + 1,
-                    confidence_score=max(existing.relationship.confidence_score, relationship.confidence_score),
+                    confidence_score=max(
+                        existing.relationship.confidence_score, relationship.confidence_score
+                    ),
                 )
                 updated_edge = Edge(relationship=updated_rel)
                 self.edges[eid] = updated_edge

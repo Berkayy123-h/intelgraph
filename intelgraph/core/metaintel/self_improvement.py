@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 import uuid
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -36,13 +36,17 @@ class SelfImprovementController:
         self._performance_history: list[dict[str, Any]] = []
         self._allocations: dict[str, float] = {}
 
-    def propose_optimization(self, target: str, description: str,
-                             expected_gain: float, risk: float) -> OptimizationProposal:
+    def propose_optimization(
+        self, target: str, description: str, expected_gain: float, risk: float
+    ) -> OptimizationProposal:
         proposal = OptimizationProposal(
             proposal_id=f"opt_{uuid.uuid4().hex[:12]}",
-            target=target, description=description,
-            expected_gain=expected_gain, risk=risk,
-            status="pending", created_at=time.time(),
+            target=target,
+            description=description,
+            expected_gain=expected_gain,
+            risk=risk,
+            status="pending",
+            created_at=time.time(),
         )
         self._proposals.append(proposal)
         return proposal
@@ -61,8 +65,9 @@ class SelfImprovementController:
         proposal.status = "rejected"
         return True
 
-    def optimize_resource_allocation(self, current_allocation: dict[str, float],
-                                     performance: dict[str, float]) -> dict[str, float]:
+    def optimize_resource_allocation(
+        self, current_allocation: dict[str, float], performance: dict[str, float]
+    ) -> dict[str, float]:
         total = sum(current_allocation.values()) or 1.0
         normalized = {k: v / total for k, v in current_allocation.items()}
         for key, perf in performance.items():

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -35,8 +35,19 @@ class UnifiedPolicyControlPlane:
         self._decisions: list[UnifiedPolicyDecision] = []
         self._rules: list[dict[str, Any]] = [
             {"id": "r1", "name": "max_risk", "max_risk": 0.8, "action": "deny"},
-            {"id": "r2", "name": "forbidden_actions", "actions": ["shutdown", "destroy", "nuke"], "action": "deny"},
-            {"id": "r3", "name": "admin_only", "required_role": "admin", "actions": ["kill_switch", "arch_change"], "action": "deny"},
+            {
+                "id": "r2",
+                "name": "forbidden_actions",
+                "actions": ["shutdown", "destroy", "nuke"],
+                "action": "deny",
+            },
+            {
+                "id": "r3",
+                "name": "admin_only",
+                "required_role": "admin",
+                "actions": ["kill_switch", "arch_change"],
+                "action": "deny",
+            },
         ]
         self._overrides: list[dict[str, Any]] = []
 
@@ -71,9 +82,12 @@ class UnifiedPolicyControlPlane:
 
         decision = UnifiedPolicyDecision(
             decision_id=f"upd_{uuid.uuid4().hex[:12]}",
-            action_type=action_type, action_risk=risk,
-            allowed=allowed, policy_sources=policy_sources or ["default"],
-            reason=reason or "No rule matched", requires_override=requires_override,
+            action_type=action_type,
+            action_risk=risk,
+            allowed=allowed,
+            policy_sources=policy_sources or ["default"],
+            reason=reason or "No rule matched",
+            requires_override=requires_override,
             timestamp=time.time(),
         )
         self._decisions.append(decision)
@@ -89,7 +103,9 @@ class UnifiedPolicyControlPlane:
             if d.decision_id == decision_id:
                 d.allowed = True
                 d.reason = f"OVERRIDE: {reason}"
-                self._overrides.append({"decision_id": decision_id, "reason": reason, "time": time.time()})
+                self._overrides.append(
+                    {"decision_id": decision_id, "reason": reason, "time": time.time()}
+                )
                 return True
         return False
 

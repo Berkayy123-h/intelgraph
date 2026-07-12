@@ -1,7 +1,5 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
-
-import ulid
 
 from intelgraph.core.evidence_chain.base import (
     EvidenceChain,
@@ -74,7 +72,7 @@ class ChainManager:
         else:
             chain = EvidenceChain(entity_id=entity_id)
             chain.chain_id = _chain_id(entity_id)
-            chain.created_at = datetime.now(timezone.utc)
+            chain.created_at = datetime.now(UTC)
             existing_count = 0
 
         existing_ids = {e.document_id for e in chain.evidence if e.document_id}
@@ -96,7 +94,7 @@ class ChainManager:
         # Incremental detection: only compare new items with existing items
         contradictions = self._contradiction.detect(chain, existing_count=existing_count)
         self._confidence.compute(chain)
-        chain.updated_at = datetime.now(timezone.utc)
+        chain.updated_at = datetime.now(UTC)
 
         self._storage.save_chain(chain)
         self._storage.save_chain_version(chain, "ADD_EVIDENCE_BATCH")
@@ -123,7 +121,7 @@ class ChainManager:
         else:
             chain = EvidenceChain(entity_id=entity_id)
             chain.chain_id = _chain_id(entity_id)
-            chain.created_at = datetime.now(timezone.utc)
+            chain.created_at = datetime.now(UTC)
             existing_count = 0
 
         item = EvidenceItem(
@@ -141,7 +139,7 @@ class ChainManager:
         self._confidence.compute(chain, source_trust_map)
         contradictions = self._contradiction.detect(chain, existing_count=existing_count)
 
-        chain.updated_at = datetime.now(timezone.utc)
+        chain.updated_at = datetime.now(UTC)
 
         self._storage.save_chain(chain)
         self._storage.save_chain_version(chain, "ADD_EVIDENCE")
@@ -161,7 +159,7 @@ class ChainManager:
 
         self._confidence.compute(chain, source_trust_map)
         self._contradiction.detect(chain)
-        chain.updated_at = datetime.now(timezone.utc)
+        chain.updated_at = datetime.now(UTC)
         chain.version += 1
 
         self._storage.save_chain(chain)
@@ -182,7 +180,7 @@ class ChainManager:
         if "contradiction_score" in updates:
             chain.contradiction_score = updates["contradiction_score"]
 
-        chain.updated_at = datetime.now(timezone.utc)
+        chain.updated_at = datetime.now(UTC)
         chain.version += 1
 
         self._storage.save_chain(chain)
@@ -201,7 +199,7 @@ class ChainManager:
         chain.recompute_id()
         self._confidence.compute(chain)
         self._contradiction.detect(chain)
-        chain.updated_at = datetime.now(timezone.utc)
+        chain.updated_at = datetime.now(UTC)
 
         self._storage.save_chain(chain)
         self._storage.save_chain_version(chain, "REMOVE_EVIDENCE")
@@ -212,7 +210,7 @@ class ChainManager:
         if chain is None:
             return None
 
-        conn = getattr(self._storage, "_get_conn")()
+        conn = self._storage._get_conn()
         row = conn.execute(
             "SELECT MAX(version) as max_ver FROM chain_versions WHERE chain_id = ?",
             (chain.chain_id,),
@@ -227,6 +225,7 @@ class ChainManager:
             return None
 
         import json
+
         data = json.loads(row2["data"])
         rolled = EvidenceChain(
             chain_id=data["chain_id"],
@@ -237,19 +236,21 @@ class ChainManager:
             version=max_ver + 1,
             source_count=data["source_count"],
             created_at=datetime.fromisoformat(data["created_at"]),
-            updated_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(UTC),
         )
         for ed in data["evidence"]:
-            rolled.evidence.append(EvidenceItem(
-                evidence_id=ed["evidence_id"],
-                source_id=ed["source_id"],
-                document_id=ed["document_id"],
-                claim=ed["claim"],
-                support_type=SupportType[ed["support_type"].upper()],
-                confidence=ed["confidence"],
-                extracted_at=datetime.fromisoformat(ed["extracted_at"]),
-                metadata=ed.get("metadata", {}),
-            ))
+            rolled.evidence.append(
+                EvidenceItem(
+                    evidence_id=ed["evidence_id"],
+                    source_id=ed["source_id"],
+                    document_id=ed["document_id"],
+                    claim=ed["claim"],
+                    support_type=SupportType[ed["support_type"].upper()],
+                    confidence=ed["confidence"],
+                    extracted_at=datetime.fromisoformat(ed["extracted_at"]),
+                    metadata=ed.get("metadata", {}),
+                )
+            )
 
         self._storage.save_chain(rolled)
         self._storage.save_chain_version(rolled, "ROLLBACK")
@@ -258,7 +259,12 @@ class ChainManager:
     def validate(self, entity_id: str) -> Any:
         chain = self._storage.load_chain_by_entity(entity_id)
         if chain is None:
-            return {"is_valid": False, "errors": ["chain not found"], "warnings": [], "quality_flags": []}
+            return {
+                "is_valid": False,
+                "errors": ["chain not found"],
+                "warnings": [],
+                "quality_flags": [],
+            }
         report = self._validator.validate(chain)
         return {
             "is_valid": report.is_valid,

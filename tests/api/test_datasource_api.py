@@ -5,33 +5,42 @@ class TestDatasourceAPI:
         assert resp.json() == []
 
     def test_register_invalid_type(self, auth_client):
-        resp = auth_client.post("/data-sources/register", json={
-            "source_id": "src1",
-            "source_name": "Bad",
-            "connector_type": "invalid",
-        })
+        resp = auth_client.post(
+            "/data-sources/register",
+            json={
+                "source_id": "src1",
+                "source_name": "Bad",
+                "connector_type": "invalid",
+            },
+        )
         assert resp.status_code == 422
 
     def test_register_http_source(self, auth_client):
-        resp = auth_client.post("/data-sources/register", json={
-            "source_id": "http1",
-            "source_name": "HTTP Feed",
-            "connector_type": "http",
-            "endpoint_url": "https://example.com/feed",
-            "polling_interval": 3600,
-        })
+        resp = auth_client.post(
+            "/data-sources/register",
+            json={
+                "source_id": "http1",
+                "source_name": "HTTP Feed",
+                "connector_type": "http",
+                "endpoint_url": "https://example.com/feed",
+                "polling_interval": 3600,
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["id"] == "http1"
         assert data["connector_type"] == "http"
 
     def test_register_file_source(self, auth_client):
-        resp = auth_client.post("/data-sources/register", json={
-            "source_id": "file1",
-            "source_name": "Local File",
-            "connector_type": "file",
-            "file_path": "/tmp/data.json",
-        })
+        resp = auth_client.post(
+            "/data-sources/register",
+            json={
+                "source_id": "file1",
+                "source_name": "Local File",
+                "connector_type": "file",
+                "file_path": "/tmp/data.json",
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["id"] == "file1"
@@ -80,18 +89,24 @@ class TestDatasourceAPI:
         assert resp.status_code == 404
 
     def test_bulk_poll(self, auth_client):
-        auth_client.post("/data-sources/register", json={
-            "source_id": "bp1",
-            "source_name": "Bulk1",
-            "connector_type": "http",
-            "endpoint_url": "https://example.com/a",
-        })
-        auth_client.post("/data-sources/register", json={
-            "source_id": "bp2",
-            "source_name": "Bulk2",
-            "connector_type": "file",
-            "file_path": "/nonexistent.json",
-        })
+        auth_client.post(
+            "/data-sources/register",
+            json={
+                "source_id": "bp1",
+                "source_name": "Bulk1",
+                "connector_type": "http",
+                "endpoint_url": "https://example.com/a",
+            },
+        )
+        auth_client.post(
+            "/data-sources/register",
+            json={
+                "source_id": "bp2",
+                "source_name": "Bulk2",
+                "connector_type": "file",
+                "file_path": "/nonexistent.json",
+            },
+        )
         resp = auth_client.post("/data-sources/bulk-poll", json=["bp1", "bp2"])
         assert resp.status_code == 200
         results = resp.json()
@@ -104,9 +119,12 @@ class TestDatasourceAPI:
         assert isinstance(data, list)
 
     def test_unauthenticated_write_rejected(self, client):
-        resp = client.post("/data-sources/register", json={
-            "source_id": "unauth",
-            "source_name": "Unauth",
-            "connector_type": "http",
-        })
+        resp = client.post(
+            "/data-sources/register",
+            json={
+                "source_id": "unauth",
+                "source_name": "Unauth",
+                "connector_type": "http",
+            },
+        )
         assert resp.status_code == 401

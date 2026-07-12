@@ -15,7 +15,9 @@ def report_group() -> None:
     pass
 
 
-def _get_services(ctx: click.Context) -> tuple[VerificationManager, ChainManager, SourceRegistryService, IntelligenceGraph]:
+def _get_services(
+    ctx: click.Context,
+) -> tuple[VerificationManager, ChainManager, SourceRegistryService, IntelligenceGraph]:
     config = ctx.obj.get("config", {})
     storage_cfg = config.get("storage", {})
     db_path = storage_cfg.get("path", "intelgraph.db")
@@ -93,7 +95,9 @@ def report_evidence(ctx: click.Context, entity_id: str, format: str, output: str
 @click.option("--format", "-f", type=click.Choice(["json", "markdown", "html"]), default="json")
 @click.option("--output", "-o", type=click.Path(dir_okay=False), default=None)
 @click.pass_context
-def report_verification(ctx: click.Context, entity_id: str, format: str, output: str | None) -> None:
+def report_verification(
+    ctx: click.Context, entity_id: str, format: str, output: str | None
+) -> None:
     vm, cm, sr, g = _get_services(ctx)
     rb = _build_report_builder(vm, cm, sr, g)
     result = rb.verification_report(entity_id, fmt=format)

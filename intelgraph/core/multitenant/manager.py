@@ -5,13 +5,11 @@ import json
 import os
 import secrets
 import sqlite3
-import time
 import uuid
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
-
 
 MULTITENANT_SCHEMA_VERSION = "2.0"
 
@@ -36,12 +34,27 @@ def _generate_api_key() -> str:
 
 _DEFAULT_TENANT_CONFIG: dict[str, Any] = {
     "thresholds": {
-        "c2_detection": {"enabled": True, "metric_key": "overall_confidence", "max": 0.4, "severity": "critical"},
-        "attack_path_found": {"enabled": True, "metric_key": "attack_path_found", "max": 0, "severity": "high"},
+        "c2_detection": {
+            "enabled": True,
+            "metric_key": "overall_confidence",
+            "max": 0.4,
+            "severity": "critical",
+        },
+        "attack_path_found": {
+            "enabled": True,
+            "metric_key": "attack_path_found",
+            "max": 0,
+            "severity": "high",
+        },
     },
     "playbooks": {
         "auto_apply": True,
-        "default_playbooks": ["c2_ip_detected", "high_risk_cve", "ransomware_cve", "malware_domain"],
+        "default_playbooks": [
+            "c2_ip_detected",
+            "high_risk_cve",
+            "ransomware_cve",
+            "malware_domain",
+        ],
     },
     "rate_limits": {
         "read": 500,
@@ -112,7 +125,7 @@ class Tenant:
             return False
         try:
             rotated = datetime.fromisoformat(self.key_rotated_at)
-            return datetime.now(timezone.utc) - rotated < timedelta(hours=_GRACE_PERIOD_HOURS)
+            return datetime.now(UTC) - rotated < timedelta(hours=_GRACE_PERIOD_HOURS)
         except ValueError:
             return False
 
@@ -145,9 +158,15 @@ class TenantManager:
             )
         """)
         # Migrate: add columns if missing
-        for col, default in [("previous_key_hash", ""), ("key_rotated_at", ""), ("rotation_history", "[]")]:
+        for col, default in [
+            ("previous_key_hash", ""),
+            ("key_rotated_at", ""),
+            ("rotation_history", "[]"),
+        ]:
             try:
-                conn.execute(f"ALTER TABLE tenants ADD COLUMN {col} TEXT NOT NULL DEFAULT '{default}'")
+                conn.execute(
+                    f"ALTER TABLE tenants ADD COLUMN {col} TEXT NOT NULL DEFAULT '{default}'"
+                )
             except Exception:
                 pass
         conn.commit()
@@ -194,7 +213,7 @@ class TenantManager:
         tenant_id = "tnt_" + uuid.uuid4().hex[:12]
         api_key = _generate_api_key()
         api_key_hash = _hash_api_key(api_key)
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         cfg = dict(_DEFAULT_TENANT_CONFIG)
         if config:
             cfg.update(config)
@@ -248,7 +267,7 @@ class TenantManager:
         tenant = self._tenants.get(tenant_id)
         if not tenant:
             return None
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         # Move current key to previous_key_hash for grace period
         if tenant.api_key_hash:
             tenant.previous_key_hash = tenant.api_key_hash
@@ -257,10 +276,12 @@ class TenantManager:
         new_key = _generate_api_key()
         tenant.api_key_hash = _hash_api_key(new_key)
         # Record rotation history
-        tenant.rotation_history.append({
-            "rotated_at": now,
-            "rotated_by": rotated_by or "api",
-        })
+        tenant.rotation_history.append(
+            {
+                "rotated_at": now,
+                "rotated_by": rotated_by or "api",
+            }
+        )
         self._save_to_db(tenant)
         return tenant_id, new_key
 
@@ -297,6 +318,7 @@ class TenantManager:
 
 class MultiTenantRouter:
     """Legacy router class for backward compatibility with Phase 28 tests."""
+
     def __init__(self) -> None:
         self._routes: dict[str, str] = {}
 

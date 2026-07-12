@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import time
 import uuid
-from dataclasses import dataclass, field
 from typing import Any
 
 
@@ -17,13 +16,25 @@ class UnifiedSafetyLayer:
 
     def check_safety(self, action: dict[str, Any]) -> dict[str, Any]:
         if self._kill_switch:
-            return {"safe": False, "reason": "Global kill-switch engaged", "action": action.get("type", "")}
+            return {
+                "safe": False,
+                "reason": "Global kill-switch engaged",
+                "action": action.get("type", ""),
+            }
         action_type = action.get("type", "")
         risk = action.get("risk", 0.0)
         if self._quarantine_mode and risk > 0.3:
-            return {"safe": False, "reason": "Quarantine mode: high-risk blocked", "action": action_type}
+            return {
+                "safe": False,
+                "reason": "Quarantine mode: high-risk blocked",
+                "action": action_type,
+            }
         if self._safe_degradation and risk > 0.6:
-            return {"safe": False, "reason": "Safe degradation: risk threshold lowered", "action": action_type}
+            return {
+                "safe": False,
+                "reason": "Safe degradation: risk threshold lowered",
+                "action": action_type,
+            }
         if risk > 0.9:
             return {"safe": False, "reason": "Risk exceeds maximum 0.9", "action": action_type}
         return {"safe": True, "reason": "Safety check passed", "action": action_type}
@@ -62,11 +73,14 @@ class UnifiedSafetyLayer:
         return False
 
     def _log_incident(self, incident_type: str, severity: str) -> None:
-        self._incidents.append({
-            "incident_id": f"si_{uuid.uuid4().hex[:12]}",
-            "type": incident_type, "severity": severity,
-            "timestamp": time.time(),
-        })
+        self._incidents.append(
+            {
+                "incident_id": f"si_{uuid.uuid4().hex[:12]}",
+                "type": incident_type,
+                "severity": severity,
+                "timestamp": time.time(),
+            }
+        )
 
     def get_incidents(self, limit: int = 100) -> list[dict[str, Any]]:
         return self._incidents[-limit:]

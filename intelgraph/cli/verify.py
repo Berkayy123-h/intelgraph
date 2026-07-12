@@ -142,19 +142,34 @@ def verify_safety(ctx: click.Context, entity_id: str) -> None:
         contradiction=record.contradiction,
         verification_state=record.verification_state.name_lower,
     )
-    click.echo(json.dumps({
-        "entity_id": entity_id,
-        "is_safe": safety.is_safe,
-        "severity": safety.severity,
-        "flags": safety.flags,
-        "warnings": safety.warnings,
-    }, indent=2))
+    click.echo(
+        json.dumps(
+            {
+                "entity_id": entity_id,
+                "is_safe": safety.is_safe,
+                "severity": safety.severity,
+                "flags": safety.flags,
+                "warnings": safety.warnings,
+            },
+            indent=2,
+        )
+    )
 
 
 @verify_group.command(name="set", help="Manually set verification or operational state")
 @click.argument("entity_id")
-@click.option("--state", "-s", default=None, help="Verification state: confirmed, probable, possible, speculative")
-@click.option("--operational", "-o", default=None, help="Operational state: active, contested, debunked, archived")
+@click.option(
+    "--state",
+    "-s",
+    default=None,
+    help="Verification state: confirmed, probable, possible, speculative",
+)
+@click.option(
+    "--operational",
+    "-o",
+    default=None,
+    help="Operational state: active, contested, debunked, archived",
+)
 @click.option("--reason", "-r", default="", help="Reason for the change")
 @click.pass_context
 def verify_set(
@@ -174,7 +189,14 @@ def verify_set(
             reasoning=reason,
         )
     except KeyError as e:
-        click.echo(json.dumps({"error": f"Invalid state: {e}. Valid verification: confirmed, probable, possible, speculative. Valid operational: active, contested, debunked, archived"}, indent=2))
+        click.echo(
+            json.dumps(
+                {
+                    "error": f"Invalid state: {e}. Valid verification: confirmed, probable, possible, speculative. Valid operational: active, contested, debunked, archived"
+                },
+                indent=2,
+            )
+        )
         return
 
     if record is None:

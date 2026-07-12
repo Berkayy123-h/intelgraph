@@ -4,7 +4,6 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from intelgraph.api.models import TaskEnqueueResponse
 from intelgraph.core.storage.audit import AuditEntry
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
@@ -12,11 +11,13 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 def _get_task_manager() -> Any:
     from intelgraph.api.main import _container
+
     return _container.task_manager
 
 
 def _get_audit() -> Any:
     from intelgraph.api.main import _container
+
     return _container.audit
 
 

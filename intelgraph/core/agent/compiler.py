@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-import time
 import uuid
 from dataclasses import dataclass, field
 from typing import Any
-
-from intelgraph.core.agent.hierarchy import ExecutionPlan, TaskNode
 
 
 @dataclass
@@ -45,7 +42,9 @@ class ReasoningCompiler:
         self._min_confidence = self._cfg.get("min_execution_confidence", 0.3)
         self._compiled: list[CompiledAction] = []
 
-    def compile_hypothesis(self, hypothesis: dict[str, Any], trace_id: str = "") -> list[CompiledAction]:
+    def compile_hypothesis(
+        self, hypothesis: dict[str, Any], trace_id: str = ""
+    ) -> list[CompiledAction]:
         actions: list[CompiledAction] = []
         desc = hypothesis.get("description", "")
         conf = hypothesis.get("confidence", 0.5)
@@ -62,13 +61,17 @@ class ReasoningCompiler:
             "initial_access": ("rest", "check_exposure", {"type": "vulnerability_scan"}),
             "impact": ("database", "assess_damage", {"scope": "affected_systems"}),
         }
-        tool_type, tool_action, params = tool_action_map.get(scenario, ("internal", "analyze", {"hypothesis": desc}))
+        tool_type, tool_action, params = tool_action_map.get(
+            scenario, ("internal", "analyze", {"hypothesis": desc})
+        )
         action = CompiledAction(
             action_id=f"act_{uuid.uuid4().hex[:12]}",
             description=f"Investigate {scenario}: {desc}",
             source_hypothesis=hypothesis.get("hypothesis_id", ""),
             source_trace_id=trace_id,
-            tool_type=tool_type, tool_action=tool_action, params=params,
+            tool_type=tool_type,
+            tool_action=tool_action,
+            params=params,
             risk_score=0.5 if tool_type != "soc" else 0.7,
             confidence=conf,
             estimated_cost=0.5,
@@ -87,7 +90,8 @@ class ReasoningCompiler:
             description=f"Execute reasoning path with {len(steps)} steps",
             source_hypothesis="",
             source_trace_id=reasoning_path.get("path_id", ""),
-            tool_type="internal", tool_action="trace_execution",
+            tool_type="internal",
+            tool_action="trace_execution",
             params={"steps": steps, "path_id": reasoning_path.get("path_id", "")},
             risk_score=0.4,
             confidence=conf,
@@ -96,7 +100,9 @@ class ReasoningCompiler:
         self._compiled.append(action)
         return action
 
-    def select_action(self, actions: list[CompiledAction], strategy: str = "best") -> CompiledAction | None:
+    def select_action(
+        self, actions: list[CompiledAction], strategy: str = "best"
+    ) -> CompiledAction | None:
         if not actions:
             return None
         if strategy == "best":
@@ -115,7 +121,9 @@ class ReasoningCompiler:
             source_trace_id=action.source_trace_id,
             tool_type=action.tool_type,
             tool_action=f"undo_{action.tool_action}",
-            params={k: f"original_{v}" if isinstance(v, str) else v for k, v in action.params.items()},
+            params={
+                k: f"original_{v}" if isinstance(v, str) else v for k, v in action.params.items()
+            },
             risk_score=max(0.1, action.risk_score - 0.2),
             confidence=action.confidence * 0.8,
             estimated_cost=action.estimated_cost * 0.5,

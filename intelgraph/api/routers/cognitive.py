@@ -3,19 +3,18 @@ from __future__ import annotations
 import time
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 
 from intelgraph.api.auth_middleware import require_permission
 from intelgraph.core.cognitive import (
-    ContradictionDetector,
     ContinuousOptimizer,
+    ContradictionDetector,
     HypothesisGenerator,
     ReasoningEngine,
     SelfLearningLoop,
     TraceSystem,
 )
 from intelgraph.core.enterprise import get_metrics as _get_metrics
-from intelgraph.core.nlp.sanitizer import InputSanitizer
 
 router = APIRouter(prefix="/reasoning", tags=["cognitive"])
 
@@ -64,9 +63,13 @@ async def reasoning_query(
     elapsed = (time.perf_counter() - start_t) * 1000
     path_dicts = [p.to_dict() for p in paths]
     alt_dicts = [p.to_dict() for p in paths[:3]]
-    t = trace.record(f"{start} -> {end}", path_dicts, [alt_dicts] if alt_dicts else [], 
-                     [p["evidence_chain"][0] if p["evidence_chain"] else "" for p in path_dicts],
-                     paths[0].score if paths else 0.0)
+    t = trace.record(
+        f"{start} -> {end}",
+        path_dicts,
+        [alt_dicts] if alt_dicts else [],
+        [p["evidence_chain"][0] if p["evidence_chain"] else "" for p in path_dicts],
+        paths[0].score if paths else 0.0,
+    )
     _get_metrics().set_gauge("reasoning_latency_ms", elapsed)
     _get_metrics().set_gauge("inference_depth", len(paths))
     return {"paths": path_dicts, "count": len(paths), "trace_id": t.trace_id}
@@ -156,5 +159,7 @@ async def detect_contradictions(
 ):
     facts = body.get("facts", [])
     contradictions = detector.detect(facts)
-    _get_metrics().set_gauge("contradiction_detection_rate", len(contradictions) / max(len(facts), 1))
+    _get_metrics().set_gauge(
+        "contradiction_detection_rate", len(contradictions) / max(len(facts), 1)
+    )
     return {"contradictions": [c.to_dict() for c in contradictions], "count": len(contradictions)}

@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import math
 import time
-from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -69,14 +67,20 @@ class EconomicGovernor:
         )
         if decision == "approve":
             self._budget_used += cost
-        self._cost_log.append({"query_id": query_id, "decision": decision, "cost": cost, "value": value, "roi": roi})
+        self._cost_log.append(
+            {"query_id": query_id, "decision": decision, "cost": cost, "value": value, "roi": roi}
+        )
         return result
 
     def should_analyze(self, text_length: int, complexity: str = "medium") -> bool:
         cost = text_length * 0.0001
         if complexity == "high":
             cost *= 2.0
-        value = text_length * 0.001 if "critical" in text_length or "cve" in str(text_length).lower() else text_length * 0.0005
+        value = (
+            text_length * 0.001
+            if "critical" in text_length or "cve" in str(text_length).lower()
+            else text_length * 0.0005
+        )
         roi = self.compute_roi(f"analysis_{time.time()}", value, cost)
         return roi.decision == "approve"
 
@@ -85,7 +89,9 @@ class EconomicGovernor:
             "budget_limit": self._budget_limit,
             "budget_used": round(self._budget_used, 4),
             "budget_remaining": round(self._budget_limit - self._budget_used, 4),
-            "utilization_pct": round(self._budget_used / self._budget_limit * 100 if self._budget_limit else 0, 2),
+            "utilization_pct": round(
+                self._budget_used / self._budget_limit * 100 if self._budget_limit else 0, 2
+            ),
         }
 
     def predict_budget_exhaustion(self, avg_cost_per_query: float) -> float:
@@ -100,7 +106,9 @@ class CostAwareInferenceRouter:
         self._governor = governor
         self._registry = registry
 
-    def select_model(self, task: str, text_length: int, accuracy_requirement: float = 0.7) -> dict[str, Any]:
+    def select_model(
+        self, task: str, text_length: int, accuracy_requirement: float = 0.7
+    ) -> dict[str, Any]:
         models = self._registry.list() if hasattr(self._registry, "list") else []
         candidates: list[tuple[float, Any]] = []
         for m in models:

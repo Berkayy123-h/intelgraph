@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -40,11 +39,19 @@ class HypothesisGenerator:
         self._cfg = config or {}
         self._max_hypotheses = self._cfg.get("max_hypotheses", 50)
         self._hypotheses: list[Hypothesis] = []
-        self._scenario_templates = self._cfg.get("scenario_templates", [
-            "command_and_control", "data_exfiltration", "lateral_movement",
-            "privilege_escalation", "persistence", "defense_evasion",
-            "initial_access", "impact",
-        ])
+        self._scenario_templates = self._cfg.get(
+            "scenario_templates",
+            [
+                "command_and_control",
+                "data_exfiltration",
+                "lateral_movement",
+                "privilege_escalation",
+                "persistence",
+                "defense_evasion",
+                "initial_access",
+                "impact",
+            ],
+        )
 
     def generate(self, graph: Any | None = None) -> list[Hypothesis]:
         hypotheses: list[Hypothesis] = []
@@ -61,7 +68,14 @@ class HypothesisGenerator:
             if i >= len(node_ids) - 1:
                 break
             src, tgt = node_ids[i], node_ids[i + 1]
-            evidence = [{"source": src, "target": tgt, "relation": "suspected_connection", "confidence": 0.5}]
+            evidence = [
+                {
+                    "source": src,
+                    "target": tgt,
+                    "relation": "suspected_connection",
+                    "confidence": 0.5,
+                }
+            ]
             hypothesis = Hypothesis(
                 hypothesis_id=f"hy_{uuid.uuid4().hex[:12]}",
                 description=f"Potential {template} scenario: {src} may be connected to {tgt}",
@@ -76,7 +90,7 @@ class HypothesisGenerator:
             hypotheses.append(hypothesis)
         hypotheses.sort(key=lambda h: -h.score)
         self._hypotheses.extend(hypotheses)
-        return hypotheses[:self._max_hypotheses]
+        return hypotheses[: self._max_hypotheses]
 
     def _detect_missing_links(self, nodes: dict, edges: dict, graph: Any) -> list[dict[str, Any]]:
         missing = []
@@ -88,23 +102,33 @@ class HypothesisGenerator:
                 if a == b:
                     continue
                 if b not in adjacency.get(a, set()) and a not in adjacency.get(b, set()):
-                    missing.append({
-                        "source": a,
-                        "target": b,
-                        "reason": "No direct edge between entities with shared context",
-                        "confidence": 0.3,
-                    })
+                    missing.append(
+                        {
+                            "source": a,
+                            "target": b,
+                            "reason": "No direct edge between entities with shared context",
+                            "confidence": 0.3,
+                        }
+                    )
         return missing
 
     def _generate_alternatives(self, src: str, tgt: str, template: str) -> list[dict[str, Any]]:
         return [
-            {"interpretation": f"{src} is indirectly related to {tgt} through intermediate entities", "confidence": 0.4},
-            {"interpretation": f"The relationship between {src} and {tgt} is coincidental", "confidence": 0.3},
+            {
+                "interpretation": f"{src} is indirectly related to {tgt} through intermediate entities",
+                "confidence": 0.4,
+            },
+            {
+                "interpretation": f"The relationship between {src} and {tgt} is coincidental",
+                "confidence": 0.3,
+            },
             {"interpretation": f"{src} and {tgt} share a common unknown actor", "confidence": 0.5},
         ]
 
     def get_active(self, limit: int = 20) -> list[Hypothesis]:
-        active = sorted([h for h in self._hypotheses if h.status == "active"], key=lambda h: -h.score)
+        active = sorted(
+            [h for h in self._hypotheses if h.status == "active"], key=lambda h: -h.score
+        )
         return active[:limit]
 
     def get(self, hypothesis_id: str) -> Hypothesis | None:

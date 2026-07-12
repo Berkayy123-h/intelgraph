@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 
@@ -21,6 +19,7 @@ _CONTENT_TYPES = {
 
 def _build_graph() -> IntelligenceGraph:
     from intelgraph.api.main import _container
+
     g = IntelligenceGraph()
     for entity in _container.backend.list_entities():
         eid = entity.id
@@ -41,6 +40,7 @@ def _build_graph() -> IntelligenceGraph:
             g.node_edges.setdefault(tgt, set()).add(rel.id)
             g.edge_node_map[rel.id] = (src, tgt)
             from intelgraph.core.graph.edge import Edge
+
             g.edges[rel.id] = Edge(relationship=rel)
     return g
 
@@ -53,11 +53,15 @@ def _build_graph() -> IntelligenceGraph:
 def export_graph(
     request: Request,
     format: str = Query("graphml", description="Export format: graphml, gexf, json, csv"),
-    since: str | None = Query(None, description="Include only data since (ISO datetime or relative like 7d, 30d)"),
+    since: str | None = Query(
+        None, description="Include only data since (ISO datetime or relative like 7d, 30d)"
+    ),
     until: str | None = Query(None, description="Include only data until (ISO datetime)"),
     min_confidence: int = Query(0, ge=0, le=100, description="Minimum confidence score"),
     min_threat_score: float = Query(0.0, ge=0.0, le=100.0, description="Minimum threat score"),
-    entity_types: list[str] = Query(default=[], description="Include only specific entity types (e.g. ip_address, domain, cve)"),
+    entity_types: list[str] = Query(
+        default=[], description="Include only specific entity types (e.g. ip_address, domain, cve)"
+    ),
 ):
     if format not in GraphExporter.SUPPORTED_FORMATS:
         alts = ", ".join(sorted(GraphExporter.SUPPORTED_FORMATS))
@@ -69,9 +73,13 @@ def export_graph(
     graph = _build_graph()
     if graph.node_count == 0:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(
             status_code=200,
-            content={"status": "empty", "message": "Graph is empty. Run a pipeline first to generate data."},
+            content={
+                "status": "empty",
+                "message": "Graph is empty. Run a pipeline first to generate data.",
+            },
         )
 
     settings = ExportSettings(

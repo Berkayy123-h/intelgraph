@@ -103,7 +103,9 @@ class OAuthClientRegister(BaseModel):
 
 
 class OAuthTokenRequest(BaseModel):
-    grant_type: str = Field(default="client_credentials", pattern=r"^(client_credentials|refresh_token)$")
+    grant_type: str = Field(
+        default="client_credentials", pattern=r"^(client_credentials|refresh_token)$"
+    )
     client_id: str = ""
     client_secret: str = ""
     refresh_token: str = ""

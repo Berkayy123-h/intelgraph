@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Uçtan Uca Zincir Doğrulaması — Faz 1
 
@@ -19,15 +18,21 @@ Zincir: DataSourceManager → NEREngine → ContradictionDetector
         → SingleSourceOfTruth/UnifiedTruthEngine → ReasoningEngine
         → UnifiedAlertingCore
 """
+
 from __future__ import annotations
 
-import json, os, tempfile, time, hashlib
-from pathlib import Path
+import hashlib
+import json
+import os
+import tempfile
 
 OUT = []
+
+
 def log(msg: str) -> None:
     OUT.append(msg)
     print(msg)
+
 
 log("=" * 72)
 log("UÇTAN UCA ZİNCİR DOĞRULAMASI — FAZ 1")
@@ -60,13 +65,14 @@ with open(src_b_path, "w") as f:
         "Kaynak: MISP threat intel."
     )
 
-log(f"  Dosyalar oluşturuldu:")
+log("  Dosyalar oluşturuldu:")
 log(f"    A: {src_a_path}")
 log(f"    B: {src_b_path}")
 
 # DataSourceManager — SQLite DB gerektiriyor
 db_path = os.path.join(tmpdir, "sources.db")
 from intelgraph.core.source.manager import DataSourceManager
+
 dsm = DataSourceManager(db_path)
 
 # Kaynak A'yı file connector olarak register et
@@ -100,8 +106,11 @@ log(f"  Sonuç: {json.dumps(poll_b, indent=2, default=str)}")
 raw_a_text = ""
 raw_b_text = ""
 if poll_a.get("status") == "success":
-    from intelgraph.core.source.connector import FileConnector, ConnectorConfig
-    cfg_a = ConnectorConfig(id="log_pazartesi", name="A", connector_type="file", file_path=src_a_path)
+    from intelgraph.core.source.connector import ConnectorConfig, FileConnector
+
+    cfg_a = ConnectorConfig(
+        id="log_pazartesi", name="A", connector_type="file", file_path=src_a_path
+    )
     fc_a = FileConnector(cfg_a)
     fc_a.connect()
     result_a = fc_a.poll()
@@ -121,10 +130,10 @@ log(f"  Ham metin B: {raw_b_text[:120]}...")
 
 dsm.close()
 
-log(f"\n  ✅ DataSourceManager: GERÇEK + ÇALIŞIYOR")
-log(f"     FileConnector dosyayı okuyor, ham metin döndürüyor.")
-log(f"     ⚠️  Ama entity çıkarmıyor — sadece raw text getiriyor.")
-log(f"     ⚠️  NEREngine'a manuel beslemek gerekiyor.")
+log("\n  ✅ DataSourceManager: GERÇEK + ÇALIŞIYOR")
+log("     FileConnector dosyayı okuyor, ham metin döndürüyor.")
+log("     ⚠️  Ama entity çıkarmıyor — sadece raw text getiriyor.")
+log("     ⚠️  NEREngine'a manuel beslemek gerekiyor.")
 
 # ══════════════════════════════════════════════════════════════════
 # ADIM 2 — NEREngine
@@ -141,39 +150,40 @@ classifier = TextClassifier()
 entities_a = ner.extract(raw_a_text)
 entities_b = ner.extract(raw_b_text)
 
-log(f"\n  Kaynak A'dan çıkarılan entity'ler:")
+log("\n  Kaynak A'dan çıkarılan entity'ler:")
 for e in entities_a:
     log(f"    {e.label:15s} '{e.text}' (conf={e.confidence})")
 
-log(f"\n  Kaynak B'den çıkarılan entity'ler:")
+log("\n  Kaynak B'den çıkarılan entity'ler:")
 for e in entities_b:
     log(f"    {e.label:15s} '{e.text}' (conf={e.confidence})")
 
 # TextClassifier ile bağlam (tehdit türü) çıkarımı
 class_a = classifier.classify(raw_a_text)
 class_b = classifier.classify(raw_b_text)
-log(f"\n  TextClassifier sonuçları:")
+log("\n  TextClassifier sonuçları:")
 log(f"    A: type={class_a.top_type}, severity={class_a.severity}, conf={class_a.confidence}")
 log(f"    B: type={class_b.top_type}, severity={class_b.severity}, conf={class_b.confidence}")
 
-log(f"\n  ⚠️  KRİTİK BULGU: NEREngine IP'yi buluyor (192.168.1.5)")
-log(f"     AMA bağlam ('C2 sunucusu', 'APT29', 'şüpheli giriş') çıkarmıyor.")
-log(f"     TextClassifier threat_type/severity belirliyor ama güven skorunu")
-log(f"     metinden okuyamıyor — sadece keyword eşleşmesi yapıyor.")
-log(f"     Güven skorları (30/100, 90/100) elle NER çıktısına eklenmeli.")
+log("\n  ⚠️  KRİTİK BULGU: NEREngine IP'yi buluyor (192.168.1.5)")
+log("     AMA bağlam ('C2 sunucusu', 'APT29', 'şüpheli giriş') çıkarmıyor.")
+log("     TextClassifier threat_type/severity belirliyor ama güven skorunu")
+log("     metinden okuyamıyor — sadece keyword eşleşmesi yapıyor.")
+log("     Güven skorları (30/100, 90/100) elle NER çıktısına eklenmeli.")
 
-log(f"\n  ✅ NEREngine: GERÇEK + ÇALIŞIYOR (sadece pattern matching)")
-log(f"  ✅ TextClassifier: GERÇEK + keyword-based threat type tespiti")
-log(f"  ❌ Bağlam/güven çıkarımı: YOK — elle eklemek gerekiyor")
+log("\n  ✅ NEREngine: GERÇEK + ÇALIŞIYOR (sadece pattern matching)")
+log("  ✅ TextClassifier: GERÇEK + keyword-based threat type tespiti")
+log("  ❌ Bağlam/güven çıkarımı: YOK — elle eklemek gerekiyor")
 
 # ADIM 2.5 — NER çıktısını entity'lere çevir (köprü kodu)
 log("\n" + "-" * 72)
 log("ADIM 2.5 — KÖPRÜ: NER çıktısını BaseEntity + Contradiction formatına çevir")
 log("-" * 72)
 
+from datetime import UTC, datetime
+
 from intelgraph.core.entity.ip_address import IPAddress
 from intelgraph.core.evidence import Evidence
-from datetime import datetime, timezone
 
 # NEREngine IP buldu mu?
 ip_found = None
@@ -184,7 +194,9 @@ for e in entities_a + entities_b:
 
 if not ip_found:
     log("  ❌ IP bulunamadı! Test başarısız.")
-    import sys; sys.exit(1)
+    import sys
+
+    sys.exit(1)
 
 log(f"  Tespit edilen IP: {ip_found}")
 
@@ -193,7 +205,7 @@ ev_a = Evidence(
     id=f"ev_a_{hashlib.md5(raw_a_text.encode()).hexdigest()[:8]}",
     source="internal_logs",
     content=raw_a_text,
-    collected_at=datetime(2024, 6, 1, tzinfo=timezone.utc),
+    collected_at=datetime(2024, 6, 1, tzinfo=UTC),
     source_tier=2,
     trust_score=30,
     reliability_score=30,
@@ -210,7 +222,7 @@ ev_b = Evidence(
     id=f"ev_b_{hashlib.md5(raw_b_text.encode()).hexdigest()[:8]}",
     source="MISP",
     content=raw_b_text,
-    collected_at=datetime(2024, 6, 2, tzinfo=timezone.utc),
+    collected_at=datetime(2024, 6, 2, tzinfo=UTC),
     source_tier=1,
     trust_score=90,
     reliability_score=90,
@@ -222,10 +234,14 @@ entity_b = IPAddress(
     evidence=(ev_b,),
 )
 
-log(f"  Entity A oluşturuldu: IP={entity_a.ip}, trust={ev_a.trust_score}, "
-    f"evidence='{ev_a.content[:50]}...'")
-log(f"  Entity B oluşturuldu: IP={entity_b.ip}, trust={ev_b.trust_score}, "
-    f"evidence='{ev_b.content[:50]}...'")
+log(
+    f"  Entity A oluşturuldu: IP={entity_a.ip}, trust={ev_a.trust_score}, "
+    f"evidence='{ev_a.content[:50]}...'"
+)
+log(
+    f"  Entity B oluşturuldu: IP={entity_b.ip}, trust={ev_b.trust_score}, "
+    f"evidence='{ev_b.content[:50]}...'"
+)
 
 # ══════════════════════════════════════════════════════════════════
 # ADIM 3 — ContradictionDetector + SSOT / UnifiedTruthEngine
@@ -259,7 +275,7 @@ facts = [
 
 detector = ContradictionDetector()
 contradictions = detector.detect(facts)
-log(f"\n  ContradictionDetector sonucu:")
+log("\n  ContradictionDetector sonucu:")
 if contradictions:
     for c in contradictions:
         log(f"    ID:     {c.contradiction_id}")
@@ -273,9 +289,9 @@ if contradictions:
 else:
     log("    ❌ Çelişki tespit EDİLMEDİ!")
 
-log(f"\n  ✅ ContradictionDetector: GERÇEK + ÇALIŞIYOR")
-log(f"     ⚠️  Ama dict formatı bekliyor — entity objesi değil.")
-log(f"     ⚠️  Çelişkiyi tespit ediyor ama çözmüyor (resolution=unresolved).")
+log("\n  ✅ ContradictionDetector: GERÇEK + ÇALIŞIYOR")
+log("     ⚠️  Ama dict formatı bekliyor — entity objesi değil.")
+log("     ⚠️  Çelişkiyi tespit ediyor ama çözmüyor (resolution=unresolved).")
 
 # 3b: UnifiedTruthEngine — conflict resolution (confidence-weighted)
 log("\n  --- UnifiedTruthEngine ile conflict resolution ---")
@@ -284,29 +300,36 @@ from intelgraph.core.ucos.truth import UnifiedTruthEngine
 ute = UnifiedTruthEngine()
 
 # Önce düşük güvenli kaynağı yaz
-r1 = ute.write(key=ip_found, value={"classification": "suspicious_login", "confidence": 30},
-               source="internal_logs", confidence=0.3)
+r1 = ute.write(
+    key=ip_found,
+    value={"classification": "suspicious_login", "confidence": 30},
+    source="internal_logs",
+    confidence=0.3,
+)
 log(f"  Düşük güven yaz: {json.dumps(r1)}")
 
 # Sonra yüksek güvenli kaynağı yaz
-r2 = ute.write(key=ip_found, value={"classification": "c2_server", "confidence": 90,
-                                     "actor": "APT29"},
-               source="MISP", confidence=0.9)
+r2 = ute.write(
+    key=ip_found,
+    value={"classification": "c2_server", "confidence": 90, "actor": "APT29"},
+    source="MISP",
+    confidence=0.9,
+)
 log(f"  Yüksek güven yaz: {json.dumps(r2)}")
 
 # Son durum
 truth_state = ute.read(ip_found)
-log(f"  Truth son durum:")
+log("  Truth son durum:")
 log(f"    {json.dumps(truth_state, indent=4, default=str)}")
 
 # Contradiction kaydı
 contra_log = ute.get_contradictions()
 log(f"  Contradiction log: {json.dumps(contra_log, indent=2, default=str)}")
 
-log(f"\n  ✅ UnifiedTruthEngine: GERÇEK + ÇALIŞIYOR")
-log(f"     Confidence-weighted: yüksek güven (0.9) düşük güveni (0.3)")
-log(f"     eziyor. APT29 C2 bilgisi korunuyor. Contradiction log'da.")
-log(f"     ⚠️  Ama TruthEngine'in graph/cognitive ile bağlantısı YOK.")
+log("\n  ✅ UnifiedTruthEngine: GERÇEK + ÇALIŞIYOR")
+log("     Confidence-weighted: yüksek güven (0.9) düşük güveni (0.3)")
+log("     eziyor. APT29 C2 bilgisi korunuyor. Contradiction log'da.")
+log("     ⚠️  Ama TruthEngine'in graph/cognitive ile bağlantısı YOK.")
 
 # 3c: SingleSourceOfTruth
 log("\n  --- SingleSourceOfTruth ile conflict resolution ---")
@@ -319,11 +342,13 @@ s2 = ssot.set(key=ip_found, value="c2_server_apt29", source="MISP", confidence=0
 log(f"  Yüksek güven set: {json.dumps(s2)}")
 
 entry = ssot.get(ip_found)
-log(f"  SSOT son durum: key={entry.key}, value={entry.value}, "
-    f"source={entry.source}, conf={entry.confidence}")
+log(
+    f"  SSOT son durum: key={entry.key}, value={entry.value}, "
+    f"source={entry.source}, conf={entry.confidence}"
+)
 
-log(f"\n  ✅ SingleSourceOfTruth: GERÇEK + ÇALIŞIYOR")
-log(f"     Aynı confidence-weighted mantık. APT29 bilgisi kazanıyor.")
+log("\n  ✅ SingleSourceOfTruth: GERÇEK + ÇALIŞIYOR")
+log("     Aynı confidence-weighted mantık. APT29 bilgisi kazanıyor.")
 
 # ══════════════════════════════════════════════════════════════════
 # ADIM 4 — ReasoningEngine (multi-hop DFS on real graph)
@@ -333,9 +358,7 @@ log("ADIM 4 — ReasoningEngine: IntelligenceGraph üzerinde multi-hop DFS")
 log("=" * 72)
 
 from intelgraph.core.graph.graph import IntelligenceGraph
-from intelgraph.core.graph.node import Node
 from intelgraph.core.relationship import Relationship
-from intelgraph.core.graph.edge import Edge
 
 graph = IntelligenceGraph()
 
@@ -347,6 +370,7 @@ log(f"    add_entity sonucu: node_id={result.id if hasattr(result, 'id') else re
 
 # İlişki ekle: bu IP -> APT29 altyapısı
 from intelgraph.core.entity.domain import Domain
+
 c2_domain = Domain(
     id="c2_domain_apt29_c2_example",
     domain_name="c2.apt29.example.com",
@@ -386,7 +410,7 @@ from intelgraph.core.cognitive.reasoning import ReasoningEngine
 
 reasoner = ReasoningEngine(graph=graph)
 
-log(f"\n  Graph durumu:")
+log("\n  Graph durumu:")
 log(f"    Node sayısı: {len(graph.nodes)}")
 for nid, node in graph.nodes.items():
     log(f"      {nid}: {node.entity.__class__.__name__}")
@@ -403,19 +427,21 @@ if paths:
     for p in paths:
         log(f"    Path ID: {p.path_id}")
         log(f"    Derinlik: {p.depth}")
-        log(f"    Adımlar:")
+        log("    Adımlar:")
         for step in p.steps:
-            log(f"      {step.source_node} "
+            log(
+                f"      {step.source_node} "
                 f"--[{step.relation}]--> "
                 f"{step.target_node} "
-                f"(conf={step.confidence}, type={step.step_type})")
+                f"(conf={step.confidence}, type={step.step_type})"
+            )
         log(f"    Total confidence: {p.total_confidence}")
 else:
-    log(f"  ❌ Path bulunamadı! Multi-hop DFS çalışmadı.")
+    log("  ❌ Path bulunamadı! Multi-hop DFS çalışmadı.")
 
-log(f"\n  ✅ ReasoningEngine: GERÇEK + ÇALIŞIYOR (gerçek graph üzerinde)")
-log(f"     multi_hop_reason IntelligenceGraph.adjacency üzerinde DFS çalıştırır.")
-log(f"     ⚠️  Ama graph'ı baştan build etmek gerekiyor — backend bağlantısı yok.")
+log("\n  ✅ ReasoningEngine: GERÇEK + ÇALIŞIYOR (gerçek graph üzerinde)")
+log("     multi_hop_reason IntelligenceGraph.adjacency üzerinde DFS çalıştırır.")
+log("     ⚠️  Ama graph'ı baştan build etmek gerekiyor — backend bağlantısı yok.")
 
 # ══════════════════════════════════════════════════════════════════
 # ADIM 5 — UnifiedAlertingCore
@@ -430,12 +456,12 @@ alerter = UnifiedAlertingCore({"cooldown_seconds": 0})  # no cooldown for test
 
 # Zincirdeki tüm bilgiyi tek bir metrics dict'te topla (manuel köprü)
 metrics = {
-    "c2_confidence": 0.9,        # TruthEngine'den (yüksek güven kazandı)
+    "c2_confidence": 0.9,  # TruthEngine'den (yüksek güven kazandı)
     "contradiction_resolved": 1.0,  # Çelişki çözüldü
     "attack_path_depth": len(paths) if paths else 0,  # Reasoning'den
     "entity_count": len(graph.nodes),
-    "source_count": 2,             # İki kaynak
-    "threat_score": 90,            # Yüksek güvenli kaynağın skoru
+    "source_count": 2,  # İki kaynak
+    "threat_score": 90,  # Yüksek güvenli kaynağın skoru
 }
 
 thresholds = {
@@ -456,7 +482,7 @@ thresholds = {
 alerts = alerter.evaluate(metrics, thresholds)
 log(f"  Metrics: {json.dumps(metrics, indent=2)}")
 log(f"  Thresholds: {json.dumps(thresholds, indent=2)}")
-log(f"\n  Üretilen alert'ler:")
+log("\n  Üretilen alert'ler:")
 if alerts:
     for a in alerts:
         log(f"    ID:       {a['alert_id']}")
@@ -470,7 +496,7 @@ else:
 log("\n  ✅ UnifiedAlertingCore: GERÇEK + ÇALIŞIYOR")
 log("     ⚠️  Ama metrics dict'i elle oluşturmak gerekiyor.")
 if alerts:
-    msg_template = alerts[0]['message']  # e.g. "c2_detection: 0.9000 exceeds 0.7"
+    msg_template = alerts[0]["message"]  # e.g. "c2_detection: 0.9000 exceeds 0.7"
     log(f"     ⚠️  Alert içeriği generic: '{msg_template}'")
 log("     ⚠️  Zincirdeki önceki adımların bilgisini (kaynak, contradiction çözümü,")
 log("         actor=APT29, path detayı) İÇERMİYOR — sadece sayısal eşik.")
@@ -484,27 +510,47 @@ log("DEĞERLENDİRME — Her motorun durumu")
 log("=" * 72)
 
 evaluations = [
-    ("1. DataSourceManager",  "GERÇEK + ÇALIŞIYOR",
-     "FileConnector dosyayı okuyor, poll mekanizması çalışıyor. "
-     "Ama sadece raw text döndürüyor."),
-    ("2. NEREngine",  "GERÇEK + SINIRLI",
-     "IP regex'i çalışıyor, 192.168.1.5 doğru tespit edildi. "
-     "Ama bağlam ('C2 sunucusu', 'APT29', 'şüpheli giriş') çıkaramıyor. "
-     "TextClassifier keyword-based threat type verebiliyor."),
-    ("3. ContradictionDetector",  "GERÇEK + ÇALIŞIYOR",
-     "Aynı entity + attribute için farklı değerleri tespit ediyor. "
-     "Severity=critical (50+ fark). Ama çözmüyor (resolution=unresolved)."),
-    ("3b. UnifiedTruthEngine",  "GERÇEK + ÇALIŞIYOR",
-     "Confidence-weighted: 0.9 > 0.3, yüksek güven kazanıyor. "
-     "Çelişki log'da tutuluyor."),
-    ("3c. SingleSourceOfTruth",  "GERÇEK + ÇALIŞIYOR",
-     "Aynı confidence-weighted mantık. APT29 bilgisi korunuyor."),
-    ("4. ReasoningEngine",  "GERÇEK + ÇALIŞIYOR",
-     "multi_hop_reason gerçek IntelligenceGraph.adjacency üzerinde "
-     "DFS çalıştırıyor. Path bulundu: 192.168.1.5 -> c2.domain -> 10.0.0.50."),
-    ("5. UnifiedAlertingCore",  "GERÇEK + BASİT",
-     "Sayısal eşik değerlendirmesi çalışıyor. Ama alert mesajı generic, "
-     "zincir bağlamını taşımıyor."),
+    (
+        "1. DataSourceManager",
+        "GERÇEK + ÇALIŞIYOR",
+        "FileConnector dosyayı okuyor, poll mekanizması çalışıyor. "
+        "Ama sadece raw text döndürüyor.",
+    ),
+    (
+        "2. NEREngine",
+        "GERÇEK + SINIRLI",
+        "IP regex'i çalışıyor, 192.168.1.5 doğru tespit edildi. "
+        "Ama bağlam ('C2 sunucusu', 'APT29', 'şüpheli giriş') çıkaramıyor. "
+        "TextClassifier keyword-based threat type verebiliyor.",
+    ),
+    (
+        "3. ContradictionDetector",
+        "GERÇEK + ÇALIŞIYOR",
+        "Aynı entity + attribute için farklı değerleri tespit ediyor. "
+        "Severity=critical (50+ fark). Ama çözmüyor (resolution=unresolved).",
+    ),
+    (
+        "3b. UnifiedTruthEngine",
+        "GERÇEK + ÇALIŞIYOR",
+        "Confidence-weighted: 0.9 > 0.3, yüksek güven kazanıyor. " "Çelişki log'da tutuluyor.",
+    ),
+    (
+        "3c. SingleSourceOfTruth",
+        "GERÇEK + ÇALIŞIYOR",
+        "Aynı confidence-weighted mantık. APT29 bilgisi korunuyor.",
+    ),
+    (
+        "4. ReasoningEngine",
+        "GERÇEK + ÇALIŞIYOR",
+        "multi_hop_reason gerçek IntelligenceGraph.adjacency üzerinde "
+        "DFS çalıştırıyor. Path bulundu: 192.168.1.5 -> c2.domain -> 10.0.0.50.",
+    ),
+    (
+        "5. UnifiedAlertingCore",
+        "GERÇEK + BASİT",
+        "Sayısal eşik değerlendirmesi çalışıyor. Ama alert mesajı generic, "
+        "zincir bağlamını taşımıyor.",
+    ),
 ]
 
 log(f"\n{'Motor':40s} {'Durum':25s} {'Detay'}")
@@ -557,4 +603,5 @@ EvidenceChain'de olduğu gibi — "mantık var, entegrasyon yok."
 
 # Temizlik
 import shutil
+
 shutil.rmtree(tmpdir, ignore_errors=True)

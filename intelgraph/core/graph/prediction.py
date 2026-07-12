@@ -5,14 +5,13 @@ import math
 import random
 import time
 import uuid
-from collections import defaultdict, deque
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from enum import Enum, auto
-from typing import Any, Callable
+from enum import Enum
+from typing import Any
 
-from intelgraph.core.graph.graph import IntelligenceGraph
-from intelgraph.core.graph.node import Node
 from intelgraph.core.enterprise.observability import get_metrics
+from intelgraph.core.graph.graph import IntelligenceGraph
 
 PREDICTION_SCHEMA_VERSION = "1.0"
 
@@ -124,7 +123,9 @@ class Predictor:
             "trust": trust / 100.0,
         }
 
-    def _forecast_holtwinters(self, values: list[float], horizon: int, alpha: float = 0.3, beta: float = 0.1) -> list[float]:
+    def _forecast_holtwinters(
+        self, values: list[float], horizon: int, alpha: float = 0.3, beta: float = 0.1
+    ) -> list[float]:
         if not values:
             return []
         n = len(values)
@@ -144,7 +145,12 @@ class Predictor:
         infl = features["influence"]
         anom = features["anomaly_score"]
         deg = features["degree"]
-        base_risk = 0.4 * min(infl * 2, 1.0) + 0.3 * anom + 0.2 * min(deg / 100.0, 1.0) + 0.1 * features["confidence"]
+        base_risk = (
+            0.4 * min(infl * 2, 1.0)
+            + 0.3 * anom
+            + 0.2 * min(deg / 100.0, 1.0)
+            + 0.1 * features["confidence"]
+        )
         horizons = [ForecastHorizon.SHORT, ForecastHorizon.MEDIUM, ForecastHorizon.LONG]
         horizon_map = {0: "short", 1: "medium", 2: "long"}
         decay = {0: 1.0, 1: 0.85, 2: 0.7}
@@ -261,7 +267,13 @@ class Predictor:
         out_edges = len(self._graph.forward_adjacency.get(node_id, set()))
         in_edges = len(self._graph.reverse_adjacency.get(node_id, set()))
         connectivity = (out_edges + in_edges) / max(self._graph.node_count, 1)
-        base_prob = 0.3 * connectivity + 0.3 * features["influence"] + 0.2 * features["anomaly_score"] + 0.1 * (1.0 - features["trust"]) + 0.1 * features["confidence"]
+        base_prob = (
+            0.3 * connectivity
+            + 0.3 * features["influence"]
+            + 0.2 * features["anomaly_score"]
+            + 0.1 * (1.0 - features["trust"])
+            + 0.1 * features["confidence"]
+        )
         horizons = [ForecastHorizon.SHORT, ForecastHorizon.MEDIUM, ForecastHorizon.LONG]
         horizon_idx = min(horizon, 2)
         growth = {0: 1.0, 1: 1.1, 2: 1.2}
@@ -275,8 +287,19 @@ class Predictor:
             value=min(forecast_val, 1.0),
             confidence=confidence,
             horizon=horizons[horizon_idx].value,
-            features={**features, "connectivity": connectivity, "out_edges": float(out_edges), "in_edges": float(in_edges)},
-            contributions={"connectivity": 0.3, "influence": 0.3, "anomaly": 0.2, "trust_decay": 0.1, "confidence": 0.1},
+            features={
+                **features,
+                "connectivity": connectivity,
+                "out_edges": float(out_edges),
+                "in_edges": float(in_edges),
+            },
+            contributions={
+                "connectivity": 0.3,
+                "influence": 0.3,
+                "anomaly": 0.2,
+                "trust_decay": 0.1,
+                "confidence": 0.1,
+            },
             uncertainty=uncertainty,
             execution_mode="online",
             timestamp=time.time(),
@@ -285,7 +308,9 @@ class Predictor:
         self._record_duration("attack_path_probability", duration)
         return pred
 
-    def community_evolution(self, node_id: str, communities: dict[str, list[str]] | None = None, horizon: int = 3) -> PredictionResult:
+    def community_evolution(
+        self, node_id: str, communities: dict[str, list[str]] | None = None, horizon: int = 3
+    ) -> PredictionResult:
         t0 = time.perf_counter_ns()
         features = self._compute_features(node_id)
         community_id = "default"
@@ -309,8 +334,17 @@ class Predictor:
             value=min(pred_size / max(community_size + 1, 1), 2.0),
             confidence=confidence,
             horizon=horizons[horizon_idx].value,
-            features={**features, "community_size": float(community_size), "growth_rate": growth_rate},
-            contributions={"community_size": 0.4, "degree": 0.3, "growth_rate": 0.2, "anomaly": 0.1},
+            features={
+                **features,
+                "community_size": float(community_size),
+                "growth_rate": growth_rate,
+            },
+            contributions={
+                "community_size": 0.4,
+                "degree": 0.3,
+                "growth_rate": 0.2,
+                "anomaly": 0.1,
+            },
             uncertainty=uncertainty,
             execution_mode="online",
             timestamp=time.time(),
@@ -329,13 +363,18 @@ class Predictor:
             results.append(self.attack_path_probability(node_id, h))
         return results
 
-    def ensemble_score(self, predictions: list[PredictionResult], weights: list[float] | None = None) -> PredictionResult:
+    def ensemble_score(
+        self, predictions: list[PredictionResult], weights: list[float] | None = None
+    ) -> PredictionResult:
         if not predictions:
             return PredictionResult(
                 prediction_id=self._generate_id(),
-                entity_id="", prediction_type="ensemble",
-                value=0.0, confidence=0.0,
-                horizon="short", execution_mode="online",
+                entity_id="",
+                prediction_type="ensemble",
+                value=0.0,
+                confidence=0.0,
+                horizon="short",
+                execution_mode="online",
                 timestamp=time.time(),
             )
         w = weights or [1.0 / len(predictions)] * len(predictions)
@@ -358,7 +397,9 @@ class Predictor:
             timestamp=time.time(),
         )
 
-    def full_forecast(self, node_id: str, communities: dict[str, list[str]] | None = None) -> dict[str, Any]:
+    def full_forecast(
+        self, node_id: str, communities: dict[str, list[str]] | None = None
+    ) -> dict[str, Any]:
         t0 = time.perf_counter_ns()
         results = self.multi_horizon_forecast(node_id)
         ensemble = self.ensemble_score(results)

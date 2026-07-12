@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import ulid
@@ -15,9 +15,11 @@ class ReviewQueue:
         conn.executescript(REVIEW_QUEUE_SQL)
         conn.commit()
 
-    def enqueue(self, entity_id: str, entity_type: str, reason: str, chain_confidence: float) -> str:
+    def enqueue(
+        self, entity_id: str, entity_type: str, reason: str, chain_confidence: float
+    ) -> str:
         queue_id = str(ulid.new())
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         conn = self._get_conn()
         conn.execute(
             """INSERT OR REPLACE INTO review_queue
@@ -30,7 +32,7 @@ class ReviewQueue:
 
     def dequeue(self, queue_id: str, reviewer: str) -> dict[str, Any] | None:
         conn = self._get_conn()
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         row = conn.execute(
             "SELECT * FROM review_queue WHERE queue_id = ? AND status = 'pending'",
             (queue_id,),
@@ -46,7 +48,7 @@ class ReviewQueue:
 
     def complete(self, queue_id: str, outcome: ReviewOutcome) -> None:
         conn = self._get_conn()
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         conn.execute(
             "UPDATE review_queue SET status = ?, updated_at = ? WHERE queue_id = ?",
             (outcome.name_lower, now, queue_id),
@@ -71,10 +73,21 @@ class ReviewQueue:
 
     def queue_stats(self) -> dict[str, int]:
         conn = self._get_conn()
-        pending = conn.execute("SELECT COUNT(*) as c FROM review_queue WHERE status = 'pending'").fetchone()["c"]
-        in_review = conn.execute("SELECT COUNT(*) as c FROM review_queue WHERE status = 'in_review'").fetchone()["c"]
-        completed = conn.execute("SELECT COUNT(*) as c FROM review_queue WHERE status != 'pending' AND status != 'in_review'").fetchone()["c"]
-        return {"pending": pending, "in_review": in_review, "completed": completed, "total": pending + in_review + completed}
+        pending = conn.execute(
+            "SELECT COUNT(*) as c FROM review_queue WHERE status = 'pending'"
+        ).fetchone()["c"]
+        in_review = conn.execute(
+            "SELECT COUNT(*) as c FROM review_queue WHERE status = 'in_review'"
+        ).fetchone()["c"]
+        completed = conn.execute(
+            "SELECT COUNT(*) as c FROM review_queue WHERE status != 'pending' AND status != 'in_review'"
+        ).fetchone()["c"]
+        return {
+            "pending": pending,
+            "in_review": in_review,
+            "completed": completed,
+            "total": pending + in_review + completed,
+        }
 
     def _get_conn(self) -> Any:
         conn = getattr(self._storage, "_conn", None)

@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
-
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 
 from intelgraph.core.graph.export import ExportSettings, GraphExporter
@@ -21,6 +19,7 @@ _CONTENT_TYPES = {
 
 def _build_graph() -> IntelligenceGraph:
     from intelgraph.api.main import _container
+
     g = IntelligenceGraph()
     for entity in _container.backend.list_entities():
         eid = entity.id
@@ -41,7 +40,7 @@ def _build_graph() -> IntelligenceGraph:
             g.node_edges.setdefault(tgt, set()).add(rel.id)
             g.edge_node_map[rel.id] = (src, tgt)
             from intelgraph.core.graph.edge import Edge
-            from intelgraph.core.relationship import Relationship
+
             g.edges[rel.id] = Edge(relationship=rel)
     return g
 
@@ -65,15 +64,23 @@ def export_graph(
     fmt: str,
     pretty: bool = Query(False, description="Pretty-print output"),
     compressed: bool = Query(False, description="Gzip-compress the output"),
-    include_community: bool = Query(False, description="Include community annotations if available"),
+    include_community: bool = Query(
+        False, description="Include community annotations if available"
+    ),
     include_centrality: bool = Query(False, description="Include centrality metrics if available"),
     entity_type: list[str] = Query(default=[], description="Include only specific entity types"),
     exclude_entity_type: list[str] = Query(default=[], description="Exclude specific entity types"),
-    relationship_type: list[str] = Query(default=[], description="Include only specific relationship types"),
-    exclude_relationship_type: list[str] = Query(default=[], description="Exclude specific relationship types"),
+    relationship_type: list[str] = Query(
+        default=[], description="Include only specific relationship types"
+    ),
+    exclude_relationship_type: list[str] = Query(
+        default=[], description="Exclude specific relationship types"
+    ),
     min_confidence: int = Query(0, ge=0, le=100, description="Minimum confidence score"),
     min_trust_weight: int = Query(0, ge=0, le=100, description="Minimum trust weight"),
-    subgraph_node_id: str | None = Query(None, description="Export subgraph starting from this node"),
+    subgraph_node_id: str | None = Query(
+        None, description="Export subgraph starting from this node"
+    ),
     subgraph_depth: int = Query(1, ge=0, le=10, description="Subgraph traversal depth"),
 ):
     if fmt not in GraphExporter.SUPPORTED_FORMATS:
@@ -94,7 +101,9 @@ def export_graph(
         include_entity_types=set(entity_type) if entity_type else None,
         exclude_entity_types=set(exclude_entity_type) if exclude_entity_type else None,
         include_relationship_types=set(relationship_type) if relationship_type else None,
-        exclude_relationship_types=set(exclude_relationship_type) if exclude_relationship_type else None,
+        exclude_relationship_types=(
+            set(exclude_relationship_type) if exclude_relationship_type else None
+        ),
         min_confidence=min_confidence,
         min_trust_weight=min_trust_weight,
         subgraph_node_id=subgraph_node_id,

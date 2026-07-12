@@ -47,7 +47,9 @@ class ChainQueryEngine:
         targets = chains or list(self._chains.values())
         return sorted(targets, key=lambda c: c.confidence, reverse=True)
 
-    def rank_by_source_count(self, chains: list[EvidenceChain] | None = None) -> list[EvidenceChain]:
+    def rank_by_source_count(
+        self, chains: list[EvidenceChain] | None = None
+    ) -> list[EvidenceChain]:
         targets = chains or list(self._chains.values())
         return sorted(targets, key=lambda c: c.source_count, reverse=True)
 
@@ -60,7 +62,11 @@ class ChainQueryEngine:
         )
 
     def get_contradictions(self) -> list[EvidenceChain]:
-        return [c for c in self._chains.values() if c.contradiction_score > 0 and c.status == EvidenceStatus.CONTESTED]
+        return [
+            c
+            for c in self._chains.values()
+            if c.contradiction_score > 0 and c.status == EvidenceStatus.CONTESTED
+        ]
 
     def stats(self) -> dict[str, Any]:
         chains = list(self._chains.values())
@@ -78,8 +84,14 @@ class ChainQueryEngine:
             "contested": contested,
             "unknown": unknown,
             "debunked": debunked,
-            "avg_confidence": round(sum(c.confidence for c in chains) / len(chains), 2) if chains else 0.0,
-            "avg_contradiction": round(sum(c.contradiction_score for c in chains) / len(chains), 2) if chains else 0.0,
+            "avg_confidence": (
+                round(sum(c.confidence for c in chains) / len(chains), 2) if chains else 0.0
+            ),
+            "avg_contradiction": (
+                round(sum(c.contradiction_score for c in chains) / len(chains), 2)
+                if chains
+                else 0.0
+            ),
             "multi_source_chains": sum(1 for c in chains if c.source_count >= 2),
             "single_source_chains": sum(1 for c in chains if c.source_count < 2),
         }

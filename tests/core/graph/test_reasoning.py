@@ -1,18 +1,15 @@
 import random
 from typing import Any
 
-import pytest
-
 from intelgraph.core.entity.person import Person
-from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.graph.edge import Edge
+from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.graph.node import Node
 from intelgraph.core.graph.reasoning import (
-    CausalReasoner,
+    CAUSAL_SCHEMA_VERSION,
     CausalEdge,
     CausalGraph,
-    CausalPath,
-    CAUSAL_SCHEMA_VERSION,
+    CausalReasoner,
 )
 
 
@@ -21,7 +18,12 @@ def _make_graph(seed: int = 42) -> IntelligenceGraph:
     g = IntelligenceGraph()
     for i in range(10):
         nid = f"node_{i}"
-        ent = Person(id=nid, name=f"Person {i}", confidence_score=min(50 + i * 5, 95), trust_score=min(40 + i * 5, 90))
+        ent = Person(
+            id=nid,
+            name=f"Person {i}",
+            confidence_score=min(50 + i * 5, 95),
+            trust_score=min(40 + i * 5, 90),
+        )
         n = Node(entity=ent)
         g.nodes[nid] = n
         g.adjacency[nid] = set()
@@ -29,11 +31,16 @@ def _make_graph(seed: int = 42) -> IntelligenceGraph:
         g.reverse_adjacency[nid] = set()
         g.node_edges[nid] = set()
     edges_data = [
-        ("node_0", "node_1", 80), ("node_0", "node_2", 60),
-        ("node_1", "node_3", 90), ("node_1", "node_4", 50),
-        ("node_2", "node_5", 70), ("node_2", "node_6", 40),
-        ("node_3", "node_7", 85), ("node_4", "node_8", 75),
-        ("node_5", "node_9", 65), ("node_6", "node_7", 55),
+        ("node_0", "node_1", 80),
+        ("node_0", "node_2", 60),
+        ("node_1", "node_3", 90),
+        ("node_1", "node_4", 50),
+        ("node_2", "node_5", 70),
+        ("node_2", "node_6", 40),
+        ("node_3", "node_7", 85),
+        ("node_4", "node_8", 75),
+        ("node_5", "node_9", 65),
+        ("node_6", "node_7", 55),
     ]
     for idx, (src, tgt, conf) in enumerate(edges_data):
         eid = f"edge_{idx}"
@@ -53,6 +60,7 @@ def _make_graph(seed: int = 42) -> IntelligenceGraph:
 def _make_rel(eid: str, src: str, tgt: str, conf: int) -> Any:
     from intelgraph.core.relationship import Relationship
     from intelgraph.core.relationship.types import RelationshipType
+
     return Relationship(
         id=eid,
         source_id=src,
@@ -71,7 +79,13 @@ class TestCausalGraph:
 
     def test_add_edge(self):
         cg = CausalGraph()
-        ce = CausalEdge(cause_id="a", effect_id="b", confidence=0.8, temporal_order_confirmed=True, influence_contribution=0.5)
+        ce = CausalEdge(
+            cause_id="a",
+            effect_id="b",
+            confidence=0.8,
+            temporal_order_confirmed=True,
+            influence_contribution=0.5,
+        )
         assert cg.add_edge(ce) is True
         assert cg.node_count() == 2
         assert cg.edge_count() == 1
@@ -309,7 +323,14 @@ class TestCausalReasoner:
     def test_trace_id_in_all_results(self):
         g = _make_graph()
         reasoner = CausalReasoner(g)
-        for method in ["root_cause_analysis", "causal_path", "explain", "chains", "causal_graph_network", "top_causes"]:
+        for method in [
+            "root_cause_analysis",
+            "causal_path",
+            "explain",
+            "chains",
+            "causal_graph_network",
+            "top_causes",
+        ]:
             if method == "root_cause_analysis":
                 result = getattr(reasoner, method)("node_0", max_depth=3)
             elif method == "causal_path":
@@ -341,7 +362,7 @@ class TestCausalRegression:
         reasoner = CausalReasoner(g)
         assert reasoner._causal_decay(0) == 1.0
         assert reasoner._causal_decay(1) == 0.7
-        assert reasoner._causal_decay(3) == 0.7 ** 3
+        assert reasoner._causal_decay(3) == 0.7**3
 
     def test_uncertainty_formula(self):
         g = _make_graph()

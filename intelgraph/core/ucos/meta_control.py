@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import time
 import uuid
-from dataclasses import dataclass, field
 from typing import Any
 
 
@@ -14,13 +13,17 @@ class SelfStabilizingMetaControl:
         self._approved_changes: list[dict[str, Any]] = []
         self._rejected_changes: list[dict[str, Any]] = []
 
-    def propose_change(self, description: str, target: str, change_type: str,
-                       risk: float = 0.5) -> dict[str, Any]:
+    def propose_change(
+        self, description: str, target: str, change_type: str, risk: float = 0.5
+    ) -> dict[str, Any]:
         proposal = {
             "proposal_id": f"sc_{uuid.uuid4().hex[:12]}",
-            "description": description, "target": target,
-            "change_type": change_type, "risk": risk,
-            "status": "pending", "created_at": time.time(),
+            "description": description,
+            "target": target,
+            "change_type": change_type,
+            "risk": risk,
+            "status": "pending",
+            "created_at": time.time(),
             "requires_human_approval": self._approval_gate and risk > 0.3,
         }
         self._pending_changes.append(proposal)
@@ -48,13 +51,18 @@ class SelfStabilizingMetaControl:
                 return True
         return False
 
-    def validate_regression(self, before_metrics: dict[str, Any],
-                            after_metrics: dict[str, Any]) -> dict[str, Any]:
+    def validate_regression(
+        self, before_metrics: dict[str, Any], after_metrics: dict[str, Any]
+    ) -> dict[str, Any]:
         regressions = []
         for key in set(before_metrics.keys()) & set(after_metrics.keys()):
-            if isinstance(before_metrics[key], (int, float)) and isinstance(after_metrics[key], (int, float)):
+            if isinstance(before_metrics[key], (int, float)) and isinstance(
+                after_metrics[key], (int, float)
+            ):
                 if after_metrics[key] < before_metrics[key] * 0.8:
-                    regressions.append({"metric": key, "before": before_metrics[key], "after": after_metrics[key]})
+                    regressions.append(
+                        {"metric": key, "before": before_metrics[key], "after": after_metrics[key]}
+                    )
         return {"has_regression": len(regressions) > 0, "regressions": regressions}
 
     def get_pending_changes(self) -> list[dict[str, Any]]:

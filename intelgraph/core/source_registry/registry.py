@@ -1,10 +1,10 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import ulid
 
 from intelgraph.core.source_registry.aggregation import TrustAggregator
-from intelgraph.core.source_registry.anti_poisoning import AntiPoisoningEngine, PoisoningReport
+from intelgraph.core.source_registry.anti_poisoning import AntiPoisoningEngine
 from intelgraph.core.source_registry.consensus import ConsensusScorer
 from intelgraph.core.source_registry.decay import TrustDecayModel
 from intelgraph.core.source_registry.ranking import SourceRanking
@@ -31,7 +31,7 @@ class SourceRegistryService:
         classification: str | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         source_id = str(ulid.new())
 
         trust_score = self._scorer.compute(
@@ -51,13 +51,15 @@ class SourceRegistryService:
             "reliability_score": reliability,
             "last_validated": now,
             "classification": classification or "",
-            "metadata": _dumps({
-                "first_seen": now,
-                "last_used": now,
-                "validation_count": 1,
-                "flags": [],
-                **(metadata or {}),
-            }),
+            "metadata": _dumps(
+                {
+                    "first_seen": now,
+                    "last_used": now,
+                    "validation_count": 1,
+                    "flags": [],
+                    **(metadata or {}),
+                }
+            ),
         }
         self._storage.register_source(entry)
         return self.get_source(source_id)
@@ -98,7 +100,7 @@ class SourceRegistryService:
         raw["reliability_score"] = 0
         meta = _loads(raw.get("metadata", "{}"))
         meta["flags"] = meta.get("flags", []) + ["DELETED"]
-        meta["deleted_at"] = datetime.now(timezone.utc).isoformat()
+        meta["deleted_at"] = datetime.now(UTC).isoformat()
         raw["metadata"] = _dumps(meta)
         self._storage.register_source(raw)
         return True
@@ -120,8 +122,12 @@ class SourceRegistryService:
     ) -> list[dict[str, Any]]:
         sources = self.list_sources(apply_rank=False)
         return self._ranking.query(
-            sources, min_trust=min_trust, max_trust=max_trust,
-            tier=tier, domain=domain, verified_only=verified_only,
+            sources,
+            min_trust=min_trust,
+            max_trust=max_trust,
+            tier=tier,
+            domain=domain,
+            verified_only=verified_only,
         )
 
     # ── Trust management ──
@@ -132,11 +138,8 @@ class SourceRegistryService:
             return None
         raw["trust_score"] = max(0, min(100, new_trust))
         meta = _loads(raw.get("metadata", "{}"))
-        meta["trust_updated_at"] = datetime.now(timezone.utc).isoformat()
-        meta["flags"] = [
-            f for f in meta.get("flags", [])
-            if f != "TRUST_OVERRIDDEN"
-        ]
+        meta["trust_updated_at"] = datetime.now(UTC).isoformat()
+        meta["flags"] = [f for f in meta.get("flags", []) if f != "TRUST_OVERRIDDEN"]
         raw["metadata"] = _dumps(meta)
         self._storage.register_source(raw)
         return self.get_source(source_id)
@@ -145,7 +148,7 @@ class SourceRegistryService:
         raw = self._storage.get_source(source_id)
         if raw is None:
             return None
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         raw["last_validated"] = now
         meta = _loads(raw.get("metadata", "{}"))
         meta["validation_count"] = meta.get("validation_count", 0) + 1
@@ -167,7 +170,7 @@ class SourceRegistryService:
         if raw is None:
             return
         meta = _loads(raw.get("metadata", "{}"))
-        meta["last_used"] = datetime.now(timezone.utc).isoformat()
+        meta["last_used"] = datetime.now(UTC).isoformat()
         raw["metadata"] = _dumps(meta)
         self._storage.register_source(raw)
 
@@ -187,10 +190,14 @@ class SourceRegistryService:
         return {
             "total": total,
             "avg_trust": round(sum(s.get("trust_score", 0) for s in sources) / total, 1),
-            "avg_reliability": round(sum(s.get("reliability_score", 0) for s in sources) / total, 1),
+            "avg_reliability": round(
+                sum(s.get("reliability_score", 0) for s in sources) / total, 1
+            ),
             "tier_distribution": tier_dist,
             "needs_revalidation": sum(1 for s in sources if self._decay.needs_revalidation(s)),
-            "flagged": sum(1 for s in sources if "DELETED" in _loads(s.get("metadata", "{}")).get("flags", [])),
+            "flagged": sum(
+                1 for s in sources if "DELETED" in _loads(s.get("metadata", "{}")).get("flags", [])
+            ),
         }
 
     def aggregate_trust(self, source_ids: list[str]) -> dict[str, Any]:
@@ -201,11 +208,11 @@ class SourceRegistryService:
                 records.append(self._decay.apply_decay(raw))
         return self._aggregator.aggregate(records)
 
-    def evaluate_entity_sources(
-        self, source_records: list[dict[str, Any]]
-    ) -> dict[str, Any]:
+    def evaluate_entity_sources(self, source_records: list[dict[str, Any]]) -> dict[str, Any]:
         aggregation = self._aggregator.aggregate(source_records)
-        poisoning = self._anti_poisoning.evaluate(source_records, aggregation.get("aggregated_trust"))
+        poisoning = self._anti_poisoning.evaluate(
+            source_records, aggregation.get("aggregated_trust")
+        )
         return {
             **aggregation,
             "poisoning_flags": [f.name for f in poisoning.flags],
@@ -230,11 +237,13 @@ class SourceRegistryService:
 
 def _dumps(obj: dict[str, Any]) -> str:
     import json
+
     return json.dumps(obj, default=str)
 
 
 def _loads(s: str) -> dict[str, Any]:
     import json
+
     if not s:
         return {}
     return json.loads(s)

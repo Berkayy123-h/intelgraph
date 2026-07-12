@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -36,8 +35,9 @@ class RealWorldAlignmentLayer:
         self._drift_events: list[dict[str, Any]] = []
         self._ground_truth: dict[str, Any] = {}
 
-    def compare_output_vs_reality(self, system_output: dict[str, Any],
-                                  real_world_data: dict[str, Any]) -> list[AlignmentScore]:
+    def compare_output_vs_reality(
+        self, system_output: dict[str, Any], real_world_data: dict[str, Any]
+    ) -> list[AlignmentScore]:
         scores = []
         for key in set(system_output.keys()) & set(real_world_data.keys()):
             sys_val = system_output[key]
@@ -51,8 +51,11 @@ class RealWorldAlignmentLayer:
                     aligned = deviation < 0.1
                 score = AlignmentScore(
                     score_id=f"al_{uuid.uuid4().hex[:12]}",
-                    metric=key, value=deviation, threshold=0.2,
-                    aligned=aligned, source="output_vs_reality",
+                    metric=key,
+                    value=deviation,
+                    threshold=0.2,
+                    aligned=aligned,
+                    source="output_vs_reality",
                     timestamp=time.time(),
                 )
                 scores.append(score)
@@ -63,27 +66,44 @@ class RealWorldAlignmentLayer:
         drifts = []
         for score in current_scores:
             if not score.aligned:
-                drifts.append({
-                    "metric": score.metric, "deviation": score.value,
-                    "threshold": score.threshold, "severity": "high" if score.value > 0.5 else "medium",
-                })
+                drifts.append(
+                    {
+                        "metric": score.metric,
+                        "deviation": score.value,
+                        "threshold": score.threshold,
+                        "severity": "high" if score.value > 0.5 else "medium",
+                    }
+                )
         return drifts
 
     def integrate_external_signal(self, signal: dict[str, Any]) -> None:
         signal["received_at"] = time.time()
         self._external_signals.append(signal)
 
-    def reconcile_belief_vs_truth(self, belief: dict[str, Any],
-                                  truth: dict[str, Any]) -> dict[str, Any]:
+    def reconcile_belief_vs_truth(
+        self, belief: dict[str, Any], truth: dict[str, Any]
+    ) -> dict[str, Any]:
         reconciled = {}
         for key in set(belief.keys()) | set(truth.keys()):
             if key in belief and key in truth:
                 if belief[key] != truth[key]:
-                    reconciled[key] = {"value": truth[key], "source": "ground_truth", "corrected": True}
+                    reconciled[key] = {
+                        "value": truth[key],
+                        "source": "ground_truth",
+                        "corrected": True,
+                    }
                 else:
-                    reconciled[key] = {"value": belief[key], "source": "consistent", "corrected": False}
+                    reconciled[key] = {
+                        "value": belief[key],
+                        "source": "consistent",
+                        "corrected": False,
+                    }
             elif key in truth:
-                reconciled[key] = {"value": truth[key], "source": "ground_truth", "corrected": False}
+                reconciled[key] = {
+                    "value": truth[key],
+                    "source": "ground_truth",
+                    "corrected": False,
+                }
         return reconciled
 
     def validate_ground_truth(self, claim: dict[str, Any]) -> bool:

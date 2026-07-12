@@ -1,26 +1,42 @@
 #!/usr/bin/env python3
 """EntityMatcher growth curve profiling — no code changes, just measurement."""
-import time
+
 import hashlib
-from collections import Counter
-from datetime import datetime, timezone
-from intelgraph.core.graph.graph import IntelligenceGraph
-from intelgraph.core.entity.ip_address import IPAddress
+import time
+from datetime import UTC, datetime
+
 from intelgraph.core.entity.domain import Domain
+from intelgraph.core.entity.ip_address import IPAddress
 from intelgraph.core.evidence import Evidence
+from intelgraph.core.graph.graph import IntelligenceGraph
+
 
 # Generate synthetic entities at increasing scales
 def make_ip(ip_str):
-    ev = Evidence(id=f"ev_{hashlib.md5(ip_str.encode()).hexdigest()[:8]}",
-                  source="test", content="malicious IP", collected_at=datetime.now(timezone.utc),
-                  source_tier=1, trust_score=50, reliability_score=50)
-    return IPAddress(id=ip_str.replace(".","_"), ip=ip_str, evidence=(ev,))
+    ev = Evidence(
+        id=f"ev_{hashlib.md5(ip_str.encode()).hexdigest()[:8]}",
+        source="test",
+        content="malicious IP",
+        collected_at=datetime.now(UTC),
+        source_tier=1,
+        trust_score=50,
+        reliability_score=50,
+    )
+    return IPAddress(id=ip_str.replace(".", "_"), ip=ip_str, evidence=(ev,))
+
 
 def make_domain(domain_str):
-    ev = Evidence(id=f"ev_{hashlib.md5(domain_str.encode()).hexdigest()[:8]}",
-                  source="test", content="malicious domain", collected_at=datetime.now(timezone.utc),
-                  source_tier=1, trust_score=50, reliability_score=50)
-    return Domain(id=domain_str.replace(".","_"), domain_name=domain_str, evidence=(ev,))
+    ev = Evidence(
+        id=f"ev_{hashlib.md5(domain_str.encode()).hexdigest()[:8]}",
+        source="test",
+        content="malicious domain",
+        collected_at=datetime.now(UTC),
+        source_tier=1,
+        trust_score=50,
+        reliability_score=50,
+    )
+    return Domain(id=domain_str.replace(".", "_"), domain_name=domain_str, evidence=(ev,))
+
 
 sizes = [100, 500, 1000, 2000, 5000, 10000, 20000, 50000]
 print(f"{'# entities':>12s}  {'Sure':>10s}  {'Node':>8s}  {'us/entity':>10s}  {'proj 100K':>10s}")
@@ -40,9 +56,11 @@ for sz in sizes:
     print(f"{sz:>12d}  {elapsed:>9.3f}s  {len(g.nodes):>8d}  {us_per:>9.1f}  {proj_100k:>9.0f}s")
 
 # Threshold estimate
-print(f"\nEslik analizi:")
-print(f"  10K:  6ms/entity → 60s total")
-print(f"  50K:  ~30ms/entity → ~1500s (25 dk)")
-print(f"  100K: ~60ms/entity → ~6000s (1.7 saat) -- KIRILMA NOKTASI")
-print(f"\nKanaat: 100K entity'de EntityMatcher optimizasyonu ZORUNLU.")
-print(f"        Hash-based pre-filter (gruplama) oncesinde kabul edilebilir ust sinir: ~20K-30K entity.")
+print("\nEslik analizi:")
+print("  10K:  6ms/entity → 60s total")
+print("  50K:  ~30ms/entity → ~1500s (25 dk)")
+print("  100K: ~60ms/entity → ~6000s (1.7 saat) -- KIRILMA NOKTASI")
+print("\nKanaat: 100K entity'de EntityMatcher optimizasyonu ZORUNLU.")
+print(
+    "        Hash-based pre-filter (gruplama) oncesinde kabul edilebilir ust sinir: ~20K-30K entity."
+)

@@ -1,13 +1,11 @@
 import random
 from typing import Any
 
-import pytest
-
 from intelgraph.core.entity.person import Person
-from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.graph.edge import Edge
-from intelgraph.core.graph.node import Node
+from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.graph.influence import InfluencePropagation
+from intelgraph.core.graph.node import Node
 
 
 def _make_graph(seed: int = 42) -> IntelligenceGraph:
@@ -23,13 +21,20 @@ def _make_graph(seed: int = 42) -> IntelligenceGraph:
         g.reverse_adjacency[nid] = set()
         g.node_edges[nid] = set()
     edges_data = [
-        ("node_0", "node_1", 80), ("node_0", "node_2", 60),
-        ("node_1", "node_3", 90), ("node_1", "node_4", 50),
-        ("node_2", "node_5", 70), ("node_2", "node_6", 40),
-        ("node_3", "node_7", 85), ("node_4", "node_8", 75),
-        ("node_5", "node_9", 65), ("node_6", "node_7", 55),
-        ("node_7", "node_8", 45), ("node_8", "node_9", 95),
-        ("node_3", "node_0", 30), ("node_5", "node_6", 35),
+        ("node_0", "node_1", 80),
+        ("node_0", "node_2", 60),
+        ("node_1", "node_3", 90),
+        ("node_1", "node_4", 50),
+        ("node_2", "node_5", 70),
+        ("node_2", "node_6", 40),
+        ("node_3", "node_7", 85),
+        ("node_4", "node_8", 75),
+        ("node_5", "node_9", 65),
+        ("node_6", "node_7", 55),
+        ("node_7", "node_8", 45),
+        ("node_8", "node_9", 95),
+        ("node_3", "node_0", 30),
+        ("node_5", "node_6", 35),
     ]
     for idx, (src, tgt, conf) in enumerate(edges_data):
         eid = f"edge_{idx}"
@@ -49,6 +54,7 @@ def _make_graph(seed: int = 42) -> IntelligenceGraph:
 def _make_rel(eid: str, src: str, tgt: str, conf: int) -> Any:
     from intelgraph.core.relationship import Relationship
     from intelgraph.core.relationship.types import RelationshipType
+
     return Relationship(
         id=eid,
         source_id=src,
@@ -95,7 +101,9 @@ class TestInfluencePropagation:
 
     def test_weighted_page_rank_deterministic(self):
         g = _make_graph()
-        weight_fn = lambda e: float(e.relationship.confidence_score) / 100.0 if e.relationship else 1.0
+        weight_fn = lambda e: (
+            float(e.relationship.confidence_score) / 100.0 if e.relationship else 1.0
+        )
         infl = InfluencePropagation(g, weight_fn=weight_fn)
         r1 = infl.weighted_page_rank()
         r2 = infl.weighted_page_rank()
@@ -103,7 +111,9 @@ class TestInfluencePropagation:
 
     def test_weighted_page_rank_converges(self):
         g = _make_graph()
-        weight_fn = lambda e: float(e.relationship.confidence_score) / 100.0 if e.relationship else 1.0
+        weight_fn = lambda e: (
+            float(e.relationship.confidence_score) / 100.0 if e.relationship else 1.0
+        )
         infl = InfluencePropagation(g, weight_fn=weight_fn)
         result = infl.weighted_page_rank()
         assert result["converged"] is True
@@ -113,7 +123,9 @@ class TestInfluencePropagation:
         g = _make_graph()
         infl = InfluencePropagation(g)
         pr = infl.page_rank()
-        weight_fn = lambda e: float(e.relationship.confidence_score) / 100.0 if e.relationship else 1.0
+        weight_fn = lambda e: (
+            float(e.relationship.confidence_score) / 100.0 if e.relationship else 1.0
+        )
         infl_w = InfluencePropagation(g, weight_fn=weight_fn)
         wpr = infl_w.weighted_page_rank()
         assert pr["scores"] != wpr["scores"]
@@ -221,7 +233,10 @@ class TestInfluencePropagation:
         assert result["decay_curve"][0]["distance"] == 0
         assert result["decay_curve"][5]["distance"] == 5
         assert result["decay_curve"][0]["decayed_influence"] == result["base_score"]
-        assert result["decay_curve"][1]["decayed_influence"] < result["decay_curve"][0]["decayed_influence"]
+        assert (
+            result["decay_curve"][1]["decayed_influence"]
+            < result["decay_curve"][0]["decayed_influence"]
+        )
 
     def test_influence_decay_model_not_found(self):
         g = _make_graph()
@@ -269,7 +284,12 @@ class TestInfluencePropagation:
     def test_execution_time_present(self):
         g = _make_graph()
         infl = InfluencePropagation(g)
-        for method in ["page_rank", "weighted_page_rank", "influence_propagation", "influence_scores"]:
+        for method in [
+            "page_rank",
+            "weighted_page_rank",
+            "influence_propagation",
+            "influence_scores",
+        ]:
             if method == "influence_propagation":
                 result = infl.influence_propagation({"node_0": 1.0}, 0.3, 0.5, 3)
             else:
@@ -291,13 +311,21 @@ class TestInfluencePropagation:
             g.node_edges[nid] = set()
         from intelgraph.core.relationship import Relationship
         from intelgraph.core.relationship.types import RelationshipType
+
         for i in range(200):
             src = f"n_{random.randint(0, 99)}"
             tgt = f"n_{random.randint(0, 99)}"
             if src == tgt:
                 continue
             eid = f"e_{i}"
-            rel = Relationship(id=eid, source_id=src, target_id=tgt, type=RelationshipType.RELATED_TO, confidence_score=random.randint(20, 100), trust_weight=random.randint(20, 100))
+            rel = Relationship(
+                id=eid,
+                source_id=src,
+                target_id=tgt,
+                type=RelationshipType.RELATED_TO,
+                confidence_score=random.randint(20, 100),
+                trust_weight=random.randint(20, 100),
+            )
             e = Edge(relationship=rel)
             g.edges[eid] = e
             g.adjacency[src].add(tgt)

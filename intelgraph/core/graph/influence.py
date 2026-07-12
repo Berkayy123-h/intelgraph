@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import time
 from collections import deque
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
-from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.enterprise.observability import get_metrics
+from intelgraph.core.graph.graph import IntelligenceGraph
 
 
 class InfluencePropagation:
@@ -42,12 +43,14 @@ class InfluencePropagation:
         n = len(node_ids)
         if n == 0:
             return {"scores": {}, "iterations": 0, "converged": True, "execution_time_ms": 0.0}
-        rank: dict[str, float] = {nid: 1.0 / n for nid in node_ids}
+        rank: dict[str, float] = dict.fromkeys(node_ids, 1.0 / n)
         out_degree: dict[str, int] = {}
         for nid in node_ids:
             out_degree[nid] = len(self._graph.forward_adjacency.get(nid, set()))
         for iteration in range(max_iterations):
-            dangling = damping * sum(rank[nid] for nid in node_ids if out_degree.get(nid, 0) == 0) / n
+            dangling = (
+                damping * sum(rank[nid] for nid in node_ids if out_degree.get(nid, 0) == 0) / n
+            )
             new_rank: dict[str, float] = {}
             for nid in node_ids:
                 incoming_sum = 0.0
@@ -99,9 +102,11 @@ class InfluencePropagation:
                 if src_tgt and src_tgt[0] == nid:
                     total += self._get_edge_weight(eid)
             out_weight[nid] = total
-        rank: dict[str, float] = {nid: 1.0 / n for nid in node_ids}
+        rank: dict[str, float] = dict.fromkeys(node_ids, 1.0 / n)
         for iteration in range(max_iterations):
-            dangling = damping * sum(rank[nid] for nid in node_ids if out_weight.get(nid, 0.0) == 0.0) / n
+            dangling = (
+                damping * sum(rank[nid] for nid in node_ids if out_weight.get(nid, 0.0) == 0.0) / n
+            )
             new_rank: dict[str, float] = {}
             for nid in node_ids:
                 incoming_sum = 0.0
@@ -151,8 +156,11 @@ class InfluencePropagation:
         node_ids = sorted(self._graph.nodes.keys())
         if not node_ids or not seed_nodes:
             return {
-                "influence": {}, "propagation_tree": {},
-                "max_depth": 0, "nodes_activated": 0, "execution_time_ms": 0.0,
+                "influence": {},
+                "propagation_tree": {},
+                "max_depth": 0,
+                "nodes_activated": 0,
+                "execution_time_ms": 0.0,
             }
         influence: dict[str, float] = {}
         propagation_tree: dict[str, list[dict[str, Any]]] = {}
@@ -179,7 +187,7 @@ class InfluencePropagation:
                         edge_w = self._get_edge_weight(eid)
                         edge_influence = 1.0 / (1.0 + edge_w)
                         break
-                neighbor_boost = current_influence * edge_influence * (decay_factor ** depth)
+                neighbor_boost = current_influence * edge_influence * (decay_factor**depth)
                 existing = influence.get(neighbor, 0.0)
                 new_val = max(existing, neighbor_boost)
                 if new_val > existing and neighbor not in seed_nodes:
@@ -187,11 +195,13 @@ class InfluencePropagation:
                     if neighbor_boost >= threshold and neighbor not in activated:
                         activated.add(neighbor)
                         queue.append((neighbor, depth + 1))
-                        propagation_tree.setdefault(current, []).append({
-                            "target": neighbor,
-                            "influence": round(neighbor_boost, 6),
-                            "depth": depth + 1,
-                        })
+                        propagation_tree.setdefault(current, []).append(
+                            {
+                                "target": neighbor,
+                                "influence": round(neighbor_boost, 6),
+                                "depth": depth + 1,
+                            }
+                        )
         duration = time.perf_counter_ns() - t0
         self._metrics.set_gauge("influence_propagation_depth", float(max_depth))
         self._record_duration("influence_propagation", duration)
@@ -233,7 +243,9 @@ class InfluencePropagation:
                     if src_tgt and src_tgt[0] == nid and src_tgt[1] == neighbor:
                         out_influence += self._get_edge_weight(eid)
                         break
-            total_influence[nid] = 0.5 * pr_score + 0.3 * deg_norm + 0.2 * min(out_influence / max(deg, 1), 1.0)
+            total_influence[nid] = (
+                0.5 * pr_score + 0.3 * deg_norm + 0.2 * min(out_influence / max(deg, 1), 1.0)
+            )
         duration = time.perf_counter_ns() - t0
         self._record_duration("influence_scores", duration)
         sorted_scores = dict(sorted(total_influence.items(), key=lambda x: -x[1]))
@@ -312,11 +324,13 @@ class InfluencePropagation:
             current, depth, score = queue.popleft()
             if depth > max_depth:
                 continue
-            chain.append({
-                "node_id": current,
-                "depth": depth,
-                "influence_score": round(score, 6),
-            })
+            chain.append(
+                {
+                    "node_id": current,
+                    "depth": depth,
+                    "influence_score": round(score, 6),
+                }
+            )
             for neighbor in self._graph.forward_adjacency.get(current, set()):
                 if neighbor in visited:
                     continue
@@ -351,13 +365,15 @@ class InfluencePropagation:
             return {"decay_curve": [], "node_id": node_id, "found": True, "execution_time_ms": 0.0}
         decay_curve: list[dict[str, Any]] = []
         for d in range(distance + 1):
-            decayed = base_score * (decay_factor ** d)
-            decay_curve.append({
-                "distance": d,
-                "raw_influence": round(base_score, 6),
-                "decayed_influence": round(decayed, 6),
-                "decay_factor": decay_factor,
-            })
+            decayed = base_score * (decay_factor**d)
+            decay_curve.append(
+                {
+                    "distance": d,
+                    "raw_influence": round(base_score, 6),
+                    "decayed_influence": round(decayed, 6),
+                    "decay_factor": decay_factor,
+                }
+            )
         duration = time.perf_counter_ns() - t0
         return {
             "decay_curve": decay_curve,

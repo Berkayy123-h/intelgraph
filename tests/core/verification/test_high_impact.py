@@ -23,7 +23,9 @@ def test_company_healthcare():
 
 
 def test_company_gov_domain():
-    assert HighImpactHandler.is_high_impact("company", name="GovWorks", industry="technology", domain="gov")
+    assert HighImpactHandler.is_high_impact(
+        "company", name="GovWorks", industry="technology", domain="gov"
+    )
 
 
 def test_company_no_high_impact():
@@ -44,17 +46,23 @@ def test_requires_confirmed():
 
 
 def test_verification_requirement_standard():
-    req = HighImpactHandler.verification_requirement(VerificationState.CONFIRMED, is_high_impact=False)
+    req = HighImpactHandler.verification_requirement(
+        VerificationState.CONFIRMED, is_high_impact=False
+    )
     assert req == "standard"
 
 
 def test_verification_requirement_verified():
-    req = HighImpactHandler.verification_requirement(VerificationState.CONFIRMED, is_high_impact=True)
+    req = HighImpactHandler.verification_requirement(
+        VerificationState.CONFIRMED, is_high_impact=True
+    )
     assert req == "verified"
 
 
 def test_verification_requirement_requires_confirmed():
-    req = HighImpactHandler.verification_requirement(VerificationState.PROBABLE, is_high_impact=True)
+    req = HighImpactHandler.verification_requirement(
+        VerificationState.PROBABLE, is_high_impact=True
+    )
     assert req == "requires_confirmed"
 
 

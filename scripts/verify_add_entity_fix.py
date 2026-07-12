@@ -3,11 +3,11 @@
 graph.add_entity Düzeltme Doğrulaması — Duplicate + Boş ID
 Mock'suz, gerçek veriyle, bağımsız.
 """
+
 from __future__ import annotations
 
 import io
 import logging
-import sys
 
 from intelgraph.core.entity.ip_address import IPAddress
 from intelgraph.core.graph.graph import IntelligenceGraph
@@ -24,8 +24,12 @@ logging.getLogger("intelgraph.core.graph.graph").addHandler(handler)
 logging.getLogger("intelgraph.core.graph.graph").setLevel(logging.INFO)
 
 graph = IntelligenceGraph()
-e1 = IPAddress(id="dup_test", ip="10.0.0.1", rdns="first.example.com", confidence_score=80, trust_score=70)
-e2 = IPAddress(id="dup_test", ip="10.0.0.2", rdns="second.example.com", confidence_score=90, trust_score=85)
+e1 = IPAddress(
+    id="dup_test", ip="10.0.0.1", rdns="first.example.com", confidence_score=80, trust_score=70
+)
+e2 = IPAddress(
+    id="dup_test", ip="10.0.0.2", rdns="second.example.com", confidence_score=90, trust_score=85
+)
 
 n1 = graph.add_entity(e1)
 n2 = graph.add_entity(e2)
@@ -83,7 +87,9 @@ print(f"Log çıktısı: {log2.strip()}")
 
 assert graph2.node_count == 1
 assert graph2.nodes["ow_test"].entity.ip == "9.9.9.9"
-assert "ow_test" not in graph2.previous_versions, "overwrite=True ise previous_versions'a kaydedilmemeli!"
+assert (
+    "ow_test" not in graph2.previous_versions
+), "overwrite=True ise previous_versions'a kaydedilmemeli!"
 assert "overwriting" in log2, "overwrite log'u üretilmeli!"
 print("✅ overwrite=True: eski davranış korunuyor, previous_versions kaydı YOK.")
 
@@ -134,7 +140,9 @@ assert "clean_test" in graph4.previous_versions
 removed = graph4.remove_node("clean_test")
 print(f"remove_node döndü: {removed}")
 print(f"Silme sonrası previous_versions: {dict(graph4.previous_versions)}")
-assert "clean_test" not in graph4.previous_versions, "remove_node previous_versions'ı da temizlemeli!"
+assert (
+    "clean_test" not in graph4.previous_versions
+), "remove_node previous_versions'ı da temizlemeli!"
 print("✅ remove_node previous_versions'ı da temizliyor (graph.py'ye eklendi).")
 
 # =====================================================================

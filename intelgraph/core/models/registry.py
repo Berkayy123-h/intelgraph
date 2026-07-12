@@ -6,7 +6,7 @@ import uuid
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Callable
+from typing import Any
 
 
 class ModelStatus(Enum):
@@ -46,12 +46,19 @@ class ModelRegistry:
         self._challengers: dict[str, list[str]] = defaultdict(list)
         self._lineage: dict[str, list[str]] = defaultdict(list)
 
-    def register(self, name: str, version: str, artifact_hash: str = "", parent_id: str = "") -> ModelArtifact:
+    def register(
+        self, name: str, version: str, artifact_hash: str = "", parent_id: str = ""
+    ) -> ModelArtifact:
         model_id = f"mdl_{uuid.uuid4().hex[:12]}"
         artifact = ModelArtifact(
-            model_id=model_id, name=name, version=version,
-            status=ModelStatus.PENDING, artifact_hash=artifact_hash or hashlib.sha256(name.encode() + version.encode()).hexdigest()[:16],
-            created_at=time.time(), parent_id=parent_id,
+            model_id=model_id,
+            name=name,
+            version=version,
+            status=ModelStatus.PENDING,
+            artifact_hash=artifact_hash
+            or hashlib.sha256(name.encode() + version.encode()).hexdigest()[:16],
+            created_at=time.time(),
+            parent_id=parent_id,
         )
         self._models[name].append(artifact)
         if parent_id:
@@ -110,7 +117,9 @@ class ModelRegistry:
         return self._get(mid)
 
     def get_challengers(self, name: str) -> list[ModelArtifact]:
-        return [self._get(cid) for cid in self._challengers.get(name, []) if self._get(cid) is not None]
+        return [
+            self._get(cid) for cid in self._challengers.get(name, []) if self._get(cid) is not None
+        ]
 
     def get_versions(self, name: str) -> list[ModelArtifact]:
         return list(self._models.get(name, []))

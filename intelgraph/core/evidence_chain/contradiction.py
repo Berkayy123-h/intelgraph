@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any
+from datetime import UTC, datetime
 
 import ulid
 
@@ -15,7 +14,7 @@ class ContradictionRecord:
     evidence_id_b: str = ""
     contradiction_type: str = ""
     score: float = 0.0
-    detected_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    detected_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     resolved_at: datetime | None = None
     resolution: str = ""
 
@@ -54,7 +53,9 @@ class ContradictionDetector:
 
         return list(self._records)
 
-    def _compare(self, a: EvidenceItem, b: EvidenceItem, chain_id: str) -> ContradictionRecord | None:
+    def _compare(
+        self, a: EvidenceItem, b: EvidenceItem, chain_id: str
+    ) -> ContradictionRecord | None:
         # NEUTRAL evidence has "no opinion" — it can't contradict or be contradicted.
         if a.support_type == SupportType.NEUTRAL or b.support_type == SupportType.NEUTRAL:
             return None
@@ -70,7 +71,9 @@ class ContradictionDetector:
 
         return None
 
-    def _direct_contradiction(self, a: EvidenceItem, b: EvidenceItem, chain_id: str) -> ContradictionRecord:
+    def _direct_contradiction(
+        self, a: EvidenceItem, b: EvidenceItem, chain_id: str
+    ) -> ContradictionRecord:
         return ContradictionRecord(
             chain_id=chain_id,
             evidence_id_a=a.evidence_id,
@@ -79,7 +82,9 @@ class ContradictionDetector:
             score=100.0,
         )
 
-    def _partial_conflict(self, a: EvidenceItem, b: EvidenceItem, chain_id: str) -> ContradictionRecord | None:
+    def _partial_conflict(
+        self, a: EvidenceItem, b: EvidenceItem, chain_id: str
+    ) -> ContradictionRecord | None:
         words_a = set(a.claim.lower().split())
         words_b = set(b.claim.lower().split())
         if not words_a or not words_b:

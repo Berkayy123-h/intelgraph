@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import time
 import uuid
-from collections import defaultdict
 from typing import Any
 
 
@@ -11,9 +10,14 @@ class GlobalHealthIndex:
         self._cfg = config or {}
         self._history: list[dict[str, Any]] = []
 
-    def compute(self, cognitive: float = 0.5, execution: float = 0.5,
-                knowledge: float = 0.5, policy: float = 0.5,
-                complexity: float = 0.5) -> dict[str, Any]:
+    def compute(
+        self,
+        cognitive: float = 0.5,
+        execution: float = 0.5,
+        knowledge: float = 0.5,
+        policy: float = 0.5,
+        complexity: float = 0.5,
+    ) -> dict[str, Any]:
         raw = {
             "cognitive_health_score": max(0.0, min(1.0, cognitive)),
             "execution_stability_score": max(0.0, min(1.0, execution)),

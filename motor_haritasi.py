@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Sistem Çapında Motor/Engine Entegrasyon/İzolasyon Haritası
 
 Her motor sınıfı için statik analiz: gerçek veri akışına bağlı mı, izole mi?
 """
+
 from __future__ import annotations
 
 # fmt: off

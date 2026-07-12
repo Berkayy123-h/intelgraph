@@ -1,9 +1,7 @@
 import json
 import threading
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
-
-import ulid
 
 
 class CacheManager:
@@ -27,7 +25,7 @@ class CacheManager:
             expires = row.get("expires_at")
             if expires:
                 exp_dt = datetime.fromisoformat(expires)
-                if exp_dt < datetime.now(timezone.utc):
+                if exp_dt < datetime.now(UTC):
                     self._miss_count += 1
                     return None
             self._memory_put(key, value, expires, persist=False)
@@ -37,15 +35,13 @@ class CacheManager:
         self._miss_count += 1
         return None
 
-    def set(
-        self, key: str, value: object, ttl: int | None = None, persist: bool = True
-    ) -> None:
+    def set(self, key: str, value: object, ttl: int | None = None, persist: bool = True) -> None:
         expires: str | None = None
         if ttl is None:
             ttl = self._default_ttl
         if ttl > 0:
-            exp_dt = datetime.now(timezone.utc).timestamp() + ttl
-            expires = datetime.fromtimestamp(exp_dt, tz=timezone.utc).isoformat()
+            exp_dt = datetime.now(UTC).timestamp() + ttl
+            expires = datetime.fromtimestamp(exp_dt, tz=UTC).isoformat()
 
         self._memory_put(key, value, expires)
         if persist:
@@ -70,7 +66,11 @@ class CacheManager:
 
     @property
     def stats(self) -> dict[str, int]:
-        return {"hits": self._hit_count, "misses": self._miss_count, "memory_size": len(self._memory)}
+        return {
+            "hits": self._hit_count,
+            "misses": self._miss_count,
+            "memory_size": len(self._memory),
+        }
 
     def _memory_get(self, key: str) -> object | None:
         with self._lock:
@@ -80,11 +80,13 @@ class CacheManager:
             value, expires_at = entry
             if expires_at:
                 exp_dt = datetime.fromisoformat(expires_at)
-                if exp_dt < datetime.now(timezone.utc):
+                if exp_dt < datetime.now(UTC):
                     self._memory.pop(key, None)
                     return None
             return value
 
-    def _memory_put(self, key: str, value: object, expires_at: str | None, persist: bool = True) -> None:
+    def _memory_put(
+        self, key: str, value: object, expires_at: str | None, persist: bool = True
+    ) -> None:
         with self._lock:
             self._memory[key] = (value, expires_at)

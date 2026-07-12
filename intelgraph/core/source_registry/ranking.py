@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from typing import Any
 
 from intelgraph.core.source_registry.decay import TrustDecayModel

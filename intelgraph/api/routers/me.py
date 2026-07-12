@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 
 from intelgraph.api.auth import _token_store, decode_token
 from intelgraph.core.multitenant import get_tenant_manager

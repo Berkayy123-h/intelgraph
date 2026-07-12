@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import ulid
@@ -26,7 +26,7 @@ class SourceRegistry:
             "source_tier": source_tier,
             "trust_score": trust_score,
             "reliability_score": reliability_score,
-            "last_validated": datetime.now(timezone.utc).isoformat(),
+            "last_validated": datetime.now(UTC).isoformat(),
             "classification": classification or "",
             "metadata": _serialize(metadata or {}),
         }
@@ -42,4 +42,5 @@ class SourceRegistry:
 
 def _serialize(obj: object) -> str:
     import json
+
     return json.dumps(obj, default=str)

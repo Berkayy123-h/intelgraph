@@ -3,18 +3,23 @@ from __future__ import annotations
 import hashlib
 import time
 import uuid
-from dataclasses import dataclass, field
-from typing import Any, Callable
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
 
+from intelgraph.core.enterprise.observability import get_metrics
+from intelgraph.core.explainability.interpreter import (
+    CounterfactualExplainer,
+    FeatureImportance,
+    ModelInterpreter,
+)
+from intelgraph.core.governance.policy import ApprovalWorkflow, AuditTrail, ComplianceChecker
+from intelgraph.core.graph.anomaly import AnomalyDetector
 from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.graph.node import Node
-from intelgraph.core.graph.anomaly import AnomalyDetector, AnomalyBaseline
-from intelgraph.core.graph.reasoning import CausalReasoner
 from intelgraph.core.graph.prediction import Predictor
-from intelgraph.core.explainability.interpreter import FeatureImportance, ModelInterpreter, CounterfactualExplainer
+from intelgraph.core.graph.reasoning import CausalReasoner
 from intelgraph.core.safety.guard import SafetyGuard
-from intelgraph.core.governance.policy import AuditTrail, ComplianceChecker, ApprovalWorkflow
-from intelgraph.core.enterprise.observability import get_metrics
 
 KERNEL_SCHEMA_VERSION = "1.0"
 KERNEL_EXECUTION_VERSION = "1.0"
@@ -68,7 +73,7 @@ class CrossSystemConsistency:
                     if nid == rc.get("root_cause_node"):
                         overlap += 1
             if max(len(anom_scores), 1) > 0:
-                score *= (1.0 - 0.2 * (1.0 - overlap / max(len(anom_scores), 1)))
+                score *= 1.0 - 0.2 * (1.0 - overlap / max(len(anom_scores), 1))
         if causal_result and prediction_result:
             score *= 0.95
         if anomaly_result and prediction_result:
@@ -90,23 +95,27 @@ class CrossSystemConsistency:
                 causal_nodes.add(rc.get("root_cause_node", ""))
             missing = top_anom_nodes - causal_nodes
             if missing:
-                conflicts.append({
-                    "type": "anomaly_causal_mismatch",
-                    "severity": "warning",
-                    "detail": f"Anomaly nodes {missing} have no causal root cause path",
-                    "resolution_hint": "increase causal max_depth or check graph connectivity",
-                })
+                conflicts.append(
+                    {
+                        "type": "anomaly_causal_mismatch",
+                        "severity": "warning",
+                        "detail": f"Anomaly nodes {missing} have no causal root cause path",
+                        "resolution_hint": "increase causal max_depth or check graph connectivity",
+                    }
+                )
         if prediction_result and anomaly_result:
             pred_scores = [p.get("value", 0.0) for p in prediction_result.get("predictions", [])]
             if pred_scores and max(pred_scores) > 0.8:
                 anom_scores = anomaly_result.get("scores", {})
                 if anom_scores and max(anom_scores.values()) < 0.3:
-                    conflicts.append({
-                        "type": "prediction_anomaly_divergence",
-                        "severity": "warning",
-                        "detail": "High prediction scores but low anomaly scores",
-                        "resolution_hint": "check feature freshness and model calibration",
-                    })
+                    conflicts.append(
+                        {
+                            "type": "prediction_anomaly_divergence",
+                            "severity": "warning",
+                            "detail": "High prediction scores but low anomaly scores",
+                            "resolution_hint": "check feature freshness and model calibration",
+                        }
+                    )
         return conflicts
 
 
@@ -139,15 +148,27 @@ class UnifiedExecutionKernel:
         )
         self._approval_workflow = ApprovalWorkflow(
             risk_threshold=self._config.get("governance", {}).get("risk_threshold", 0.7),
-            auto_approve_low_risk=self._config.get("governance", {}).get("auto_approve_low_risk", True),
+            auto_approve_low_risk=self._config.get("governance", {}).get(
+                "auto_approve_low_risk", True
+            ),
         )
         self._safety_guard = SafetyGuard(
             bounds=self._config.get("safety", {}).get("bounds", {}),
-            fallbacks={
-                pt: self._config.get("safety", {}).get("fallback_default", 0.0)
-                for pt in ["risk_forecast", "temporal_trend", "influence_trajectory",
-                           "anomaly_likelihood", "attack_path_probability", "community_evolution"]
-            } if self._config.get("safety", {}).get("enabled", True) else {},
+            fallbacks=(
+                {
+                    pt: self._config.get("safety", {}).get("fallback_default", 0.0)
+                    for pt in [
+                        "risk_forecast",
+                        "temporal_trend",
+                        "influence_trajectory",
+                        "anomaly_likelihood",
+                        "attack_path_probability",
+                        "community_evolution",
+                    ]
+                }
+                if self._config.get("safety", {}).get("enabled", True)
+                else {}
+            ),
         )
 
     def _compute_graph_version(self) -> str:
@@ -200,27 +221,43 @@ class UnifiedExecutionKernel:
             try:
                 anomaly_result = self._anomaly_detector.multi_factor_score()
                 all_anomaly_scores = anomaly_result.get("scores", {})
-                self._anomaly_detector._baseline.record_snapshot(self._anomaly_detector._compute_features())
-                self._anomaly_detector._baseline.compute_baselines(self._anomaly_detector._compute_features())
+                self._anomaly_detector._baseline.record_snapshot(
+                    self._anomaly_detector._compute_features()
+                )
+                self._anomaly_detector._baseline.compute_baselines(
+                    self._anomaly_detector._compute_features()
+                )
                 self._causal_reasoner._anomaly_scores = all_anomaly_scores
                 self._predictor._anomaly_scores = all_anomaly_scores
-                trace.phases["anomaly"] = {"status": "completed", "node_count": len(all_anomaly_scores)}
+                trace.phases["anomaly"] = {
+                    "status": "completed",
+                    "node_count": len(all_anomaly_scores),
+                }
             except Exception as e:
                 trace.phases["anomaly"] = {"status": "failed", "error": str(e)}
         if enable_causal and anomaly_node:
             try:
-                causal_result = self._causal_reasoner.top_causes(anomaly_node, max_depth=5, top_n=10)
+                causal_result = self._causal_reasoner.top_causes(
+                    anomaly_node, max_depth=5, top_n=10
+                )
                 if causal_result.get("found"):
-                    all_influence_scores = {rc.get("root_cause_node", ""): rc.get("confidence", 0.0)
-                                            for rc in causal_result.get("root_causes", [])}
+                    all_influence_scores = {
+                        rc.get("root_cause_node", ""): rc.get("confidence", 0.0)
+                        for rc in causal_result.get("root_causes", [])
+                    }
                     self._predictor._influence_scores = all_influence_scores
-                trace.phases["causal"] = {"status": "completed", "root_cause_count": len(causal_result.get("root_causes", []))}
+                trace.phases["causal"] = {
+                    "status": "completed",
+                    "root_cause_count": len(causal_result.get("root_causes", [])),
+                }
             except Exception as e:
                 causal_result = {"found": False, "error": str(e)}
                 trace.phases["causal"] = {"status": "failed", "error": str(e)}
         if enable_prediction:
             try:
-                nodes_to_forecast = [anomaly_node] if anomaly_node else list(self._graph.nodes.keys())[:5]
+                nodes_to_forecast = (
+                    [anomaly_node] if anomaly_node else list(self._graph.nodes.keys())[:5]
+                )
                 all_predictions: list[dict[str, Any]] = []
                 for nid in nodes_to_forecast:
                     if nid in self._graph.nodes:
@@ -230,12 +267,19 @@ class UnifiedExecutionKernel:
                     "forecasts": all_predictions,
                     "total_forecasts": len(all_predictions),
                 }
-                trace.phases["prediction"] = {"status": "completed", "forecast_count": len(all_predictions)}
+                trace.phases["prediction"] = {
+                    "status": "completed",
+                    "forecast_count": len(all_predictions),
+                }
             except Exception as e:
                 prediction_result = {"forecasts": [], "total_forecasts": 0, "error": str(e)}
                 trace.phases["prediction"] = {"status": "failed", "error": str(e)}
-        coherence = self._consistency.coherence_score(anomaly_result, causal_result, prediction_result)
-        conflicts = self._consistency.detect_conflicts(anomaly_result, causal_result, prediction_result)
+        coherence = self._consistency.coherence_score(
+            anomaly_result, causal_result, prediction_result
+        )
+        conflicts = self._consistency.detect_conflicts(
+            anomaly_result, causal_result, prediction_result
+        )
         trace.coherence_score = coherence
         trace.completed_at = time.time()
         duration = time.perf_counter_ns() - t0
@@ -271,7 +315,10 @@ class UnifiedExecutionKernel:
                 except Exception as e:
                     trace.phases["explainability"] = {"status": "failed", "error": str(e)}
                 else:
-                    trace.phases["explainability"] = {"status": "completed", "feature_count": len(explanation)}
+                    trace.phases["explainability"] = {
+                        "status": "completed",
+                        "feature_count": len(explanation),
+                    }
 
                 pred_value = all_pred_dicts[0].get("value", 0.0)
                 pred_type = all_pred_dicts[0].get("prediction_type", "unknown")
@@ -294,7 +341,10 @@ class UnifiedExecutionKernel:
                         entity_risk=entity_risk,
                     )
                     governance_result = compliance_report.to_dict()
-                    trace.phases["governance"] = {"status": "completed", "compliant": compliance_report.status.name == "COMPLIANT"}
+                    trace.phases["governance"] = {
+                        "status": "completed",
+                        "compliant": compliance_report.status.name == "COMPLIANT",
+                    }
                 except Exception as e:
                     governance_result = {"status": "non_compliant", "error": str(e)}
                     trace.phases["governance"] = {"status": "failed", "error": str(e)}
@@ -330,6 +380,7 @@ class UnifiedExecutionKernel:
 
 def build_graph_from_container() -> IntelligenceGraph:
     from intelgraph.api.main import _container
+
     g = IntelligenceGraph()
     for entity in _container.backend.list_entities():
         eid = entity.id
@@ -343,7 +394,7 @@ def build_graph_from_container() -> IntelligenceGraph:
         tgt = rel.target_id
         if src in g.nodes and tgt in g.nodes:
             from intelgraph.core.graph.edge import Edge
-            from intelgraph.core.relationship import Relationship
+
             g.adjacency.setdefault(src, set()).add(tgt)
             g.adjacency.setdefault(tgt, set()).add(src)
             g.forward_adjacency.setdefault(src, set()).add(tgt)

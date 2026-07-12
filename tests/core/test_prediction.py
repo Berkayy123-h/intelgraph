@@ -1,24 +1,26 @@
 from __future__ import annotations
 
 import time
-from datetime import datetime, timezone
-from typing import Any
+from datetime import UTC, datetime
 
 import pytest
 
-from intelgraph.core.entity.person import Person
 from intelgraph.core.entity.technology import Technology
+from intelgraph.core.features.store import FeatureStore
+from intelgraph.core.graph.edge import Edge
 from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.graph.node import Node
-from intelgraph.core.graph.edge import Edge
 from intelgraph.core.graph.prediction import (
-    Predictor, PredictionResult, ForecastHorizon,
+    ForecastHorizon,
+    PredictionResult,
+    Predictor,
 )
-from intelgraph.core.models.registry import ModelRegistry, ModelStatus, ModelArtifact
-from intelgraph.core.features.store import FeatureStore
 from intelgraph.core.kernel.execution import (
-    UnifiedExecutionKernel, CrossSystemConsistency, KernelTrace,
+    CrossSystemConsistency,
+    KernelTrace,
+    UnifiedExecutionKernel,
 )
+from intelgraph.core.models.registry import ModelRegistry, ModelStatus
 from intelgraph.core.relationship.base import Relationship
 from intelgraph.core.relationship.types import RelationshipType
 
@@ -28,14 +30,16 @@ def _make_entity(id: str) -> Technology:
         id=id,
         confidence_score=50,
         trust_score=50,
-        created_at=datetime(2025, 1, 1, tzinfo=timezone.utc),
-        updated_at=datetime(2025, 1, 1, tzinfo=timezone.utc),
+        created_at=datetime(2025, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2025, 1, 1, tzinfo=UTC),
     )
 
 
 def _make_rel(id: str, src: str, tgt: str, conf: float = 0.5, trust: float = 0.5) -> Relationship:
     return Relationship(
-        id=id, source_id=src, target_id=tgt,
+        id=id,
+        source_id=src,
+        target_id=tgt,
         type=RelationshipType.RELATED_TO,
         confidence_score=int(conf * 100),
         trust_weight=int(trust * 100),
@@ -99,6 +103,7 @@ def store() -> FeatureStore:
 # ForecastHorizon (Enum)
 # ---------------------------------------------------------------------------
 
+
 class TestForecastHorizon:
     def test_members(self) -> None:
         assert ForecastHorizon.SHORT.value == "short"
@@ -110,19 +115,28 @@ class TestForecastHorizon:
 # PredictionResult
 # ---------------------------------------------------------------------------
 
+
 class TestPredictionResult:
     def test_create(self) -> None:
         pr = PredictionResult(
-            prediction_id="p1", entity_id="A", prediction_type="risk",
-            value=0.5, confidence=0.8, horizon="short",
+            prediction_id="p1",
+            entity_id="A",
+            prediction_type="risk",
+            value=0.5,
+            confidence=0.8,
+            horizon="short",
         )
         assert pr.entity_id == "A"
         assert pr.value == 0.5
 
     def test_to_dict(self) -> None:
         pr = PredictionResult(
-            prediction_id="p1", entity_id="A", prediction_type="risk",
-            value=0.5, confidence=0.8, horizon="short",
+            prediction_id="p1",
+            entity_id="A",
+            prediction_type="risk",
+            value=0.5,
+            confidence=0.8,
+            horizon="short",
         )
         d = pr.to_dict()
         assert d["entity_id"] == "A"
@@ -132,6 +146,7 @@ class TestPredictionResult:
 # ---------------------------------------------------------------------------
 # Predictor - risk_forecast
 # ---------------------------------------------------------------------------
+
 
 class TestRiskForecast:
     def test_returns_prediction_result(self, predictor: Predictor) -> None:
@@ -179,6 +194,7 @@ class TestRiskForecast:
 # Predictor - temporal_trend
 # ---------------------------------------------------------------------------
 
+
 class TestTemporalTrend:
     def test_type(self, predictor: Predictor) -> None:
         r = predictor.temporal_trend("B")
@@ -205,6 +221,7 @@ class TestTemporalTrend:
 # Predictor - influence_trajectory
 # ---------------------------------------------------------------------------
 
+
 class TestInfluenceTrajectory:
     def test_type(self, predictor: Predictor) -> None:
         r = predictor.influence_trajectory("A")
@@ -227,6 +244,7 @@ class TestInfluenceTrajectory:
 # Predictor - anomaly_likelihood
 # ---------------------------------------------------------------------------
 
+
 class TestAnomalyLikelihood:
     def test_type(self, predictor: Predictor) -> None:
         r = predictor.anomaly_likelihood("B")
@@ -248,6 +266,7 @@ class TestAnomalyLikelihood:
 # ---------------------------------------------------------------------------
 # Predictor - attack_path_probability
 # ---------------------------------------------------------------------------
+
 
 class TestAttackPathProbability:
     def test_type(self, predictor: Predictor) -> None:
@@ -277,6 +296,7 @@ class TestAttackPathProbability:
 # Predictor - community_evolution
 # ---------------------------------------------------------------------------
 
+
 class TestCommunityEvolution:
     def test_type(self, predictor: Predictor) -> None:
         r = predictor.community_evolution("A")
@@ -297,6 +317,7 @@ class TestCommunityEvolution:
 # ---------------------------------------------------------------------------
 # Predictor - counterfactual
 # ---------------------------------------------------------------------------
+
 
 class TestCounterfactual:
     def test_basic(self, predictor: Predictor) -> None:
@@ -321,6 +342,7 @@ class TestCounterfactual:
 # Predictor - full_forecast
 # ---------------------------------------------------------------------------
 
+
 class TestFullForecast:
     def test_returns_dict(self, predictor: Predictor) -> None:
         r = predictor.full_forecast("A")
@@ -336,18 +358,33 @@ class TestFullForecast:
     def test_all_types_present(self, predictor: Predictor) -> None:
         r = predictor.full_forecast("A")
         types = {p["prediction_type"] for p in r["predictions"]}
-        assert types == {"risk_forecast", "temporal_trend", "influence_trajectory",
-                          "anomaly_likelihood", "attack_path_probability"}
+        assert types == {
+            "risk_forecast",
+            "temporal_trend",
+            "influence_trajectory",
+            "anomaly_likelihood",
+            "attack_path_probability",
+        }
 
     def test_deterministic_values(self, predictor: Predictor) -> None:
         r1 = predictor.full_forecast("A")
         r2 = predictor.full_forecast("A")
-        e1 = r1["ensemble"]; e2 = r2["ensemble"]
+        e1 = r1["ensemble"]
+        e2 = r2["ensemble"]
         assert e1["value"] == e2["value"]
         assert e1["confidence"] == e2["confidence"]
         assert e1["uncertainty"] == e2["uncertainty"]
         for p1, p2 in zip(r1["predictions"], r2["predictions"]):
-            for k in ("entity_id", "prediction_type", "value", "confidence", "uncertainty", "horizon", "features", "contributions"):
+            for k in (
+                "entity_id",
+                "prediction_type",
+                "value",
+                "confidence",
+                "uncertainty",
+                "horizon",
+                "features",
+                "contributions",
+            ):
                 assert p1[k] == p2[k], f"Mismatch in {k}: {p1[k]} != {p2[k]}"
 
     def test_graph_version(self, predictor: Predictor) -> None:
@@ -360,11 +397,26 @@ class TestFullForecast:
 # Predictor - ensemble_score
 # ---------------------------------------------------------------------------
 
+
 class TestEnsembleScore:
     def test_basic(self, predictor: Predictor) -> None:
         preds = [
-            PredictionResult(prediction_id="a", entity_id="X", prediction_type="a", value=0.5, confidence=0.8, horizon="short"),
-            PredictionResult(prediction_id="b", entity_id="X", prediction_type="b", value=0.7, confidence=0.6, horizon="short"),
+            PredictionResult(
+                prediction_id="a",
+                entity_id="X",
+                prediction_type="a",
+                value=0.5,
+                confidence=0.8,
+                horizon="short",
+            ),
+            PredictionResult(
+                prediction_id="b",
+                entity_id="X",
+                prediction_type="b",
+                value=0.7,
+                confidence=0.6,
+                horizon="short",
+            ),
         ]
         r = predictor.ensemble_score(preds)
         assert r.prediction_type == "ensemble"
@@ -376,16 +428,44 @@ class TestEnsembleScore:
 
     def test_custom_weights(self, predictor: Predictor) -> None:
         preds = [
-            PredictionResult(prediction_id="a", entity_id="X", prediction_type="a", value=0.0, confidence=0.8, horizon="short"),
-            PredictionResult(prediction_id="b", entity_id="X", prediction_type="b", value=1.0, confidence=0.6, horizon="short"),
+            PredictionResult(
+                prediction_id="a",
+                entity_id="X",
+                prediction_type="a",
+                value=0.0,
+                confidence=0.8,
+                horizon="short",
+            ),
+            PredictionResult(
+                prediction_id="b",
+                entity_id="X",
+                prediction_type="b",
+                value=1.0,
+                confidence=0.6,
+                horizon="short",
+            ),
         ]
         r = predictor.ensemble_score(preds, [1.0, 3.0])
         assert r.value == pytest.approx(0.75)
 
     def test_deterministic(self, predictor: Predictor) -> None:
         preds = [
-            PredictionResult(prediction_id="a", entity_id="X", prediction_type="a", value=0.5, confidence=0.8, horizon="short"),
-            PredictionResult(prediction_id="b", entity_id="X", prediction_type="b", value=0.5, confidence=0.6, horizon="short"),
+            PredictionResult(
+                prediction_id="a",
+                entity_id="X",
+                prediction_type="a",
+                value=0.5,
+                confidence=0.8,
+                horizon="short",
+            ),
+            PredictionResult(
+                prediction_id="b",
+                entity_id="X",
+                prediction_type="b",
+                value=0.5,
+                confidence=0.6,
+                horizon="short",
+            ),
         ]
         r1 = predictor.ensemble_score(preds)
         r2 = predictor.ensemble_score(preds)
@@ -400,6 +480,7 @@ class TestEnsembleScore:
 # Predictor - multi_horizon_forecast
 # ---------------------------------------------------------------------------
 
+
 class TestMultiHorizonForecast:
     def test_returns_15(self, predictor: Predictor) -> None:
         results = predictor.multi_horizon_forecast("A")
@@ -409,13 +490,23 @@ class TestMultiHorizonForecast:
         r1 = predictor.multi_horizon_forecast("A")
         r2 = predictor.multi_horizon_forecast("A")
         for p1, p2 in zip(r1, r2):
-            for k in ("entity_id", "prediction_type", "value", "confidence", "uncertainty", "horizon", "features", "contributions"):
+            for k in (
+                "entity_id",
+                "prediction_type",
+                "value",
+                "confidence",
+                "uncertainty",
+                "horizon",
+                "features",
+                "contributions",
+            ):
                 assert getattr(p1, k) == getattr(p2, k)
 
 
 # ---------------------------------------------------------------------------
 # ModelRegistry
 # ---------------------------------------------------------------------------
+
 
 class TestModelRegistry:
     def test_register_and_list(self, registry: ModelRegistry) -> None:
@@ -434,14 +525,16 @@ class TestModelRegistry:
 
     def test_rollback(self, registry: ModelRegistry) -> None:
         m = registry.register("risk_v1", "1.0.0")
-        registry.approve(m.model_id); registry.deploy(m.model_id)
+        registry.approve(m.model_id)
+        registry.deploy(m.model_id)
         assert registry.rollback(m.model_id) is True
         versions = registry.get_versions("risk_v1")
         assert versions[-1].status == ModelStatus.ROLLED_BACK
 
     def test_champion(self, registry: ModelRegistry) -> None:
         m = registry.register("risk_v1", "1.0.0")
-        registry.approve(m.model_id); registry.deploy(m.model_id)
+        registry.approve(m.model_id)
+        registry.deploy(m.model_id)
         assert registry.set_champion(m.model_id) is True
         champ = registry.get_champion("risk_v1")
         assert champ is not None and champ.model_id == m.model_id
@@ -449,7 +542,9 @@ class TestModelRegistry:
 
     def test_add_challenger(self, registry: ModelRegistry) -> None:
         m1 = registry.register("risk_v1", "1.0.0")
-        registry.approve(m1.model_id); registry.deploy(m1.model_id); registry.set_champion(m1.model_id)
+        registry.approve(m1.model_id)
+        registry.deploy(m1.model_id)
+        registry.set_champion(m1.model_id)
         m2 = registry.register("risk_v1", "2.0.0")
         assert registry.add_challenger(m2.model_id) is True
         challengers = registry.get_challengers("risk_v1")
@@ -459,7 +554,8 @@ class TestModelRegistry:
 
     def test_performance(self, registry: ModelRegistry) -> None:
         m = registry.register("risk_v1", "1.0.0")
-        registry.approve(m.model_id); registry.deploy(m.model_id)
+        registry.approve(m.model_id)
+        registry.deploy(m.model_id)
         assert registry.record_performance(m.model_id, {"accuracy": 0.95}) is True
         versions = registry.get_versions("risk_v1")
         assert versions[-1].performance_metrics.get("accuracy") == 0.95
@@ -470,7 +566,9 @@ class TestModelRegistry:
         hc = registry.health_check("risk_v1")
         assert hc["healthy"] is False
         # Promote to champion
-        registry.approve(m.model_id); registry.deploy(m.model_id); registry.set_champion(m.model_id)
+        registry.approve(m.model_id)
+        registry.deploy(m.model_id)
+        registry.set_champion(m.model_id)
         hc = registry.health_check("risk_v1")
         assert hc["healthy"] is True
 
@@ -498,6 +596,7 @@ class TestModelRegistry:
 # ---------------------------------------------------------------------------
 # FeatureStore
 # ---------------------------------------------------------------------------
+
 
 class TestFeatureStore:
     def test_set_get(self, store: FeatureStore) -> None:
@@ -560,29 +659,42 @@ class TestFeatureStore:
 # CrossSystemConsistency
 # ---------------------------------------------------------------------------
 
+
 class TestCrossSystemConsistency:
     def test_perfect_coherence(self) -> None:
         csc = CrossSystemConsistency()
         s = csc.coherence_score(
-            {"scores": {"A": 0.9}}, {"root_causes": [{"root_cause_node": "A", "confidence": 0.8}]}, {"predictions": [{"value": 0.5}]},
+            {"scores": {"A": 0.9}},
+            {"root_causes": [{"root_cause_node": "A", "confidence": 0.8}]},
+            {"predictions": [{"value": 0.5}]},
         )
         assert s > 0.8
 
     def test_low_coherence(self) -> None:
         csc = CrossSystemConsistency()
         s = csc.coherence_score(
-            {"scores": {"A": 0.9, "B": 0.9, "C": 0.9}}, {"root_causes": [{"root_cause_node": "Z", "confidence": 0.8}]}, {"predictions": [{"value": 0.5}]},
+            {"scores": {"A": 0.9, "B": 0.9, "C": 0.9}},
+            {"root_causes": [{"root_cause_node": "Z", "confidence": 0.8}]},
+            {"predictions": [{"value": 0.5}]},
         )
         assert s < 1.0
 
     def test_no_conflicts(self) -> None:
         csc = CrossSystemConsistency()
-        cs = csc.detect_conflicts({"scores": {"A": 0.9}}, {"root_causes": [{"root_cause_node": "A", "confidence": 0.8}]}, {"predictions": [{"value": 0.3}]})
+        cs = csc.detect_conflicts(
+            {"scores": {"A": 0.9}},
+            {"root_causes": [{"root_cause_node": "A", "confidence": 0.8}]},
+            {"predictions": [{"value": 0.3}]},
+        )
         assert len(cs) == 0
 
     def test_anomaly_causal_mismatch(self) -> None:
         csc = CrossSystemConsistency()
-        cs = csc.detect_conflicts({"scores": {"A": 0.9, "B": 0.9, "C": 0.9, "D": 0.9, "E": 0.9}}, {"root_causes": [{"root_cause_node": "Z"}]}, {"predictions": [{"value": 0.3}]})
+        cs = csc.detect_conflicts(
+            {"scores": {"A": 0.9, "B": 0.9, "C": 0.9, "D": 0.9, "E": 0.9}},
+            {"root_causes": [{"root_cause_node": "Z"}]},
+            {"predictions": [{"value": 0.3}]},
+        )
         assert any(c["type"] == "anomaly_causal_mismatch" for c in cs)
 
     def test_prediction_anomaly_divergence(self) -> None:
@@ -600,13 +712,28 @@ class TestCrossSystemConsistency:
 # KernelTrace
 # ---------------------------------------------------------------------------
 
+
 class TestKernelTrace:
     def test_create(self) -> None:
-        t = KernelTrace(trace_id="kt1", graph_version="gv1", execution_mode="det", phases={}, coherence_score=0.9, started_at=100.0)
+        t = KernelTrace(
+            trace_id="kt1",
+            graph_version="gv1",
+            execution_mode="det",
+            phases={},
+            coherence_score=0.9,
+            started_at=100.0,
+        )
         assert t.trace_id == "kt1"
 
     def test_to_dict(self) -> None:
-        t = KernelTrace(trace_id="kt1", graph_version="gv1", execution_mode="det", phases={}, coherence_score=0.9, started_at=100.0)
+        t = KernelTrace(
+            trace_id="kt1",
+            graph_version="gv1",
+            execution_mode="det",
+            phases={},
+            coherence_score=0.9,
+            started_at=100.0,
+        )
         d = t.to_dict()
         assert d["schema_version"] == "1.0"
         assert d["coherence_score"] == 0.9
@@ -616,13 +743,22 @@ class TestKernelTrace:
 # UnifiedExecutionKernel
 # ---------------------------------------------------------------------------
 
+
 class TestKernel:
     def test_execute_basic(self, kernel: UnifiedExecutionKernel) -> None:
         r = kernel.execute("A")
-        assert "trace" in r and "anomaly" in r and "causal" in r and "prediction" in r and "coherence" in r and "execution_time_ms" in r
+        assert (
+            "trace" in r
+            and "anomaly" in r
+            and "causal" in r
+            and "prediction" in r
+            and "coherence" in r
+            and "execution_time_ms" in r
+        )
 
     def test_execute_deterministic(self, kernel: UnifiedExecutionKernel) -> None:
-        r1 = kernel.execute("A"); r2 = kernel.execute("A")
+        r1 = kernel.execute("A")
+        r2 = kernel.execute("A")
         a1 = {k: v for k, v in r1["anomaly"].items() if k != "execution_time_ms"}
         a2 = {k: v for k, v in r2["anomaly"].items() if k != "execution_time_ms"}
         assert a1 == a2

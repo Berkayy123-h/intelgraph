@@ -1,16 +1,18 @@
+from datetime import UTC
+
 import pytest
 from fastapi.testclient import TestClient
 
-from intelgraph.api.main import create_app
 from intelgraph.api.auth import (
+    TOKEN_EXPIRY_HOURS,
     _hash_password,
     _verify_password,
-    register_user,
     login_user,
+    register_user,
     validate_token,
-    TOKEN_EXPIRY_HOURS,
 )
-from intelgraph.core.enterprise.config_validator import ConfigValidationError, validate_config
+from intelgraph.api.main import create_app
+from intelgraph.core.enterprise.config_validator import ConfigValidationError
 
 
 @pytest.fixture
@@ -22,16 +24,25 @@ def client():
 
 class TestRBACEnforcement:
     def _register_and_get_header(self, client, role: str = "user"):
-        resp = client.post("/auth/register", json={
-            "username": f"user_{role}", "password": "pass", "role": role,
-        })
+        resp = client.post(
+            "/auth/register",
+            json={
+                "username": f"user_{role}",
+                "password": "pass",
+                "role": role,
+            },
+        )
         token = resp.json()["access_token"]
         return {"Authorization": f"Bearer {token}"}
 
     def test_unauthenticated_create_entity_returns_401(self, client):
-        resp = client.post("/entities", json={
-            "entity_type": "person", "attributes": {"name": "Alice"},
-        })
+        resp = client.post(
+            "/entities",
+            json={
+                "entity_type": "person",
+                "attributes": {"name": "Alice"},
+            },
+        )
         assert resp.status_code == 401
 
     def test_unauthenticated_update_entity_returns_401(self, client):
@@ -43,9 +54,14 @@ class TestRBACEnforcement:
         assert resp.status_code == 401
 
     def test_unauthenticated_create_relationship_returns_401(self, client):
-        resp = client.post("/relationships", json={
-            "type": "RELATED_TO", "source_id": "a", "target_id": "b",
-        })
+        resp = client.post(
+            "/relationships",
+            json={
+                "type": "RELATED_TO",
+                "source_id": "a",
+                "target_id": "b",
+            },
+        )
         assert resp.status_code == 401
 
     def test_unauthenticated_delete_relationship_returns_401(self, client):
@@ -58,9 +74,14 @@ class TestRBACEnforcement:
 
     def test_user_cannot_create_entity_returns_403(self, client):
         headers = self._register_and_get_header(client, "user")
-        resp = client.post("/entities", json={
-            "entity_type": "person", "attributes": {"name": "Alice"},
-        }, headers=headers)
+        resp = client.post(
+            "/entities",
+            json={
+                "entity_type": "person",
+                "attributes": {"name": "Alice"},
+            },
+            headers=headers,
+        )
         assert resp.status_code == 403
 
     def test_user_cannot_delete_entity_returns_403(self, client):
@@ -70,24 +91,39 @@ class TestRBACEnforcement:
 
     def test_analyst_can_create_entity(self, client):
         headers = self._register_and_get_header(client, "analyst")
-        resp = client.post("/entities", json={
-            "entity_type": "person", "attributes": {"name": "Alice"},
-        }, headers=headers)
+        resp = client.post(
+            "/entities",
+            json={
+                "entity_type": "person",
+                "attributes": {"name": "Alice"},
+            },
+            headers=headers,
+        )
         assert resp.status_code == 200
 
     def test_analyst_cannot_delete_entity_returns_403(self, client):
         headers = self._register_and_get_header(client, "analyst")
-        eid = client.post("/entities", json={
-            "entity_type": "person", "attributes": {"name": "X"},
-        }, headers=headers).json()["id"]
+        eid = client.post(
+            "/entities",
+            json={
+                "entity_type": "person",
+                "attributes": {"name": "X"},
+            },
+            headers=headers,
+        ).json()["id"]
         resp = client.delete(f"/entities/{eid}", headers=headers)
         assert resp.status_code == 403
 
     def test_admin_can_delete_entity(self, client):
         headers = self._register_and_get_header(client, "admin")
-        eid = client.post("/entities", json={
-            "entity_type": "person", "attributes": {"name": "Y"},
-        }, headers=headers).json()["id"]
+        eid = client.post(
+            "/entities",
+            json={
+                "entity_type": "person",
+                "attributes": {"name": "Y"},
+            },
+            headers=headers,
+        ).json()["id"]
         resp = client.delete(f"/entities/{eid}", headers=headers)
         assert resp.status_code == 200
 
@@ -119,6 +155,7 @@ class TestAuthHardening:
     def test_validate_valid_token(self):
         uid = "test_validate"
         import hashlib
+
         uid_hash = hashlib.sha256(uid.encode()).hexdigest()[:16]
         token = register_user(uid, "pass")["access_token"]
         result = validate_token(token)
@@ -128,9 +165,10 @@ class TestAuthHardening:
         assert validate_token("invalid.token.here") is None
 
     def test_validate_expired_token(self):
-        import jwt
         import os
-        import time
+
+        import jwt
+
         secret = os.environ.get("INTELGRAPH_SECRET_KEY", "test_secret")
         expired = jwt.encode(
             {"sub": "test", "iat": 0, "exp": 1},
@@ -167,14 +205,16 @@ class TestConfigValidation:
 
 class TestEvidencePersistence:
     def test_store_and_retrieve_evidence(self, client):
-        from intelgraph.core.evidence.evidence import Evidence
-        from datetime import datetime, timezone
+        from datetime import datetime
+
         from intelgraph.api.main import _container
+        from intelgraph.core.evidence.evidence import Evidence
+
         ev = Evidence(
             id="ev-1",
             source="https://example.com",
             content="test content",
-            collected_at=datetime.now(timezone.utc),
+            collected_at=datetime.now(UTC),
             source_tier=1,
             trust_score=80,
             reliability_score=70,
@@ -186,6 +226,7 @@ class TestEvidencePersistence:
 
     def test_evidence_not_found_when_wrong_entity_id(self, client):
         from intelgraph.api.main import _container
+
         results = _container.backend.get_collection_evidence("nonexistent-entity")
         assert results == []
 

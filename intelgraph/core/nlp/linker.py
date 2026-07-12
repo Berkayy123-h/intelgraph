@@ -72,7 +72,9 @@ class EntityLinker:
         total = len(entities)
         result = {
             "matched": [],
-            "unmatched": [{"mention": e, "graph_node_id": None, "confidence": 0.0} for e in entities],
+            "unmatched": [
+                {"mention": e, "graph_node_id": None, "confidence": 0.0} for e in entities
+            ],
             "total_mentions": total,
             "matched_count": 0,
             "link_accuracy": 0.0,

@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 import uuid
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -40,9 +40,14 @@ class UnifiedTelemetryCore:
         self._success_history: list[bool] = []
         self._metric_history: dict[str, list[float]] = defaultdict(list)
 
-    def record(self, reasoning_quality: float = 0.5, execution_success: bool = True,
-               latency_ms: float = 0.0, drift: float = 0.0,
-               active_pipelines: int = 0) -> TelemetrySnapshot:
+    def record(
+        self,
+        reasoning_quality: float = 0.5,
+        execution_success: bool = True,
+        latency_ms: float = 0.0,
+        drift: float = 0.0,
+        active_pipelines: int = 0,
+    ) -> TelemetrySnapshot:
         self._latency_history.append(latency_ms)
         self._success_history.append(execution_success)
         if len(self._latency_history) > 1000:
@@ -50,7 +55,9 @@ class UnifiedTelemetryCore:
         if len(self._success_history) > 1000:
             self._success_history = self._success_history[-1000:]
         avg_latency = sum(self._latency_history[-100:]) / max(len(self._latency_history[-100:]), 1)
-        success_rate = sum(1 for s in self._success_history[-100:] if s) / max(len(self._success_history[-100:]), 1)
+        success_rate = sum(1 for s in self._success_history[-100:] if s) / max(
+            len(self._success_history[-100:]), 1
+        )
         throughput = len(self._latency_history[-60:]) / 60.0 if self._latency_history else 0.0
         health = self._compute_health(reasoning_quality, success_rate, drift)
         snapshot = TelemetrySnapshot(

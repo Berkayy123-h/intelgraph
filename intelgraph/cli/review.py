@@ -29,12 +29,17 @@ def _get_manager(ctx: click.Context) -> ReviewManager:
 def review_evaluate(ctx: click.Context, entity_id: str) -> None:
     mgr = _get_manager(ctx)
     result = mgr.evaluate(entity_id)
-    click.echo(json.dumps({
-        "entity_id": entity_id,
-        "needs_review": result.needs_review,
-        "reason": result.reason,
-        "suggested_action": result.suggested_action,
-    }, indent=2))
+    click.echo(
+        json.dumps(
+            {
+                "entity_id": entity_id,
+                "needs_review": result.needs_review,
+                "reason": result.reason,
+                "suggested_action": result.suggested_action,
+            },
+            indent=2,
+        )
+    )
 
 
 @review_group.command(name="enqueue", help="Add entity to review queue")
@@ -56,10 +61,14 @@ def review_enqueue(ctx: click.Context, entity_id: str, entity_type: str) -> None
 @click.option("--notes", "-n", default="", help="Review notes")
 @click.option("--queue-id", default=None, help="Review queue ID if dequeued")
 @click.pass_context
-def review_approve(ctx: click.Context, entity_id: str, reviewer: str, notes: str, queue_id: str | None) -> None:
+def review_approve(
+    ctx: click.Context, entity_id: str, reviewer: str, notes: str, queue_id: str | None
+) -> None:
     mgr = _get_manager(ctx)
     try:
-        record = mgr.process_review(entity_id, ReviewOutcome.APPROVED_REVIEW, reviewer, notes, queue_id)
+        record = mgr.process_review(
+            entity_id, ReviewOutcome.APPROVED_REVIEW, reviewer, notes, queue_id
+        )
         click.echo(json.dumps(record.to_dict(), indent=2))
     except ValueError as e:
         click.echo(json.dumps({"error": str(e)}, indent=2), err=True)
@@ -71,10 +80,14 @@ def review_approve(ctx: click.Context, entity_id: str, reviewer: str, notes: str
 @click.option("--notes", "-n", default="", help="Review notes")
 @click.option("--queue-id", default=None, help="Review queue ID if dequeued")
 @click.pass_context
-def review_reject(ctx: click.Context, entity_id: str, reviewer: str, notes: str, queue_id: str | None) -> None:
+def review_reject(
+    ctx: click.Context, entity_id: str, reviewer: str, notes: str, queue_id: str | None
+) -> None:
     mgr = _get_manager(ctx)
     try:
-        record = mgr.process_review(entity_id, ReviewOutcome.REJECTED_REVIEW, reviewer, notes, queue_id)
+        record = mgr.process_review(
+            entity_id, ReviewOutcome.REJECTED_REVIEW, reviewer, notes, queue_id
+        )
         click.echo(json.dumps(record.to_dict(), indent=2))
     except ValueError as e:
         click.echo(json.dumps({"error": str(e)}, indent=2), err=True)
@@ -86,10 +99,14 @@ def review_reject(ctx: click.Context, entity_id: str, reviewer: str, notes: str,
 @click.option("--notes", "-n", default="", help="Review notes")
 @click.option("--queue-id", default=None, help="Review queue ID if dequeued")
 @click.pass_context
-def review_needs_more(ctx: click.Context, entity_id: str, reviewer: str, notes: str, queue_id: str | None) -> None:
+def review_needs_more(
+    ctx: click.Context, entity_id: str, reviewer: str, notes: str, queue_id: str | None
+) -> None:
     mgr = _get_manager(ctx)
     try:
-        record = mgr.process_review(entity_id, ReviewOutcome.NEEDS_MORE_EVIDENCE, reviewer, notes, queue_id)
+        record = mgr.process_review(
+            entity_id, ReviewOutcome.NEEDS_MORE_EVIDENCE, reviewer, notes, queue_id
+        )
         click.echo(json.dumps(record.to_dict(), indent=2))
     except ValueError as e:
         click.echo(json.dumps({"error": str(e)}, indent=2), err=True)

@@ -4,9 +4,10 @@ import random
 import time
 import uuid
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Callable
+from typing import Any
 
 
 class FailureMode(Enum):
@@ -97,7 +98,7 @@ class ChaosSimulator:
             lambda s: s.replace("CVE-", "CVE-9999-99999"),
             lambda s: s + " <script>alert('xss')</script>",
             lambda s: s.upper(),
-            lambda s: "\u0000".join(list(s))[:len(s)],
+            lambda s: "\u0000".join(list(s))[: len(s)],
         ]
         if random.random() < 0.3:
             fn = random.choice(perturbations)
@@ -135,7 +136,15 @@ class ChaosSimulator:
                     recovery_times.append(9999.0)
         success_rate = (total - failures) / total if total else 1.0
         avg_recovery = sum(recovery_times) / len(recovery_times) if recovery_times else 0.0
-        grade = "A" if success_rate > 0.99 else "B" if success_rate > 0.95 else "C" if success_rate > 0.9 else "D" if success_rate > 0.8 else "F"
+        grade = (
+            "A"
+            if success_rate > 0.99
+            else (
+                "B"
+                if success_rate > 0.95
+                else "C" if success_rate > 0.9 else "D" if success_rate > 0.8 else "F"
+            )
+        )
         return ResilienceScore(
             pipeline=pipeline_fn.__name__ if hasattr(pipeline_fn, "__name__") else "unknown",
             success_rate=success_rate,
@@ -144,4 +153,3 @@ class ChaosSimulator:
             total_attempts=total,
             grade=grade,
         )
-

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import time
 from typing import Any
 
 from intelgraph.core.orchestrator.queue_interface import TaskQueue
@@ -9,6 +8,7 @@ from intelgraph.core.orchestrator.task import Task, TaskStatus
 
 try:
     import redis as redis_lib
+
     HAS_REDIS = True
 except ImportError:
     HAS_REDIS = False
@@ -18,11 +18,12 @@ class RedisTaskQueue(TaskQueue):
     _PENDING_KEY = "intelgraph:tasks:pending"
     _TASK_KEY_PREFIX = "intelgraph:tasks:data:"
 
-    def __init__(self, host: str = "localhost", port: int = 6379, db: int = 0, password: str = "") -> None:
+    def __init__(
+        self, host: str = "localhost", port: int = 6379, db: int = 0, password: str = ""
+    ) -> None:
         if not HAS_REDIS:
             raise ImportError(
-                "redis is required for RedisTaskQueue. "
-                "Install it with: pip install redis"
+                "redis is required for RedisTaskQueue. " "Install it with: pip install redis"
             )
         self._client = redis_lib.Redis(host=host, port=port, db=db, password=password)
 
@@ -32,7 +33,9 @@ class RedisTaskQueue(TaskQueue):
         self._client.lpush(self._PENDING_KEY, task.id)
 
     def dequeue(self) -> Task | None:
-        result = self._client.brpoplpush(self._PENDING_KEY, self._PENDING_KEY + ":processing", timeout=1)
+        result = self._client.brpoplpush(
+            self._PENDING_KEY, self._PENDING_KEY + ":processing", timeout=1
+        )
         if result is None:
             return None
         tid = result.decode() if isinstance(result, bytes) else result
@@ -121,17 +124,19 @@ class RedisTaskQueue(TaskQueue):
         }
 
     def _serialize(self, task: Task) -> str:
-        return json.dumps({
-            "id": task.id,
-            "type": task.type.value,
-            "payload": task.payload.hex(),
-            "status": task.status.value,
-            "retry_count": task.retry_count,
-            "max_retries": task.max_retries,
-            "error": task.error,
-            "created_at": task.created_at,
-            "updated_at": task.updated_at,
-        })
+        return json.dumps(
+            {
+                "id": task.id,
+                "type": task.type.value,
+                "payload": task.payload.hex(),
+                "status": task.status.value,
+                "retry_count": task.retry_count,
+                "max_retries": task.max_retries,
+                "error": task.error,
+                "created_at": task.created_at,
+                "updated_at": task.updated_at,
+            }
+        )
 
     def _deserialize(self, raw: str | bytes) -> Task:
         if isinstance(raw, bytes):
@@ -140,6 +145,7 @@ class RedisTaskQueue(TaskQueue):
         t = Task.__new__(Task)
         t.id = data["id"]
         from intelgraph.core.orchestrator.task import TaskType
+
         t.type = TaskType(data["type"])
         t.payload = bytes.fromhex(data["payload"]) if data.get("payload") else b""
         t.status = TaskStatus(data["status"])

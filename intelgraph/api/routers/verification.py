@@ -12,6 +12,7 @@ router = APIRouter(
 
 def _get_verification() -> Any:
     from intelgraph.api.main import _container
+
     return _container.verification
 
 
@@ -23,5 +24,7 @@ def _get_verification() -> Any:
 def get_verification(entity_id: str, vm: Any = Depends(_get_verification)):
     record = vm.get_verification(entity_id)
     if record is None:
-        raise HTTPException(status_code=404, detail=f"No verification record for entity {entity_id}")
+        raise HTTPException(
+            status_code=404, detail=f"No verification record for entity {entity_id}"
+        )
     return record.to_dict()

@@ -1,13 +1,12 @@
 from typing import Any
 
-
-from intelgraph.core.collection.base import Collector, CollectionResult
-from intelgraph.core.collection.http_collector import HTTPCollector
-from intelgraph.core.collection.web_scraper import WebScraperCollector
 from intelgraph.core.collection.api_collector import APICollector
+from intelgraph.core.collection.base import CollectionResult, Collector
 from intelgraph.core.collection.file_collector import FileCollector
-from intelgraph.core.collection.rss_collector import RSSCollector
+from intelgraph.core.collection.http_collector import HTTPCollector
 from intelgraph.core.collection.incremental import IncrementalTracker
+from intelgraph.core.collection.rss_collector import RSSCollector
+from intelgraph.core.collection.web_scraper import WebScraperCollector
 from intelgraph.core.source_registry import SourceRegistryService
 
 
@@ -39,10 +38,7 @@ class CollectionManager:
         return self._collectors.get(name)
 
     def list_collectors(self) -> list[dict[str, Any]]:
-        return [
-            {"name": c.name, "runnable": True}
-            for c in self._collectors.values()
-        ]
+        return [{"name": c.name, "runnable": True} for c in self._collectors.values()]
 
     def collect(
         self,

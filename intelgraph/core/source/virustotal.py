@@ -3,9 +3,10 @@ from __future__ import annotations
 import json
 import os
 import time
-import urllib.request
 import urllib.error
+import urllib.request
 from dataclasses import dataclass
+from datetime import UTC
 from typing import Any
 
 import structlog
@@ -74,8 +75,9 @@ class VirusTotalClient:
         reputation = attrs.get("reputation", 0)
         last_analysis = attrs.get("last_analysis_date", "")
         if isinstance(last_analysis, (int, float)):
-            from datetime import datetime, timezone
-            last_analysis = datetime.fromtimestamp(last_analysis, tz=timezone.utc).isoformat()
+            from datetime import datetime
+
+            last_analysis = datetime.fromtimestamp(last_analysis, tz=UTC).isoformat()
 
         malicious = stats.get("malicious", 0)
         suspicious = stats.get("suspicious", 0)

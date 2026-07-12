@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import time
 import uuid
-from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Callable
+from typing import Any
 
 GOVERNANCE_SCHEMA_VERSION = "1.0"
 
@@ -138,7 +138,7 @@ class AuditTrail:
         )
         self._entries.append(entry)
         if len(self._entries) > self._max_entries:
-            self._entries = self._entries[-self._max_entries:]
+            self._entries = self._entries[-self._max_entries :]
         return entry
 
     def query(
@@ -192,26 +192,32 @@ class ComplianceChecker:
                 passed.append(rule_name)
                 continue
             if rule_type == "max_value" and value > threshold:
-                violations.append(ComplianceViolation(
-                    rule_name=rule_name,
-                    severity=rule.get("severity", "warning"),
-                    message=f"Value {value:.4f} exceeds threshold {threshold}",
-                    timestamp=now,
-                ))
+                violations.append(
+                    ComplianceViolation(
+                        rule_name=rule_name,
+                        severity=rule.get("severity", "warning"),
+                        message=f"Value {value:.4f} exceeds threshold {threshold}",
+                        timestamp=now,
+                    )
+                )
             elif rule_type == "min_value" and value < threshold:
-                violations.append(ComplianceViolation(
-                    rule_name=rule_name,
-                    severity=rule.get("severity", "warning"),
-                    message=f"Value {value:.4f} below threshold {threshold}",
-                    timestamp=now,
-                ))
+                violations.append(
+                    ComplianceViolation(
+                        rule_name=rule_name,
+                        severity=rule.get("severity", "warning"),
+                        message=f"Value {value:.4f} below threshold {threshold}",
+                        timestamp=now,
+                    )
+                )
             elif rule_type == "risk_based" and entity_risk > threshold:
-                violations.append(ComplianceViolation(
-                    rule_name=rule_name,
-                    severity=rule.get("severity", "critical"),
-                    message=f"Entity risk {entity_risk:.4f} exceeds threshold {threshold}",
-                    timestamp=now,
-                ))
+                violations.append(
+                    ComplianceViolation(
+                        rule_name=rule_name,
+                        severity=rule.get("severity", "critical"),
+                        message=f"Entity risk {entity_risk:.4f} exceeds threshold {threshold}",
+                        timestamp=now,
+                    )
+                )
             else:
                 passed.append(rule_name)
         status = ComplianceStatus.COMPLIANT if not violations else ComplianceStatus.NON_COMPLIANT

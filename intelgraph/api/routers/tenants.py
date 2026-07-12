@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 
 from intelgraph.api.auth import login_with_api_key
-from intelgraph.core.multitenant import Tenant, get_tenant_manager
+from intelgraph.core.multitenant import get_tenant_manager
 
 router = APIRouter(prefix="/tenants", tags=["Tenants"])
 

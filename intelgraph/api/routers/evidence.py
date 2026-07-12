@@ -12,6 +12,7 @@ router = APIRouter(
 
 def _get_chain() -> Any:
     from intelgraph.api.main import _container
+
     return _container.chain
 
 

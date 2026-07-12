@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 @dataclass(frozen=True)
@@ -40,5 +40,5 @@ class Evidence:
 class Provenance:
     collection_id: str
     collector_name: str
-    collected_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    collected_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     source_lineage: SourceLineage | None = None

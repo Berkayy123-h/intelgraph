@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -47,10 +47,14 @@ class UnifiedCognitiveCore:
         elapsed = (time.perf_counter() - start) * 1000
         result = UnifiedReasoningResult(
             result_id=f"ur_{uuid.uuid4().hex[:12]}",
-            query=query, reasoning_type=reasoning_type,
-            paths=paths, contradictions=contradictions,
-            hypotheses=hypotheses, total_confidence=confidence,
-            duration_ms=elapsed, created_at=time.time(),
+            query=query,
+            reasoning_type=reasoning_type,
+            paths=paths,
+            contradictions=contradictions,
+            hypotheses=hypotheses,
+            total_confidence=confidence,
+            duration_ms=elapsed,
+            created_at=time.time(),
         )
         self._history.append(result)
         return result
@@ -64,17 +68,22 @@ class UnifiedCognitiveCore:
             adj = graph.get("adjacency", {})
             all_paths = self._dfs_paths(start, end, adj, max_depth=5)
             for p in all_paths:
-                paths.append({
-                    "nodes": p, "confidence": max(0.1, 1.0 - len(p) * 0.15),
-                    "hop_count": len(p) - 1, "type": "deduced",
-                })
+                paths.append(
+                    {
+                        "nodes": p,
+                        "confidence": max(0.1, 1.0 - len(p) * 0.15),
+                        "hop_count": len(p) - 1,
+                        "type": "deduced",
+                    }
+                )
         else:
             causal = self._causal_inference(query, graph)
             paths.extend(causal)
         return paths
 
-    def _dfs_paths(self, start: str, end: str, adj: dict[str, Any],
-                   max_depth: int, visited: set | None = None) -> list[list[str]]:
+    def _dfs_paths(
+        self, start: str, end: str, adj: dict[str, Any], max_depth: int, visited: set | None = None
+    ) -> list[list[str]]:
         if visited is None:
             visited = set()
         if start == end:
@@ -94,20 +103,28 @@ class UnifiedCognitiveCore:
         adj = graph.get("adjacency", {})
         forward = graph.get("forward_adjacency", adj)
         paths = self._dfs_paths(source, "", forward, 3)
-        return [{"nodes": p, "type": "causal", "confidence": max(0.3, 1.0 - len(p) * 0.2)} for p in paths if len(p) > 1]
+        return [
+            {"nodes": p, "type": "causal", "confidence": max(0.3, 1.0 - len(p) * 0.2)}
+            for p in paths
+            if len(p) > 1
+        ]
 
     def _detect_contradictions(self, paths: list[dict[str, Any]]) -> list[dict[str, Any]]:
         contradictions = []
         for i, p1 in enumerate(paths):
-            for p2 in paths[i + 1:]:
+            for p2 in paths[i + 1 :]:
                 if set(p1.get("nodes", [])) & set(p2.get("nodes", [])):
                     if abs(p1.get("confidence", 0) - p2.get("confidence", 0)) > 0.5:
-                        contradictions.append({
-                            "path_a": p1.get("nodes", []),
-                            "path_b": p2.get("nodes", []),
-                            "confidence_gap": round(abs(p1.get("confidence", 0) - p2.get("confidence", 0)), 4),
-                            "severity": "high",
-                        })
+                        contradictions.append(
+                            {
+                                "path_a": p1.get("nodes", []),
+                                "path_b": p2.get("nodes", []),
+                                "confidence_gap": round(
+                                    abs(p1.get("confidence", 0) - p2.get("confidence", 0)), 4
+                                ),
+                                "severity": "high",
+                            }
+                        )
         return contradictions
 
     def _generate_hypotheses(self, query: str, paths: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -119,15 +136,19 @@ class UnifiedCognitiveCore:
         hypotheses = []
         for t in templates:
             if any(kw in query.lower() for kw in t["keywords"]):
-                hypotheses.append({
-                    "hypothesis_id": f"h_{uuid.uuid4().hex[:8]}",
-                    "pattern": t["pattern"],
-                    "confidence": 0.5 + 0.1 * len(paths),
-                    "evidence_count": len(paths),
-                })
+                hypotheses.append(
+                    {
+                        "hypothesis_id": f"h_{uuid.uuid4().hex[:8]}",
+                        "pattern": t["pattern"],
+                        "confidence": 0.5 + 0.1 * len(paths),
+                        "evidence_count": len(paths),
+                    }
+                )
         return hypotheses
 
-    def _compute_confidence(self, paths: list[dict[str, Any]], contradictions: list[dict[str, Any]]) -> float:
+    def _compute_confidence(
+        self, paths: list[dict[str, Any]], contradictions: list[dict[str, Any]]
+    ) -> float:
         if not paths:
             return 0.0
         avg_conf = sum(p.get("confidence", 0.5) for p in paths) / len(paths)
@@ -138,11 +159,13 @@ class UnifiedCognitiveCore:
         sorted_events = sorted(events, key=lambda e: e.get("timestamp", ""))
         chains = []
         for i in range(len(sorted_events) - 1):
-            chains.append({
-                "from": sorted_events[i],
-                "to": sorted_events[i + 1],
-                "temporal_gap": f"{sorted_events[i + 1].get('timestamp', '')} - {sorted_events[i].get('timestamp', '')}",
-            })
+            chains.append(
+                {
+                    "from": sorted_events[i],
+                    "to": sorted_events[i + 1],
+                    "temporal_gap": f"{sorted_events[i + 1].get('timestamp', '')} - {sorted_events[i].get('timestamp', '')}",
+                }
+            )
         return chains
 
     def probabilistic_reason(self, premises: list[dict[str, Any]]) -> dict[str, Any]:

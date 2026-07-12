@@ -12,6 +12,7 @@ from intelgraph.core.kernel.execution import UnifiedExecutionKernel
 
 def _build_graph(ctx: click.Context) -> IntelligenceGraph:
     from intelgraph.core.storage.sqlite_backend import SQLiteBackend
+
     cfg = ctx.obj["config"]
     db_path = cfg.get("storage", {}).get("path", "intelgraph.db")
     backend = SQLiteBackend(db_path)
@@ -29,6 +30,7 @@ def _build_graph(ctx: click.Context) -> IntelligenceGraph:
         tgt = rel.target_id
         if src in g.nodes and tgt in g.nodes:
             from intelgraph.core.graph.edge import Edge
+
             g.adjacency.setdefault(src, set()).add(tgt)
             g.adjacency.setdefault(tgt, set()).add(src)
             g.forward_adjacency.setdefault(src, set()).add(tgt)
@@ -52,6 +54,7 @@ def prediction_group() -> None:
 @click.pass_context
 def explain(ctx: click.Context, features_json: str, contributions_json: str, top_n: int) -> None:
     from intelgraph.core.explainability.interpreter import FeatureImportance
+
     try:
         features = json.loads(features_json)
         contributions = json.loads(contributions_json)
@@ -69,6 +72,7 @@ def explain(ctx: click.Context, features_json: str, contributions_json: str, top
 @click.pass_context
 def safety_check(ctx: click.Context, prediction_type: str, value: float) -> None:
     from intelgraph.core.safety.guard import SafetyGuard
+
     guard = SafetyGuard()
     result = guard.check_prediction(prediction_type, value)
     click.echo(json.dumps(result.to_dict(), indent=2))
@@ -81,6 +85,7 @@ def safety_check(ctx: click.Context, prediction_type: str, value: float) -> None
 @click.pass_context
 def compliance(ctx: click.Context, prediction_type: str, value: float, entity_risk: float) -> None:
     from intelgraph.core.governance.policy import ComplianceChecker
+
     checker = ComplianceChecker()
     result = checker.check(prediction_type, value, entity_risk)
     click.echo(json.dumps(result.to_dict(), indent=2))
@@ -93,8 +98,16 @@ def compliance(ctx: click.Context, prediction_type: str, value: float, entity_ri
 @click.argument("risk_score", type=float)
 @click.option("--justification", default="")
 @click.pass_context
-def approve(ctx: click.Context, prediction_type: str, entity_id: str, value: float, risk_score: float, justification: str) -> None:
+def approve(
+    ctx: click.Context,
+    prediction_type: str,
+    entity_id: str,
+    value: float,
+    risk_score: float,
+    justification: str,
+) -> None:
     from intelgraph.core.governance.policy import ApprovalWorkflow
+
     wf = ApprovalWorkflow()
     req = wf.request_approval(prediction_type, entity_id, value, risk_score, justification)
     click.echo(json.dumps(req.to_dict(), indent=2))

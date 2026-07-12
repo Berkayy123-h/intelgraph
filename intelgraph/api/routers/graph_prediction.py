@@ -4,10 +4,10 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
+from intelgraph.core.features.store import get_feature_store
 from intelgraph.core.graph.prediction import Predictor
 from intelgraph.core.kernel.execution import UnifiedExecutionKernel, build_graph_from_container
 from intelgraph.core.models.registry import get_model_registry
-from intelgraph.core.features.store import get_feature_store
 
 router = APIRouter(prefix="/graph/prediction", tags=["graph"])
 
@@ -30,7 +30,9 @@ def forecast_node(body: dict[str, Any]):
 @router.get("/risk/{node_id}", summary="Risk forecast for a node")
 def risk_forecast(node_id: str, horizon: int = 1):
     if horizon < 0 or horizon > 2:
-        raise HTTPException(status_code=400, detail="horizon must be 0 (short), 1 (medium), or 2 (long)")
+        raise HTTPException(
+            status_code=400, detail="horizon must be 0 (short), 1 (medium), or 2 (long)"
+        )
     graph = build_graph_from_container()
     if node_id not in graph.nodes:
         raise HTTPException(status_code=404, detail=f"Node {node_id} not found")
@@ -119,7 +121,9 @@ def get_features(node_id: str):
     quality = store.data_quality_score(node_id)
     return {
         "entity_id": node_id,
-        "features": [{"name": f.name, "value": f.value, "freshness": f.freshness_score()} for f in features],
+        "features": [
+            {"name": f.name, "value": f.value, "freshness": f.freshness_score()} for f in features
+        ],
         "data_quality_score": quality,
         "stale_features": store.detect_stale(node_id),
     }
@@ -128,6 +132,7 @@ def get_features(node_id: str):
 @router.post("/explain", summary="Explain a prediction with feature importance")
 def explain_prediction(body: dict[str, Any]):
     from intelgraph.core.explainability.interpreter import FeatureImportance
+
     fi = FeatureImportance()
     features = body.get("features", {})
     contributions = body.get("contributions", {})
@@ -139,9 +144,12 @@ def explain_prediction(body: dict[str, Any]):
 @router.post("/safety-check", summary="Check prediction against safety constraints")
 def safety_check(body: dict[str, Any]):
     from intelgraph.core.safety.guard import SafetyGuard
+
     guard = SafetyGuard(
         bounds=body.get("bounds", {}),
-        fallbacks={pt: body.get("fallback_default", 0.0) for pt in body.get("prediction_types", [])},
+        fallbacks={
+            pt: body.get("fallback_default", 0.0) for pt in body.get("prediction_types", [])
+        },
     )
     result = guard.check_prediction(
         prediction_type=body.get("prediction_type", "risk_forecast"),
@@ -153,6 +161,7 @@ def safety_check(body: dict[str, Any]):
 @router.post("/compliance", summary="Check prediction compliance")
 def compliance_check(body: dict[str, Any]):
     from intelgraph.core.governance.policy import ComplianceChecker
+
     checker = ComplianceChecker(body.get("rules", {}))
     result = checker.check(
         prediction_type=body.get("prediction_type", "risk_forecast"),
@@ -165,6 +174,7 @@ def compliance_check(body: dict[str, Any]):
 @router.post("/approval", summary="Request approval for high-risk prediction")
 def request_approval(body: dict[str, Any]):
     from intelgraph.core.governance.policy import ApprovalWorkflow
+
     wf = ApprovalWorkflow(
         risk_threshold=body.get("risk_threshold", 0.7),
         auto_approve_low_risk=body.get("auto_approve_low_risk", True),
@@ -181,8 +191,8 @@ def request_approval(body: dict[str, Any]):
 
 @router.get("/audit", summary="Query audit trail")
 def query_audit(entity_id: str | None = None, action: str | None = None, limit: int = 100):
-    from intelgraph.core.kernel.execution import build_graph_from_container
     from intelgraph.core.governance.policy import AuditTrail
+
     trail = AuditTrail()
     entries = trail.query(entity_id=entity_id, action=action, limit=limit)
     return {"entries": [e.to_dict() for e in entries], "count": len(entries)}
@@ -191,6 +201,7 @@ def query_audit(entity_id: str | None = None, action: str | None = None, limit: 
 @router.get("/model-report", summary="Generate model interpretability report")
 def model_report(model_name: str = "default"):
     from intelgraph.core.explainability.interpreter import ModelInterpreter
+
     interp = ModelInterpreter()
     report = interp.generate_report(model_name, [])
     return report.to_dict()

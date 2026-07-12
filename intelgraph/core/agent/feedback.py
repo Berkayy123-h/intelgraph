@@ -3,10 +3,8 @@ from __future__ import annotations
 import time
 import uuid
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
-
-from intelgraph.core.agent.hierarchy import TaskNode, TaskStatus
 
 
 @dataclass
@@ -40,12 +38,23 @@ class ExecutionFeedbackLoop:
         self._policy_weights: dict[str, float] = {}
         self._weak_signals: list[dict[str, Any]] = []
 
-    def record_outcome(self, task_id: str, success: bool, confidence: float,
-                       duration_ms: float, error: str = "", outcome_type: str = "execution") -> ExecutionOutcome:
+    def record_outcome(
+        self,
+        task_id: str,
+        success: bool,
+        confidence: float,
+        duration_ms: float,
+        error: str = "",
+        outcome_type: str = "execution",
+    ) -> ExecutionOutcome:
         outcome = ExecutionOutcome(
             outcome_id=f"oc_{uuid.uuid4().hex[:12]}",
-            task_id=task_id, success=success, confidence=confidence,
-            duration_ms=duration_ms, error=error, outcome_type=outcome_type,
+            task_id=task_id,
+            success=success,
+            confidence=confidence,
+            duration_ms=duration_ms,
+            error=error,
+            outcome_type=outcome_type,
             created_at=time.time(),
         )
         self._outcomes.append(outcome)
@@ -84,7 +93,9 @@ class ExecutionFeedbackLoop:
         freq: dict[str, int] = defaultdict(int)
         for s in self._weak_signals:
             freq[s.get("error", "unknown")] += 1
-        return [{"error": err, "frequency": cnt} for err, cnt in freq.items() if cnt >= min_frequency]
+        return [
+            {"error": err, "frequency": cnt} for err, cnt in freq.items() if cnt >= min_frequency
+        ]
 
     def get_outcomes(self, limit: int = 100) -> list[ExecutionOutcome]:
         return self._outcomes[-limit:]

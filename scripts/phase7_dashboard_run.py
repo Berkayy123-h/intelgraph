@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Phase 7 — Backend-connected Dashboard
 
@@ -7,6 +6,7 @@ Phase 7 — Backend-connected Dashboard
 2. DashboardState'e veriyi yükle
 3. FastAPI/Uvicorn ile dashboard'u serve et
 """
+
 from __future__ import annotations
 
 import csv
@@ -23,7 +23,6 @@ os.environ["OTX_API_KEY"] = "bc74aac50ae436dee05bfae89647406f73eed2cf947939f9d3e
 from intelgraph.api.routers.dashboard import dashboard_state
 from intelgraph.core.pipeline.chain import Pipeline
 from intelgraph.core.source.otx import OtxClient
-from intelgraph.core.nlp.extractor import NEREngine
 
 URLHAUS_CSV = "/tmp/urlhaus_recent.csv"
 if not Path(URLHAUS_CSV).exists():
@@ -43,7 +42,7 @@ print(f"  {len(pulses)} pulses, {total_otx} IOCs")
 
 # ── 2. Load URLhaus sample ──
 with open(URLHAUS_CSV) as f:
-    reader = csv.reader(l for l in f if not l.startswith('#'))
+    reader = csv.reader(l for l in f if not l.startswith("#"))
     urlhaus_rows = [r[2] for i, r in enumerate(reader) if i < 50]
 urlhaus_text = "\n".join(urlhaus_rows)
 print(f"  URLhaus: {len(urlhaus_rows)} entries")
@@ -61,8 +60,18 @@ sys.stdout.flush()
 t0 = time.time()
 
 thresholds = {
-    "c2_detection": {"enabled": True, "metric_key": "overall_confidence", "max": 0.4, "severity": "critical"},
-    "attack_path_found": {"enabled": True, "metric_key": "attack_path_found", "max": 0, "severity": "high"},
+    "c2_detection": {
+        "enabled": True,
+        "metric_key": "overall_confidence",
+        "max": 0.4,
+        "severity": "critical",
+    },
+    "attack_path_found": {
+        "enabled": True,
+        "metric_key": "attack_path_found",
+        "max": 0,
+        "severity": "high",
+    },
 }
 
 pipeline = Pipeline()
@@ -76,13 +85,16 @@ result_dict["source_texts"] = result.source_texts
 dashboard_state.feed(result_dict)
 
 # Feed source info
-dashboard_state.feed_sources({
-    "URLhaus": {"iocs": len(urlhaus_rows), "entities": len(result.extracted_entities)},
-    "OTX": {"iocs": total_otx, "pulses": len(pulses)},
-})
+dashboard_state.feed_sources(
+    {
+        "URLhaus": {"iocs": len(urlhaus_rows), "entities": len(result.extracted_entities)},
+        "OTX": {"iocs": total_otx, "pulses": len(pulses)},
+    }
+)
 
 # Feed NER stats
 from collections import Counter
+
 ner_labels = Counter(e.label for e in result.extracted_entities)
 ner_samples: dict[str, list[str]] = {"DOMAIN": [], "FILENAME": [], "UNKNOWN": []}
 seen: dict[str, set[str]] = {k: set() for k in ner_samples}
@@ -96,7 +108,7 @@ dashboard_state.feed_ner(dict(ner_labels), ner_samples)
 pipeline.cleanup()
 
 print(f"\n{'='*60}")
-print(f"Dashboard state populated:")
+print("Dashboard state populated:")
 print(f"  Entities:  {len(result.extracted_entities)}")
 print(f"  DOMAIN:    {ner_labels.get('DOMAIN',0)}")
 print(f"  FILENAME:  {ner_labels.get('FILENAME',0)}")
@@ -111,24 +123,28 @@ print(f"{'='*60}")
 out = Path("/tmp/opencode/phase7")
 out.mkdir(parents=True, exist_ok=True)
 with open(out / "pipeline_result.json", "w") as f:
-    json.dump({
-        "sources": len(sources),
-        "entities": len(result.extracted_entities),
-        "domains": ner_labels.get("DOMAIN", 0),
-        "filenames": ner_labels.get("FILENAME", 0),
-        "unknowns": ner_labels.get("UNKNOWN", 0),
-        "graph_nodes": len(result.graph.nodes) if result.graph else 0,
-        "alerts": len(result.alerts),
-        "incidents": len(result.incidents),
-        "errors": len(result.errors),
-        "elapsed_seconds": round(elapsed, 1),
-    }, f, indent=2)
+    json.dump(
+        {
+            "sources": len(sources),
+            "entities": len(result.extracted_entities),
+            "domains": ner_labels.get("DOMAIN", 0),
+            "filenames": ner_labels.get("FILENAME", 0),
+            "unknowns": ner_labels.get("UNKNOWN", 0),
+            "graph_nodes": len(result.graph.nodes) if result.graph else 0,
+            "alerts": len(result.alerts),
+            "incidents": len(result.incidents),
+            "errors": len(result.errors),
+            "elapsed_seconds": round(elapsed, 1),
+        },
+        f,
+        indent=2,
+    )
 
 # ── 7. Start server ──
-print(f"\nStarting dashboard server...")
-print(f"  Open: http://127.0.0.1:8111")
-print(f"  API:  http://127.0.0.1:8111/dashboard/summary")
-print(f"  Stop: Ctrl+C\n")
+print("\nStarting dashboard server...")
+print("  Open: http://127.0.0.1:8111")
+print("  API:  http://127.0.0.1:8111/dashboard/summary")
+print("  Stop: Ctrl+C\n")
 
 uvicorn.run(
     "intelgraph.api.main:create_app",

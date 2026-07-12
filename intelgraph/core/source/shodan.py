@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 import os
 import time
-import urllib.request
 import urllib.error
+import urllib.request
 from dataclasses import dataclass
 from typing import Any
 
@@ -45,9 +45,7 @@ class ShodanClient:
     def __init__(self, api_key: str | None = None) -> None:
         self._api_key = api_key or os.environ.get("SHODAN_API_KEY", "")
         if not self._api_key:
-            raise ValueError(
-                "SHODAN_API_KEY not set. Set the SHODAN_API_KEY environment variable."
-            )
+            raise ValueError("SHODAN_API_KEY not set. Set the SHODAN_API_KEY environment variable.")
 
     def _request(self, ip: str) -> dict[str, Any]:
         url = f"{SHODAN_BASE}/shodan/host/{ip}?key={self._api_key}"

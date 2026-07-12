@@ -1,8 +1,7 @@
-import uuid
-from contextvars import ContextVar
-from typing import Generator
-
 import contextlib
+import uuid
+from collections.abc import Generator
+from contextvars import ContextVar
 
 _correlation_id: ContextVar[str] = ContextVar("_correlation_id", default="")
 

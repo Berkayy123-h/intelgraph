@@ -1,4 +1,3 @@
-import time
 
 from intelgraph.core.enterprise.observability import MetricsCollector, get_metrics
 

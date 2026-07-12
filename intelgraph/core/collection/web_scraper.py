@@ -2,7 +2,6 @@ import re
 import time
 from html.parser import HTMLParser
 from typing import Any
-from urllib.parse import urljoin, urlparse
 
 import ulid
 

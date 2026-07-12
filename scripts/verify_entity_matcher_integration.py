@@ -5,13 +5,14 @@ EntityMatcher/MergeEngine Entegrasyon Doğrulaması
 add_entity() otomatik olarak EntityMatcher çağırıp aynı IP'leri birleştiriyor mu?
 Mock'suz, gerçek veriyle, manuel matcher çağrısı YOK.
 """
+
 from __future__ import annotations
 
 import io
 import logging
 
-from intelgraph.core.entity.ip_address import IPAddress
 from intelgraph.core.entity.domain import Domain
+from intelgraph.core.entity.ip_address import IPAddress
 from intelgraph.core.graph.graph import IntelligenceGraph
 
 print("=" * 72)

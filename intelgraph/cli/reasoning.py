@@ -11,6 +11,7 @@ from intelgraph.core.graph.reasoning import CausalReasoner
 
 def _build_graph(ctx: click.Context) -> IntelligenceGraph:
     from intelgraph.core.storage.sqlite_backend import SQLiteBackend
+
     cfg = ctx.obj["config"]
     db_path = cfg.get("storage", {}).get("path", "intelgraph.db")
     backend = SQLiteBackend(db_path)
@@ -28,6 +29,7 @@ def _build_graph(ctx: click.Context) -> IntelligenceGraph:
         tgt = rel.target_id
         if src in g.nodes and tgt in g.nodes:
             from intelgraph.core.graph.edge import Edge
+
             g.adjacency.setdefault(src, set()).add(tgt)
             g.adjacency.setdefault(tgt, set()).add(src)
             g.forward_adjacency.setdefault(src, set()).add(tgt)
@@ -50,7 +52,9 @@ def reasoning_group() -> None:
 @click.option("--max-causes", default=10, type=int, help="Maximum root causes to return")
 @click.option("--output", "-o", default=None, help="Output file path (JSON)")
 @click.pass_context
-def root_cause(ctx: click.Context, anomaly_node: str, max_depth: int, max_causes: int, output: str | None) -> None:
+def root_cause(
+    ctx: click.Context, anomaly_node: str, max_depth: int, max_causes: int, output: str | None
+) -> None:
     graph = _build_graph(ctx)
     reasoner = CausalReasoner(graph)
     result = reasoner.root_cause_analysis(anomaly_node, max_depth, max_causes)
@@ -68,7 +72,9 @@ def root_cause(ctx: click.Context, anomaly_node: str, max_depth: int, max_causes
 @click.option("--max-depth", default=5, type=int, help="Maximum path depth")
 @click.option("--output", "-o", default=None, help="Output file path (JSON)")
 @click.pass_context
-def causal_path(ctx: click.Context, source: str, target: str, max_depth: int, output: str | None) -> None:
+def causal_path(
+    ctx: click.Context, source: str, target: str, max_depth: int, output: str | None
+) -> None:
     graph = _build_graph(ctx)
     reasoner = CausalReasoner(graph)
     result = reasoner.causal_path(source, target, max_depth)
@@ -120,7 +126,9 @@ def chains(ctx: click.Context, node_id: str, max_depth: int, output: str | None)
 @click.option("--top-n", default=10, type=int, help="Number of top causes to return")
 @click.option("--output", "-o", default=None, help="Output file path (JSON)")
 @click.pass_context
-def top_causes(ctx: click.Context, node_id: str, max_depth: int, top_n: int, output: str | None) -> None:
+def top_causes(
+    ctx: click.Context, node_id: str, max_depth: int, top_n: int, output: str | None
+) -> None:
     graph = _build_graph(ctx)
     reasoner = CausalReasoner(graph)
     result = reasoner.top_causes(node_id, max_depth, top_n)

@@ -1,7 +1,7 @@
 import pytest
 
-from intelgraph.core.source.manager import DataSourceManager
 from intelgraph.core.source.connector import ConnectorConfig
+from intelgraph.core.source.manager import DataSourceManager
 
 
 @pytest.fixture
@@ -37,7 +37,9 @@ class TestDataSourceManager:
         assert len(sources) == 2
 
     def test_get_source(self, manager):
-        manager.register_connector("g1", "Get Test", "http", {"endpoint_url": "https://example.com"})
+        manager.register_connector(
+            "g1", "Get Test", "http", {"endpoint_url": "https://example.com"}
+        )
         src = manager.get_source("g1")
         assert src["id"] == "g1"
 
@@ -51,7 +53,9 @@ class TestDataSourceManager:
         assert manager.delete_source("d1") is False
 
     def test_poll_source(self, manager):
-        manager.register_connector("p1", "Poll Test", "http", {"endpoint_url": "https://example.com/data"})
+        manager.register_connector(
+            "p1", "Poll Test", "http", {"endpoint_url": "https://example.com/data"}
+        )
         result = manager.poll_source("p1")
         assert result["status"] == "error"
         assert "error" in result
@@ -74,8 +78,18 @@ class TestDataSourceManager:
 
     def test_run_scheduled_poll(self, manager):
         from intelgraph.core.source.connector import ConnectorConfig
-        cfg1 = ConnectorConfig(id="r1", name="R1", connector_type="http", endpoint_url="https://x.com", enabled=True, polling_interval_seconds=0)
-        cfg2 = ConnectorConfig(id="r2", name="R2", connector_type="http", endpoint_url="https://y.com", enabled=False)
+
+        cfg1 = ConnectorConfig(
+            id="r1",
+            name="R1",
+            connector_type="http",
+            endpoint_url="https://x.com",
+            enabled=True,
+            polling_interval_seconds=0,
+        )
+        cfg2 = ConnectorConfig(
+            id="r2", name="R2", connector_type="http", endpoint_url="https://y.com", enabled=False
+        )
         manager.store.register_source(cfg1)
         manager.store.register_source(cfg2)
         results = manager.run_scheduled_poll()

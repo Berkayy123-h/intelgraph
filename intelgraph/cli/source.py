@@ -14,11 +14,18 @@ def source_group() -> None:
 @source_group.command(name="add", help="Register a new intelligence source")
 @click.argument("url")
 @click.option("--name", "-n", default=None, help="Human-readable source name")
-@click.option("--tier", "-t", type=click.Choice(["1", "2", "3"]), default="3",
-              help="Source trust tier (1=high, 2=medium, 3=low)")
+@click.option(
+    "--tier",
+    "-t",
+    type=click.Choice(["1", "2", "3"]),
+    default="3",
+    help="Source trust tier (1=high, 2=medium, 3=low)",
+)
 @click.option("--classify", "-c", default=None, help="Source classification label")
 @click.pass_context
-def source_add(ctx: click.Context, url: str, name: str | None, tier: str, classify: str | None) -> None:
+def source_add(
+    ctx: click.Context, url: str, name: str | None, tier: str, classify: str | None
+) -> None:
     registry = _get_registry(ctx)
     result = registry.add_source(
         source_url=url,

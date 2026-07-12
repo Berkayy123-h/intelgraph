@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import logging
 import os
 import shutil
 import subprocess
-import time
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -37,7 +35,7 @@ class BackupManager:
         self._output_dir.mkdir(parents=True, exist_ok=True)
 
     def create_backup(self, label: str = "") -> BackupResult:
-        ts = datetime.now(timezone.utc)
+        ts = datetime.now(UTC)
         ts_str = ts.strftime("%Y%m%dT%H%M%S")
         safe_label = "".join(c if c.isalnum() or c in "-_" else "_" for c in label) if label else ""
         suffix = f"_{safe_label}" if safe_label else ""

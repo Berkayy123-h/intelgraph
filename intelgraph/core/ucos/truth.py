@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import time
 import uuid
-from collections import defaultdict
-from dataclasses import dataclass, field
 from typing import Any
 
 
@@ -20,22 +18,33 @@ class UnifiedTruthEngine:
         if existing:
             diff = abs(existing.get("confidence", 0) - confidence)
             if diff > 0.5 and existing.get("value") != value:
-                self._contradictions.append({
-                    "key": key, "existing": dict(existing),
-                    "incoming": {"value": value, "source": source, "confidence": confidence},
-                    "resolved_at": time.time(),
-                })
+                self._contradictions.append(
+                    {
+                        "key": key,
+                        "existing": dict(existing),
+                        "incoming": {"value": value, "source": source, "confidence": confidence},
+                        "resolved_at": time.time(),
+                    }
+                )
                 self._conflict_count += 1
                 if confidence > existing.get("confidence", 0):
                     self._state[key] = {
-                        "value": value, "source": source,
-                        "confidence": confidence, "updated_at": time.time(),
+                        "value": value,
+                        "source": source,
+                        "confidence": confidence,
+                        "updated_at": time.time(),
                     }
-                    return {"key": key, "action": "overwritten", "previous_source": existing.get("source")}
+                    return {
+                        "key": key,
+                        "action": "overwritten",
+                        "previous_source": existing.get("source"),
+                    }
                 return {"key": key, "action": "rejected", "reason": "existing_higher_confidence"}
         self._state[key] = {
-            "value": value, "source": source,
-            "confidence": confidence, "updated_at": time.time(),
+            "value": value,
+            "source": source,
+            "confidence": confidence,
+            "updated_at": time.time(),
         }
         return {"key": key, "action": "written", "source": source}
 
@@ -65,7 +74,11 @@ class UnifiedTruthEngine:
                 if isinstance(entry, dict) and "value" in entry:
                     conf = entry.get("confidence", 0.5)
                     if key not in unified or conf > unified[key]["confidence"]:
-                        unified[key] = {"value": entry["value"], "source": entry.get("source", "unknown"), "confidence": conf}
+                        unified[key] = {
+                            "value": entry["value"],
+                            "source": entry.get("source", "unknown"),
+                            "confidence": conf,
+                        }
         return unified
 
     def get_contradictions(self, limit: int = 100) -> list[dict[str, Any]]:

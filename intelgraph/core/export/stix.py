@@ -1,19 +1,19 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import stix2
-from stix2.v21 import Bundle, Indicator, IPv4Address, IPv6Address, DomainName, Vulnerability
+from stix2.v21 import Bundle, DomainName, Indicator, IPv4Address, IPv6Address, Vulnerability
 
 from intelgraph.core.entity import BaseEntity
 from intelgraph.core.entity.cve import CveEntity
 from intelgraph.core.entity.domain import Domain
 from intelgraph.core.entity.ip_address import IPAddress
+from intelgraph.core.graph.edge import Edge
 from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.graph.node import Node
-from intelgraph.core.graph.edge import Edge
 
 
 def _stix_id(prefix: str, seed: str) -> str:
@@ -23,8 +23,12 @@ def _stix_id(prefix: str, seed: str) -> str:
 
 def _to_timestamp(dt: datetime | None) -> str:
     if dt is None:
-        return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-    return dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ") if dt.tzinfo else dt.replace(tzinfo=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    return (
+        dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        if dt.tzinfo
+        else dt.replace(tzinfo=UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    )
 
 
 def _labels(entity: BaseEntity) -> list[str]:
@@ -42,10 +46,12 @@ def _external_refs(entity: BaseEntity) -> list[dict[str, str]]:
     refs = []
     for ev in getattr(entity, "evidence", ()):
         if ev.source and ev.content:
-            refs.append({
-                "source_name": ev.source,
-                "description": ev.content[:200],
-            })
+            refs.append(
+                {
+                    "source_name": ev.source,
+                    "description": ev.content[:200],
+                }
+            )
     return refs
 
 

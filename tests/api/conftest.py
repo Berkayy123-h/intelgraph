@@ -20,11 +20,14 @@ def client(_app_config):
 
 @pytest.fixture
 def auth_client(client):
-    resp = client.post("/auth/register", json={
-        "username": "admin",
-        "password": "admin123",
-        "role": "admin",
-    })
+    resp = client.post(
+        "/auth/register",
+        json={
+            "username": "admin",
+            "password": "admin123",
+            "role": "admin",
+        },
+    )
     assert resp.status_code == 200
     token = resp.json()["access_token"]
     client.headers["Authorization"] = f"Bearer {token}"

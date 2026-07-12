@@ -21,7 +21,9 @@ class AppError(Exception):
         self.details = details or []
 
 
-def _error_body(code: str, message: str, details: list[dict[str, str]] | None = None) -> dict[str, Any]:
+def _error_body(
+    code: str, message: str, details: list[dict[str, str]] | None = None
+) -> dict[str, Any]:
     body: dict[str, Any] = {"code": code, "message": message}
     if details:
         body["details"] = details
@@ -48,6 +50,7 @@ def validation_error_handler(request: Request, exc: RequestValidationError) -> J
 
 def generic_error_handler(request: Request, exc: Exception) -> JSONResponse:
     import structlog
+
     structlog.get_logger(__name__).error("unhandled exception", error=str(exc), exc_info=True)
     return JSONResponse(
         status_code=500,

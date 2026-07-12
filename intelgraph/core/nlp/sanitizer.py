@@ -18,8 +18,8 @@ class InputSanitizer:
 
     @staticmethod
     def strip_html(text: str) -> str:
-        clean = re.sub(r'<[^>]+>', ' ', text)
-        return re.sub(r'\s+', ' ', clean).strip()
+        clean = re.sub(r"<[^>]+>", " ", text)
+        return re.sub(r"\s+", " ", clean).strip()
 
     @staticmethod
     def validate_text(text: str, min_length: int = 1, max_length: int = MAX_TEXT_LENGTH) -> bool:

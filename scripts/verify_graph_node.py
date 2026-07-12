@@ -4,15 +4,12 @@ graph.node Gerçek Davranış Doğrulaması — CRUD + Referans Bütünlüğü
 
 Mock'suz, gerçek veriyle, bağımsız.
 """
+
 from __future__ import annotations
 
-import sys
-
 from intelgraph.core.entity.ip_address import IPAddress
-from intelgraph.core.entity.base import BaseEntity
-from intelgraph.core.graph.node import Node
 from intelgraph.core.graph.graph import IntelligenceGraph
-from intelgraph.core.graph.edge import Edge
+from intelgraph.core.graph.node import Node
 from intelgraph.core.relationship.base import Relationship
 from intelgraph.core.relationship.types import RelationshipType
 
@@ -182,7 +179,7 @@ print(f"\n>>> Node A ({na.id}) siliniyor...")
 removed_a = graph3.remove_node("node_A")
 print(f"remove_node('node_A') döndü: {removed_a}")
 
-print(f"\n--- Silme SONRASI durum ---")
+print("\n--- Silme SONRASI durum ---")
 print(f"Node A hala var mı? {graph3.has_node('node_A')}")
 print(f"Node B hala var mı? {graph3.has_node('node_B')}")
 print(f"Edge hala var mı?   {graph3.has_edge(edge_id)}")
@@ -206,7 +203,9 @@ result_efn = list(graph3.edges_for_node("node_B"))
 print(f"edges_for_node('node_B'): {result_efn}")
 
 assert not graph3.has_edge(edge_id), "Edge hala var! ORPHAN!"
-assert "node_A" not in graph3.node_edges.get("node_B", set()), "node_edges[B] hala A'ya ait edge'i tutuyor!"
+assert "node_A" not in graph3.node_edges.get(
+    "node_B", set()
+), "node_edges[B] hala A'ya ait edge'i tutuyor!"
 print("\n✅ Referans bütünlüğü SAĞLAM: remove_node() cascade delete ile tüm edge'leri temizliyor.")
 print("   (graph.py:54-78 — remove_node içinde edge_ids döngüsü)")
 
@@ -229,7 +228,7 @@ eid2 = edge2.id
 
 # Manuel olarak edge_node_map boz (edge silindi ama edge_node_map'te kaldı)
 # veya tersi — node silindi ama node_edges'te orphan_A'ya ait edge kaldı
-# Aslında remove_node zaten temizliyor. 
+# Aslında remove_node zaten temizliyor.
 # Peki edge_node_map'te kaydı olup edges dict'inde olmayan edge?
 
 # edge_node_map'i manuel bozalım
@@ -275,7 +274,7 @@ edge3 = graph5.add_relationship(rel3)
 # edges.pop, edge_node_map'i de temizler — buna ulaşmak için doğrudan dict manipülasyonu
 # Tam yetim edge: nodes dict'inde yok, edges dict'inde var
 graph5.nodes.clear()
-print(f"\nManuel: graph5.nodes temizlendi (node'lar yok, edge hala var).")
+print("\nManuel: graph5.nodes temizlendi (node'lar yok, edge hala var).")
 print(f"  nodes: {graph5.nodes}")
 print(f"  edges: {list(graph5.edges.keys())}")
 try:

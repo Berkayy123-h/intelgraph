@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
 from typing import Any
 
 
@@ -66,7 +65,9 @@ class FeedValidator:
                 valid.append(entry)
         return valid
 
-    def validate_with_errors(self, entries: list[dict[str, Any]]) -> list[tuple[dict[str, Any], list[str]]]:
+    def validate_with_errors(
+        self, entries: list[dict[str, Any]]
+    ) -> list[tuple[dict[str, Any], list[str]]]:
         results: list[tuple[dict[str, Any], list[str]]] = []
         for entry in entries:
             entry = self._schema.apply_defaults(entry)

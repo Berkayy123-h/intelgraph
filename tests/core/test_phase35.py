@@ -1,21 +1,15 @@
 from __future__ import annotations
 
-import json
-import os
-import time
-import secrets
-from datetime import datetime, timedelta, timezone
-
 import pyotp
 import pytest
 
-from intelgraph.core.auth.totp import TOTPManager, generate_recovery_codes, _hash_recovery_code
-from intelgraph.core.multitenant.manager import TenantManager, _hash_api_key, _generate_api_key
-
+from intelgraph.core.auth.totp import TOTPManager, _hash_recovery_code, generate_recovery_codes
+from intelgraph.core.multitenant.manager import TenantManager
 
 # =======================================================================
 # TOTP 2FA Tests
 # =======================================================================
+
 
 class TestTOTPManager:
     @pytest.fixture
@@ -118,6 +112,7 @@ class TestRecoveryCodes:
         assert len(h) == 64  # sha256 hex
         # Verify with same hash
         from intelgraph.core.auth.totp import _verify_recovery_code
+
         assert _verify_recovery_code(code, h) is True
         assert _verify_recovery_code("wrong", h) is False
 
@@ -126,9 +121,11 @@ class TestRecoveryCodes:
 # OAuth2 Client Credentials Tests
 # =======================================================================
 
+
 class TestOAuth2:
     def test_register_and_authenticate(self):
-        from intelgraph.api.auth import register_oauth_client, authenticate_oauth_client
+        from intelgraph.api.auth import authenticate_oauth_client, register_oauth_client
+
         result = register_oauth_client("client_test", "super_secret_key_123!", tenant_id="tenant_1")
         assert result["client_id"] == "client_test"
         assert result["tenant_id"] == "tenant_1"
@@ -142,16 +139,23 @@ class TestOAuth2:
         assert "read" in token_resp["scope"]
 
     def test_authenticate_wrong_secret(self):
-        from intelgraph.api.auth import register_oauth_client, authenticate_oauth_client
+        from intelgraph.api.auth import authenticate_oauth_client, register_oauth_client
+
         register_oauth_client("client_test2", "correct_secret_12345!")
         assert authenticate_oauth_client("client_test2", "wrong_secret") is None
 
     def test_authenticate_nonexistent_client(self):
         from intelgraph.api.auth import authenticate_oauth_client
+
         assert authenticate_oauth_client("nonexistent", "secret") is None
 
     def test_refresh_token(self):
-        from intelgraph.api.auth import register_oauth_client, authenticate_oauth_client, refresh_oauth_token
+        from intelgraph.api.auth import (
+            authenticate_oauth_client,
+            refresh_oauth_token,
+            register_oauth_client,
+        )
+
         register_oauth_client("client_refresh", "my_secret_key_12345!")
         resp = authenticate_oauth_client("client_refresh", "my_secret_key_12345!")
         assert resp is not None
@@ -161,10 +165,12 @@ class TestOAuth2:
 
     def test_refresh_invalid_token(self):
         from intelgraph.api.auth import refresh_oauth_token
+
         assert refresh_oauth_token("invalid.jwt.token") is None
 
     def test_token_contains_scope(self):
-        from intelgraph.api.auth import register_oauth_client, authenticate_oauth_client
+        from intelgraph.api.auth import authenticate_oauth_client, register_oauth_client
+
         register_oauth_client("client_scope", "secret_key_12345!!!", scopes=["read", "write"])
         resp = authenticate_oauth_client("client_scope", "secret_key_12345!!!")
         assert resp is not None
@@ -176,26 +182,31 @@ class TestOAuth2:
 # 2FA Login Flow Tests
 # =======================================================================
 
+
 class Test2FALoginFlow:
     def test_login_without_2fa_returns_token(self):
-        from intelgraph.api.auth import register_user, login_with_2fa_step1
+        from intelgraph.api.auth import login_with_2fa_step1, register_user
+
         register_user("flow_user", "pass123")
         result = login_with_2fa_step1("flow_user", "pass123")
         assert result is not None
         assert "access_token" in result
 
     def test_login_with_wrong_password(self):
-        from intelgraph.api.auth import register_user, login_with_2fa_step1
+        from intelgraph.api.auth import login_with_2fa_step1, register_user
+
         register_user("flow_user2", "pass123")
         assert login_with_2fa_step1("flow_user2", "wrong") is None
 
     def test_login_with_2fa_requires_temp_token(self):
-        from intelgraph.api.auth import register_user, login_with_2fa_step1, get_totp_manager
+        from intelgraph.api.auth import get_totp_manager, login_with_2fa_step1, register_user
+
         register_user("2fa_user", "pass123")
         # Enable 2FA
         totp = get_totp_manager()
         # Find the user's uid
         from intelgraph.api.auth import _token_store
+
         uid = None
         for uid_key, data in _token_store.items():
             if data["username"] == "2fa_user":
@@ -210,7 +221,14 @@ class Test2FALoginFlow:
         assert "temp_token" in result
 
     def test_verify_2fa_code_completes_login(self):
-        from intelgraph.api.auth import register_user, login_with_2fa_step1, verify_2fa_code, get_totp_manager, _token_store
+        from intelgraph.api.auth import (
+            _token_store,
+            get_totp_manager,
+            login_with_2fa_step1,
+            register_user,
+            verify_2fa_code,
+        )
+
         register_user("2fa_user2", "pass123")
         totp = get_totp_manager()
         uid = None
@@ -233,7 +251,14 @@ class Test2FALoginFlow:
         assert "access_token" in result
 
     def test_verify_2fa_wrong_code(self):
-        from intelgraph.api.auth import register_user, login_with_2fa_step1, verify_2fa_code, get_totp_manager, _token_store
+        from intelgraph.api.auth import (
+            _token_store,
+            get_totp_manager,
+            login_with_2fa_step1,
+            register_user,
+            verify_2fa_code,
+        )
+
         register_user("2fa_user3", "pass123")
         totp = get_totp_manager()
         uid = None
@@ -250,12 +275,14 @@ class Test2FALoginFlow:
 
     def test_verify_2fa_invalid_temp_token(self):
         from intelgraph.api.auth import verify_2fa_code
+
         assert verify_2fa_code("invalid.jwt.token", "123456") is None
 
 
 # =======================================================================
 # API Key Rotation + Grace Period Tests
 # =======================================================================
+
 
 class TestAPIKeyRotationGracePeriod:
     @pytest.fixture
@@ -326,9 +353,17 @@ class TestAPIKeyRotationGracePeriod:
 # Integration: TOTP + Auth API (via direct calls, not HTTP)
 # =======================================================================
 
+
 class TestAuthIntegration:
     def test_register_and_2fa_enable_then_login(self):
-        from intelgraph.api.auth import register_user, login_with_2fa_step1, verify_2fa_code, get_totp_manager, _token_store
+        from intelgraph.api.auth import (
+            _token_store,
+            get_totp_manager,
+            login_with_2fa_step1,
+            register_user,
+            verify_2fa_code,
+        )
+
         register_user("integration_user", "pass123")
 
         # Find uid
@@ -359,7 +394,14 @@ class TestAuthIntegration:
         assert "access_token" in result
 
     def test_register_and_2fa_enable_then_login_recovery(self):
-        from intelgraph.api.auth import register_user, login_with_2fa_step1, verify_2fa_code, get_totp_manager, _token_store
+        from intelgraph.api.auth import (
+            _token_store,
+            get_totp_manager,
+            login_with_2fa_step1,
+            register_user,
+            verify_2fa_code,
+        )
+
         register_user("integration_user2", "pass123")
 
         uid = None
@@ -382,13 +424,16 @@ class TestAuthIntegration:
         assert "access_token" in result
 
     def test_oauth_client_authenticated(self):
-        from intelgraph.api.auth import register_oauth_client, authenticate_oauth_client
         import jwt
+
+        from intelgraph.api.auth import authenticate_oauth_client, register_oauth_client
+
         register_oauth_client("oauth_integration", "my_oauth_secret_1234!", tenant_id="t1")
         resp = authenticate_oauth_client("oauth_integration", "my_oauth_secret_1234!")
         assert resp is not None
         # Decode the access token and verify claims
         from intelgraph.api.auth import _SECRET_KEY, TOKEN_ALGORITHM
+
         payload = jwt.decode(resp["access_token"], _SECRET_KEY, algorithms=[TOKEN_ALGORITHM])
         assert payload["sub"] == "oauth_integration"
         assert payload.get("tenant_id") == "t1"

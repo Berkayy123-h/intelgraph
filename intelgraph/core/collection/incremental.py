@@ -1,5 +1,5 @@
 import hashlib
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 
@@ -21,7 +21,7 @@ class IncrementalTracker:
 
         ttl = timedelta(days=ttl_days) if ttl_days else self._default_ttl
         last = datetime.fromisoformat(cached.get("collected_at", ""))
-        staleness = datetime.now(timezone.utc) - last
+        staleness = datetime.now(UTC) - last
         return staleness > ttl
 
     def mark_collected(
@@ -35,7 +35,7 @@ class IncrementalTracker:
         entry = {
             "source_key": source_key,
             "target": target,
-            "collected_at": datetime.now(timezone.utc).isoformat(),
+            "collected_at": datetime.now(UTC).isoformat(),
             "content_hash": content_hash,
             "metadata": metadata or {},
         }
@@ -63,11 +63,13 @@ class IncrementalTracker:
 
 def _serialize(obj: dict[str, Any]) -> str:
     import json
+
     return json.dumps(obj, default=str)
 
 
 def _deserialize(s: str) -> dict[str, Any]:
     import json
+
     try:
         return json.loads(s)
     except (json.JSONDecodeError, ValueError):

@@ -1,12 +1,8 @@
 from __future__ import annotations
 
-import copy
-import math
-import time
 import uuid
-from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 COGNITIVE_SCHEMA_VERSION = "1.0"
 
@@ -90,7 +86,9 @@ class ReasoningEngine:
     def set_graph(self, graph: Any) -> None:
         self._graph = graph
 
-    def multi_hop_reason(self, start: str, end: str, max_depth: int | None = None) -> list[ReasoningPath]:
+    def multi_hop_reason(
+        self, start: str, end: str, max_depth: int | None = None
+    ) -> list[ReasoningPath]:
         depth = max_depth or self._max_depth
         paths: list[ReasoningPath] = []
         visited: set[str] = set()
@@ -99,7 +97,9 @@ class ReasoningEngine:
         self._traces.extend(paths)
         return paths
 
-    def causal_inference(self, node_id: str, relation: str = "causes", max_depth: int | None = None) -> list[ReasoningPath]:
+    def causal_inference(
+        self, node_id: str, relation: str = "causes", max_depth: int | None = None
+    ) -> list[ReasoningPath]:
         depth = max_depth or self._max_depth
         paths: list[ReasoningPath] = []
         visited: set[str] = set()
@@ -138,7 +138,9 @@ class ReasoningEngine:
         self._traces.extend(paths)
         return paths
 
-    def probabilistic_reason(self, start: str, relations: list[tuple[str, str, float]]) -> ReasoningPath:
+    def probabilistic_reason(
+        self, start: str, relations: list[tuple[str, str, float]]
+    ) -> ReasoningPath:
         steps: list[ReasoningStep] = []
         chain_conf = 1.0
         chain_uncertainty = 0.0
@@ -190,8 +192,14 @@ class ReasoningEngine:
         return None
 
     def _dfs_paths(
-        self, current: str, target: str, steps: list[ReasoningStep],
-        visited: set[str], results: list[ReasoningPath], max_depth: int, depth: int,
+        self,
+        current: str,
+        target: str,
+        steps: list[ReasoningStep],
+        visited: set[str],
+        results: list[ReasoningPath],
+        max_depth: int,
+        depth: int,
     ) -> None:
         if depth > max_depth:
             return
@@ -223,8 +231,14 @@ class ReasoningEngine:
         visited.discard(current)
 
     def _dfs_causal(
-        self, current: str, relation: str, steps: list[ReasoningStep],
-        visited: set[str], results: list[ReasoningPath], max_depth: int, depth: int,
+        self,
+        current: str,
+        relation: str,
+        steps: list[ReasoningStep],
+        visited: set[str],
+        results: list[ReasoningPath],
+        max_depth: int,
+        depth: int,
     ) -> None:
         if depth > max_depth:
             return
@@ -252,7 +266,9 @@ class ReasoningEngine:
                 steps.pop()
         visited.discard(current)
 
-    def _build_path(self, steps: list[ReasoningStep], results: list[ReasoningPath], is_causal: bool = False) -> None:
+    def _build_path(
+        self, steps: list[ReasoningStep], results: list[ReasoningPath], is_causal: bool = False
+    ) -> None:
         conf = 1.0
         unc = 0.0
         ev = []

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 
 from intelgraph.api.auth_middleware import require_permission
 from intelgraph.core.enterprise import get_metrics as _get_metrics
@@ -94,8 +94,7 @@ async def system_query(
         entry = state.get(key)
         truth_entry = truth.read(key)
         return {"state_entry": entry.to_dict() if entry else None, "truth_entry": truth_entry}
-    return {"state": {k: v.to_dict() for k, v in state.get_all().items()},
-            "truth": truth.query()}
+    return {"state": {k: v.to_dict() for k, v in state.get_all().items()}, "truth": truth.query()}
 
 
 @router.post("/reason", summary="Execute unified reasoning query")
@@ -189,8 +188,10 @@ async def system_state(
     state: SingleSourceOfTruth = Depends(get_state),
     _=require_permission("ucos:read"),
 ):
-    return {"entries": {k: v.to_dict() for k, v in state.get_all().items()},
-            "count": len(state.get_all())}
+    return {
+        "entries": {k: v.to_dict() for k, v in state.get_all().items()},
+        "count": len(state.get_all()),
+    }
 
 
 @router.post("/state/set", summary="Set a value in the unified state")

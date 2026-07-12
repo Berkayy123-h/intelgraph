@@ -1,7 +1,7 @@
 import time
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlparse
 
@@ -66,7 +66,7 @@ class HTTPCollector(Collector):
             content=response_data,
             content_type="html",
             source_url=target,
-            collected_at=datetime.now(timezone.utc),
+            collected_at=datetime.now(UTC),
             metadata={"method": "GET", "url": target},
         )
         result.documents.append(doc)

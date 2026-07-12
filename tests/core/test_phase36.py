@@ -2,24 +2,28 @@ from __future__ import annotations
 
 import csv
 import io
-import time
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
-from intelgraph.core.graph.export import GraphExportError, GraphExporter, ExportSettings
+from intelgraph.core.entity.domain import Domain
+from intelgraph.core.entity.ip_address import IPAddress
+from intelgraph.core.graph.edge import Edge
+from intelgraph.core.graph.export import ExportSettings, GraphExporter, GraphExportError
 from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.graph.node import Node
-from intelgraph.core.graph.edge import Edge
-from intelgraph.core.entity.base import BaseEntity, EntityType
-from intelgraph.core.entity.ip_address import IPAddress
-from intelgraph.core.entity.domain import Domain
 from intelgraph.core.relationship.base import Relationship
 from intelgraph.core.relationship.types import RelationshipType
 
 
-def _make_node(node_id: str, entity_type: str = "ip_address", confidence: int = 80, first_seen=None, last_seen=None):
+def _make_node(
+    node_id: str,
+    entity_type: str = "ip_address",
+    confidence: int = 80,
+    first_seen=None,
+    last_seen=None,
+):
     if entity_type == "ip_address":
         ent = IPAddress(
             id=node_id,
@@ -28,10 +32,10 @@ def _make_node(node_id: str, entity_type: str = "ip_address", confidence: int = 
             asn="",
             organization="",
             open_ports=(),
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
-            first_seen=first_seen or datetime.now(timezone.utc),
-            last_seen=last_seen or datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            first_seen=first_seen or datetime.now(UTC),
+            last_seen=last_seen or datetime.now(UTC),
             aliases=(),
             confidence_score=confidence,
             trust_score=70,
@@ -49,10 +53,10 @@ def _make_node(node_id: str, entity_type: str = "ip_address", confidence: int = 
             nameservers=(),
             ip_addresses=(),
             technologies=(),
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
-            first_seen=first_seen or datetime.now(timezone.utc),
-            last_seen=last_seen or datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            first_seen=first_seen or datetime.now(UTC),
+            last_seen=last_seen or datetime.now(UTC),
             aliases=(),
             confidence_score=confidence,
             trust_score=70,
@@ -74,9 +78,9 @@ def _make_edge(eid: str, src: str, tgt: str, rel_type=RelationshipType.RELATED_T
         trust_weight=60,
         evidence_chain=(),
         provenance=(),
-        created_at=datetime.now(timezone.utc),
-        first_seen=datetime.now(timezone.utc),
-        last_seen=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        first_seen=datetime.now(UTC),
+        last_seen=datetime.now(UTC),
     )
     return Edge(relationship=rel)
 
@@ -174,6 +178,7 @@ class TestJSONExport:
         g = _build_test_graph()
         exporter = GraphExporter(g)
         import json
+
         data = json.loads("".join(exporter.export_iter("json")))
         assert "graph" in data
         assert "nodes" in data["graph"]
@@ -185,6 +190,7 @@ class TestJSONExport:
         g = _build_test_graph()
         exporter = GraphExporter(g)
         import json
+
         data = json.loads("".join(exporter.export_iter("json")))
         assert "metadata" in data
         assert "filtering" in data["metadata"]
@@ -246,6 +252,7 @@ class TestFilters:
         g = _build_test_graph()
         # Inject threat scores into cache
         from intelgraph.core.graph.anomaly import _THREAT_SCORE_CACHE
+
         _THREAT_SCORE_CACHE.clear()
         _THREAT_SCORE_CACHE["node_ip1"] = 85.0
         _THREAT_SCORE_CACHE["node_dm1"] = 30.0
@@ -262,9 +269,10 @@ class TestFilters:
     def test_since_filter(self):
         g = _build_test_graph()
         # One node seen very recently, another seen long ago
-        old_dt = datetime(2020, 1, 1, tzinfo=timezone.utc)
-        new_dt = datetime.now(timezone.utc)
+        old_dt = datetime(2020, 1, 1, tzinfo=UTC)
+        new_dt = datetime.now(UTC)
         from intelgraph.core.graph.export import ExportSettings
+
         settings = ExportSettings(since="2023-01-01T00:00:00+00:00")
         exporter = GraphExporter(g, settings)
         nodes = exporter._get_node_list()
@@ -289,6 +297,7 @@ class TestFilters:
     def test_combined_filters(self):
         g = _build_test_graph()
         from intelgraph.core.graph.anomaly import _THREAT_SCORE_CACHE
+
         _THREAT_SCORE_CACHE.clear()
         _THREAT_SCORE_CACHE["node_ip1"] = 90.0
         _THREAT_SCORE_CACHE["node_dm1"] = 30.0
@@ -329,6 +338,7 @@ class TestNodeAttrs:
     def test_threat_score_in_attrs(self):
         g = _build_test_graph()
         from intelgraph.core.graph.anomaly import _THREAT_SCORE_CACHE
+
         _THREAT_SCORE_CACHE.clear()
         _THREAT_SCORE_CACHE["node_ip1"] = 75.5
         try:

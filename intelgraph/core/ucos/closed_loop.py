@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -44,9 +44,13 @@ class ClosedLoopIntelligenceSystem:
         self._drift_threshold = self._cfg.get("drift_threshold", 0.2)
         self._performance_baseline: dict[str, float] = {}
 
-    def run_cycle(self, input_data: dict[str, Any], reasoning_result: dict[str, Any],
-                  execution_result: dict[str, Any],
-                  observation: dict[str, Any] | None = None) -> LifecycleEntry:
+    def run_cycle(
+        self,
+        input_data: dict[str, Any],
+        reasoning_result: dict[str, Any],
+        execution_result: dict[str, Any],
+        observation: dict[str, Any] | None = None,
+    ) -> LifecycleEntry:
         start = time.perf_counter()
         observation = observation or {}
         drift = self._detect_drift(observation)
@@ -103,7 +107,9 @@ class ClosedLoopIntelligenceSystem:
                 if key not in self._performance_baseline:
                     self._performance_baseline[key] = value
                 else:
-                    self._performance_baseline[key] = self._performance_baseline[key] * 0.9 + value * 0.1
+                    self._performance_baseline[key] = (
+                        self._performance_baseline[key] * 0.9 + value * 0.1
+                    )
 
     def get_cycles(self, limit: int = 100) -> list[LifecycleEntry]:
         return self._history[-limit:]

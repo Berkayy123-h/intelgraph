@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -36,7 +36,9 @@ class UnifiedExecutionRuntime:
         self._task_queue: list[dict[str, Any]] = []
         self._audit: list[dict[str, Any]] = []
 
-    def execute(self, goal: str, steps: list[dict[str, Any]] | None = None) -> UnifiedExecutionResult:
+    def execute(
+        self, goal: str, steps: list[dict[str, Any]] | None = None
+    ) -> UnifiedExecutionResult:
         start = time.perf_counter()
         steps = steps or [{"action": "default", "params": {"goal": goal}}]
         results = []
@@ -47,10 +49,14 @@ class UnifiedExecutionRuntime:
         for step in steps:
             action = step.get("action", "analyze")
             params = step.get("params", {})
-            self._audit.append({
-                "action": action, "params": params,
-                "timestamp": time.time(), "status": "executing",
-            })
+            self._audit.append(
+                {
+                    "action": action,
+                    "params": params,
+                    "timestamp": time.time(),
+                    "status": "executing",
+                }
+            )
             result = self._simulate_step(action, params)
             outputs[action] = result
             self._audit[-1]["status"] = "completed" if result.get("success") else "failed"
@@ -63,8 +69,12 @@ class UnifiedExecutionRuntime:
         elapsed = (time.perf_counter() - start) * 1000
         result = UnifiedExecutionResult(
             execution_id=f"ue_{uuid.uuid4().hex[:12]}",
-            goal=goal, steps=steps, success=success,
-            outputs=outputs, duration_ms=elapsed, error=error,
+            goal=goal,
+            steps=steps,
+            success=success,
+            outputs=outputs,
+            duration_ms=elapsed,
+            error=error,
             created_at=time.time(),
         )
         self._history.append(result)

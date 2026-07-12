@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from enum import Enum, auto
-from typing import Any, Callable
-
-from intelgraph.core.agent.tools import ActionRisk
+from enum import Enum
+from typing import Any
 
 
 class ApprovalLevel(Enum):
@@ -53,7 +52,9 @@ class SafetyGovernor:
         self._kill_switch_global = False
         self._kill_switch_agents: dict[str, bool] = {}
         self._kill_switch_tasks: dict[str, bool] = {}
-        self._forbidden_actions: list[str] = self._cfg.get("forbidden_actions", ["shutdown", "destroy", "nuke"])
+        self._forbidden_actions: list[str] = self._cfg.get(
+            "forbidden_actions", ["shutdown", "destroy", "nuke"]
+        )
         self._human_in_loop = self._cfg.get("human_in_loop", True)
         self._anomaly_baseline: dict[str, float] = {}
         self._check_callbacks: list[Callable] = []
@@ -64,7 +65,9 @@ class SafetyGovernor:
     def register_check_callback(self, cb: Callable) -> None:
         self._check_callbacks.append(cb)
 
-    def check_action(self, action_type: str, description: str, risk_score: float) -> SafetyCheckResult:
+    def check_action(
+        self, action_type: str, description: str, risk_score: float
+    ) -> SafetyCheckResult:
         for cmd in self._forbidden_actions:
             if cmd in description.lower():
                 return SafetyCheckResult(
@@ -80,11 +83,14 @@ class SafetyGovernor:
         if self._kill_switch_global:
             return SafetyCheckResult(
                 result_id=f"sr_{uuid.uuid4().hex[:12]}",
-                approved=False, approval_level=ApprovalLevel.DENY,
-                risk_score=risk_score, action_type=action_type,
+                approved=False,
+                approval_level=ApprovalLevel.DENY,
+                risk_score=risk_score,
+                action_type=action_type,
                 action_description=description,
                 violations=["Global kill switch engaged"],
-                kill_switch_engaged=True, timestamp=time.time(),
+                kill_switch_engaged=True,
+                timestamp=time.time(),
             )
         anomaly = self._detect_anomaly(action_type, risk_score)
         level = self._determine_approval(risk_score, anomaly)
@@ -110,10 +116,15 @@ class SafetyGovernor:
         baseline = self._anomaly_baseline.get(action_type, 0.3)
         deviation = abs(risk_score - baseline)
         if deviation > 0.4:
-            self._anomalies.append({
-                "action_type": action_type, "expected": baseline,
-                "actual": risk_score, "deviation": deviation, "time": time.time(),
-            })
+            self._anomalies.append(
+                {
+                    "action_type": action_type,
+                    "expected": baseline,
+                    "actual": risk_score,
+                    "deviation": deviation,
+                    "time": time.time(),
+                }
+            )
             return True
         return False
 

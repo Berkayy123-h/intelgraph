@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
+from datetime import UTC
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
-from intelgraph.core.nlp.extractor import NEREngine
 from intelgraph.core.explanation.builder import ExplanationBuilder
+from intelgraph.core.nlp.extractor import NEREngine
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
@@ -80,7 +80,9 @@ class DashboardState:
             self._sources_map[""] = sources
             self._save()
 
-    def feed_ner(self, counts: dict[str, int], samples: dict[str, list[str]], tenant_id: str = "") -> None:
+    def feed_ner(
+        self, counts: dict[str, int], samples: dict[str, list[str]], tenant_id: str = ""
+    ) -> None:
         if not tenant_id:
             self._ner_counts_map[""] = counts
             self._ner_samples_map[""] = samples
@@ -122,15 +124,18 @@ dashboard_state = DashboardState()
 # Helper: recompute NER stats from source texts
 # ---------------------------------------------------------------------------
 
+
 def _parse_iso(s: str | None) -> datetime | None:
-    from datetime import datetime, timezone
+    from datetime import datetime
+
     if not s:
         return None
     try:
         dt = datetime.fromisoformat(s)
-        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+        return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
     except (ValueError, TypeError):
         return None
+
 
 def _compute_ner_stats(source_texts: list[str]) -> tuple[dict[str, int], dict[str, list[str]]]:
     ner = NEREngine()
@@ -152,6 +157,7 @@ def _compute_ner_stats(source_texts: list[str]) -> tuple[dict[str, int], dict[st
 # Endpoints
 # ---------------------------------------------------------------------------
 
+
 @router.get("/summary")
 def get_summary(request: Request) -> dict[str, Any]:
     tenant_id = _get_tenant(request)
@@ -162,7 +168,8 @@ def get_summary(request: Request) -> dict[str, Any]:
     nodes = r.get("graph_nodes_summary", [])
     top_threats = sorted(
         [n for n in nodes if n.get("threat_score", 0) > 0],
-        key=lambda n: n["threat_score"], reverse=True
+        key=lambda n: n["threat_score"],
+        reverse=True,
     )[:5]
     return {
         "node_count": r.get("graph_node_count", 0),
@@ -249,6 +256,7 @@ def get_incidents(request: Request) -> list[dict[str, Any]]:
     if not r:
         return []
     severity_map = {"critical": 3, "high": 2, "medium": 1, "low": 0}
+
     def _normalize(item: dict[str, Any]) -> dict[str, Any]:
         raw_sev = item.get("severity", "medium")
         sev = severity_map.get(raw_sev, 1) if isinstance(raw_sev, str) else (raw_sev or 1)
@@ -270,6 +278,7 @@ def get_incidents(request: Request) -> list[dict[str, Any]]:
             "resolved": item.get("resolved", False),
             "confirmed": item.get("confirmed", False),
         }
+
     seen: set[str] = set()
     result: list[dict[str, Any]] = []
     for item in r.get("incidents", []) + r.get("alerts", []):
@@ -293,16 +302,21 @@ def get_graph(request: Request, limit: int = 200, since: str | None = None) -> d
 
     # Temporal filter
     if since:
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime, timedelta
+
         if since.endswith("d"):
-            cutoff = datetime.now(timezone.utc) - timedelta(days=int(since[:-1]))
+            cutoff = datetime.now(UTC) - timedelta(days=int(since[:-1]))
         else:
             try:
                 cutoff = datetime.fromisoformat(since)
             except ValueError:
                 cutoff = None
         if cutoff:
-            nodes = [n for n in nodes if _parse_iso(n.get("last_seen")) and _parse_iso(n["last_seen"]) >= cutoff]
+            nodes = [
+                n
+                for n in nodes
+                if _parse_iso(n.get("last_seen")) and _parse_iso(n["last_seen"]) >= cutoff
+            ]
 
     if len(nodes) > limit:
         # Sort by confidence descending, take top *limit*
@@ -356,18 +370,24 @@ def get_incident_playbook(request: Request, incident_id: str) -> dict[str, Any]:
     statuses = r.get("playbook_statuses", {})
     pb = statuses.get(incident_id)
     if not pb:
-        return {"incident_id": incident_id, "playbook": None, "message": "No playbook matched for this incident."}
+        return {
+            "incident_id": incident_id,
+            "playbook": None,
+            "message": "No playbook matched for this incident.",
+        }
     return {"incident_id": incident_id, "playbook": pb}
 
 
 @router.post("/incidents/{incident_id}/playbook/steps/{step_id}/complete")
 def complete_playbook_step(
     request: Request,
-    incident_id: str, step_id: str,
+    incident_id: str,
+    step_id: str,
     completed_by: str = "human",
     notes: str = "",
 ) -> dict[str, Any]:
     from intelgraph.core.playbook import PlaybookEngine
+
     engine = PlaybookEngine()
     tenant_id = _get_tenant(request)
     r = dashboard_state.result_for(tenant_id) if tenant_id else dashboard_state.result
@@ -376,7 +396,9 @@ def complete_playbook_step(
         engine.restore_from_dicts(status_data)
     status = engine.complete_step(incident_id, step_id, completed_by=completed_by, notes=notes)
     if status is None:
-        raise HTTPException(status_code=404, detail=f"Incident {incident_id} has no active playbook.")
+        raise HTTPException(
+            status_code=404, detail=f"Incident {incident_id} has no active playbook."
+        )
     if r is not None:
         r["playbook_statuses"] = engine.to_dicts()
     return {

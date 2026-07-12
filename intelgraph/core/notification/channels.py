@@ -4,13 +4,13 @@ import json
 import logging
 import smtplib
 import time
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from typing import Any
-from urllib.request import Request, urlopen
 from urllib.error import URLError
+from urllib.request import Request, urlopen
 
-from intelgraph.core.notification.models import NotificationEvent, NotificationChannel
+from intelgraph.core.notification.models import NotificationChannel, NotificationEvent
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,11 @@ def send_email(event: NotificationEvent, channel: NotificationChannel) -> str | 
             server = smtplib.SMTP(smtp_host, smtp_port, timeout=15)
             server.starttls()
         else:
-            server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=15) if smtp_port == 465 else smtplib.SMTP(smtp_host, smtp_port, timeout=15)
+            server = (
+                smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=15)
+                if smtp_port == 465
+                else smtplib.SMTP(smtp_host, smtp_port, timeout=15)
+            )
         if username and password:
             server.login(username, password)
         server.sendmail(from_addr, to_addrs, msg.as_string())
@@ -86,18 +90,20 @@ def send_slack(event: NotificationEvent, channel: NotificationChannel) -> str | 
     color_map = {"low": "#3fb950", "medium": "#d29922", "high": "#f0883e", "critical": "#ff7b72"}
     color = color_map.get(event.severity, "#8b949e")
     payload = {
-        "attachments": [{
-            "color": color,
-            "title": event.title,
-            "text": event.body,
-            "fields": [
-                {"title": "Event Type", "value": event.event_type, "short": True},
-                {"title": "Severity", "value": event.severity, "short": True},
-                {"title": "Entity", "value": event.entity_id or "N/A", "short": True},
-            ],
-            "footer": "IntelGraph Notification",
-            "ts": int(time.time()),
-        }]
+        "attachments": [
+            {
+                "color": color,
+                "title": event.title,
+                "text": event.body,
+                "fields": [
+                    {"title": "Event Type", "value": event.event_type, "short": True},
+                    {"title": "Severity", "value": event.severity, "short": True},
+                    {"title": "Entity", "value": event.entity_id or "N/A", "short": True},
+                ],
+                "footer": "IntelGraph Notification",
+                "ts": int(time.time()),
+            }
+        ]
     }
     headers = {"Content-Type": "application/json"}
     body = json.dumps(payload).encode("utf-8")

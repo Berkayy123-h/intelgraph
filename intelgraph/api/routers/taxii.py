@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
@@ -35,6 +35,7 @@ _COLLECTIONS = {
 def _get_graph() -> Any:
     """Return reconstructed IntelligenceGraph from container backend."""
     from intelgraph.core.kernel.execution import build_graph_from_container
+
     return build_graph_from_container()
 
 
@@ -68,15 +69,17 @@ def list_collections():
     graph = _get_graph()
     collections = []
     for cid, col in _COLLECTIONS.items():
-        collections.append({
-            "id": cid,
-            "title": col["title"],
-            "description": col["description"],
-            "can_read": col["can_read"],
-            "can_write": col["can_write"],
-            "media_types": col["media_types"],
-            "objects_count": len(graph.nodes),
-        })
+        collections.append(
+            {
+                "id": cid,
+                "title": col["title"],
+                "description": col["description"],
+                "can_read": col["can_read"],
+                "can_write": col["can_write"],
+                "media_types": col["media_types"],
+                "objects_count": len(graph.nodes),
+            }
+        )
     return JSONResponse(
         content={"collections": collections},
         media_type=_TAXII_MEDIA_TYPE,
@@ -95,8 +98,12 @@ def list_collections():
 )
 def get_objects(
     collection_id: str,
-    added_after: str | None = Query(None, description="Only return objects added after this timestamp (ISO 8601)"),
-    match_type: str | None = Query(None, alias="match[type]", description="Filter by STIX object type"),
+    added_after: str | None = Query(
+        None, description="Only return objects added after this timestamp (ISO 8601)"
+    ),
+    match_type: str | None = Query(
+        None, alias="match[type]", description="Filter by STIX object type"
+    ),
     limit: int = Query(100, description="Maximum number of objects to return", ge=1, le=1000),
     next_cursor: str | None = Query(None, alias="next", description="Cursor for pagination"),
 ):
@@ -134,6 +141,7 @@ def get_objects(
         stix_json = graph_to_bundle_json(graph, since=since)
 
     import json
+
     bundle = json.loads(stix_json)
 
     objects = bundle.get("objects", [])
@@ -141,7 +149,7 @@ def get_objects(
     # Pagination
     total = len(objects)
     offset = int(next_cursor) if next_cursor else 0
-    page = objects[offset:offset + limit]
+    page = objects[offset : offset + limit]
 
     response_data: dict[str, Any] = {
         "objects": page,
@@ -168,6 +176,7 @@ def get_object_by_id(collection_id: str, object_id: str):
     graph = _get_graph()
     stix_json = graph_to_bundle_json(graph)
     import json
+
     bundle = json.loads(stix_json)
 
     for obj in bundle.get("objects", []):

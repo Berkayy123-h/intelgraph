@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+import json
+import time
+from typing import Any
 
 from intelgraph.core.source.connector import ConnectorConfig, ConnectorRegistry
 from intelgraph.core.source.store import DataSourceStore
-
-import json
-import time
 
 
 class DataSourceManager:
@@ -19,9 +18,13 @@ class DataSourceManager:
         source_id: str,
         source_name: str,
         connector_type: str,
-        config_overrides: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
-        cfg_kwargs: Dict[str, Any] = {"id": source_id, "name": source_name, "connector_type": connector_type}
+        config_overrides: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        cfg_kwargs: dict[str, Any] = {
+            "id": source_id,
+            "name": source_name,
+            "connector_type": connector_type,
+        }
         if config_overrides:
             cfg_kwargs.update(config_overrides)
         cfg = ConnectorConfig(**cfg_kwargs)
@@ -31,10 +34,10 @@ class DataSourceManager:
         self.store.register_source(cfg)
         return cfg.to_dict()
 
-    def list_sources(self) -> List[Dict[str, Any]]:
+    def list_sources(self) -> list[dict[str, Any]]:
         return self.store.list_sources()
 
-    def get_source(self, source_id: str) -> Dict[str, Any]:
+    def get_source(self, source_id: str) -> dict[str, Any]:
         src = self.store.get_source(source_id)
         if src is None:
             return {"error": "Source not found"}
@@ -43,7 +46,7 @@ class DataSourceManager:
     def delete_source(self, source_id: str) -> bool:
         return self.store.delete_source(source_id)
 
-    def _parse_src_config(self, src: Dict[str, Any]) -> Dict[str, Any]:
+    def _parse_src_config(self, src: dict[str, Any]) -> dict[str, Any]:
         config_str = src.get("config", "{}")
         if isinstance(config_str, str) and config_str.strip():
             try:
@@ -54,7 +57,7 @@ class DataSourceManager:
             return config_str
         return {}
 
-    def poll_source(self, source_id: str) -> Dict[str, Any]:
+    def poll_source(self, source_id: str) -> dict[str, Any]:
         src = self.store.get_source(source_id)
         if src is None:
             return {"error": "Source not found", "status": "error"}
@@ -85,7 +88,8 @@ class DataSourceManager:
         connector.disconnect()
         if result.success:
             self.store.record_poll(
-                source_id, "success",
+                source_id,
+                "success",
                 duration_ms=elapsed_ms,
                 nodes_ingested=result.nodes_ingested,
             )
@@ -97,13 +101,15 @@ class DataSourceManager:
             }
         else:
             self.store.record_poll(
-                source_id, "failure",
+                source_id,
+                "failure",
                 duration_ms=elapsed_ms,
                 error_message=result.error_message,
             )
             consecutive = (src.get("consecutive_failures", 0) or 0) + 1
             self.store.update_source_status(
-                source_id, "error" if consecutive >= 3 else "active",
+                source_id,
+                "error" if consecutive >= 3 else "active",
                 consecutive_failures=consecutive,
             )
             return {
@@ -112,13 +118,13 @@ class DataSourceManager:
                 "duration_ms": elapsed_ms,
             }
 
-    def bulk_poll(self, source_ids: List[str]) -> List[Dict[str, Any]]:
+    def bulk_poll(self, source_ids: list[str]) -> list[dict[str, Any]]:
         results = []
         for sid in source_ids:
             results.append(self.poll_source(sid))
         return results
 
-    def run_scheduled_poll(self) -> List[Dict[str, Any]]:
+    def run_scheduled_poll(self) -> list[dict[str, Any]]:
         sources = self.store.list_sources()
         results = []
         now = time.time()
@@ -136,7 +142,7 @@ class DataSourceManager:
                 results.append(self.poll_source(src["id"]))
         return results
 
-    def get_poll_history(self, source_id: str) -> List[Dict[str, Any]]:
+    def get_poll_history(self, source_id: str) -> list[dict[str, Any]]:
         return self.store.get_poll_history(source_id)
 
     def close(self) -> None:

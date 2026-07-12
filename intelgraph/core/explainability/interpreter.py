@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 EXPLAINABILITY_SCHEMA_VERSION = "1.0"
@@ -74,13 +74,15 @@ class FeatureImportance:
             raw = features.get(name, 0.0)
             direction = "positive" if contribution >= 0 else "negative"
             importance_pct = abs(contribution) / total_abs
-            result.append(FeatureContribution(
-                feature_name=name,
-                raw_value=raw,
-                contribution=contribution,
-                direction=direction,
-                importance_percentile=importance_pct,
-            ))
+            result.append(
+                FeatureContribution(
+                    feature_name=name,
+                    raw_value=raw,
+                    contribution=contribution,
+                    direction=direction,
+                    importance_percentile=importance_pct,
+                )
+            )
         return result
 
     def global_importance(
@@ -215,14 +217,16 @@ class CounterfactualExplainer:
                 if new_val < min_b or new_val > max_b:
                     continue
                 impact = delta * needed_change / max(abs(feat_val), 1e-10)
-                candidates.append({
-                    "feature": feat_name,
-                    "current_value": round(feat_val, 4),
-                    "suggested_value": round(new_val, 4),
-                    "delta": round(delta, 4),
-                    "estimated_impact": round(impact, 4),
-                    "direction": "increase" if delta > 0 else "decrease",
-                })
+                candidates.append(
+                    {
+                        "feature": feat_name,
+                        "current_value": round(feat_val, 4),
+                        "suggested_value": round(new_val, 4),
+                        "delta": round(delta, 4),
+                        "estimated_impact": round(impact, 4),
+                        "direction": "increase" if delta > 0 else "decrease",
+                    }
+                )
         candidates.sort(key=lambda x: -abs(x["estimated_impact"]))
         return candidates[:5]
 
@@ -244,8 +248,7 @@ class CounterfactualExplainer:
             "forecast_before": round(forecast_value_before, 4),
             "forecast_after": round(forecast_value_after, 4),
             "impact": round(impact, 4),
-            "impact_direction": "increase" if impact > 0 else "decrease" if impact < 0 else "neutral",
+            "impact_direction": (
+                "increase" if impact > 0 else "decrease" if impact < 0 else "neutral"
+            ),
         }
-
-
-

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import ulid
 
@@ -22,9 +22,9 @@ class Relationship:
     trust_weight: int = 0
     evidence_chain: tuple[Evidence, ...] = field(default_factory=tuple)
     provenance: tuple[Provenance, ...] = field(default_factory=tuple)
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    first_seen: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    last_seen: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    first_seen: datetime = field(default_factory=lambda: datetime.now(UTC))
+    last_seen: datetime = field(default_factory=lambda: datetime.now(UTC))
     occurrence_count: int = 1
 
     def __post_init__(self) -> None:

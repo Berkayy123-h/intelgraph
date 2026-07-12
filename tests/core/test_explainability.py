@@ -1,27 +1,37 @@
 from __future__ import annotations
 
-import time
-from typing import Any
-
 import pytest
 
 from intelgraph.core.explainability.interpreter import (
-    FeatureImportance, FeatureContribution, PredictionExplanation,
-    ModelInterpreter, ModelInterpretabilityReport, CounterfactualExplainer,
-)
-from intelgraph.core.safety.guard import (
-    SafetyGuard, ConstraintValidator, BoundsChecker, FallbackHandler,
-    SafetyReport, SafetyViolation, Severity,
+    CounterfactualExplainer,
+    FeatureContribution,
+    FeatureImportance,
+    ModelInterpreter,
+    PredictionExplanation,
 )
 from intelgraph.core.governance.policy import (
-    AuditTrail, ComplianceChecker, ComplianceReport, ComplianceStatus,
-    ApprovalWorkflow, ApprovalRequest, ApprovalStatus, PolicyEvaluator,
+    ApprovalRequest,
+    ApprovalStatus,
+    ApprovalWorkflow,
+    AuditTrail,
+    ComplianceChecker,
+    ComplianceStatus,
+    PolicyEvaluator,
 )
-
+from intelgraph.core.safety.guard import (
+    BoundsChecker,
+    ConstraintValidator,
+    FallbackHandler,
+    SafetyGuard,
+    SafetyReport,
+    SafetyViolation,
+    Severity,
+)
 
 # ===================================================================
 # Explainability Tests
 # ===================================================================
+
 
 class TestFeatureContribution:
     def test_creation(self) -> None:
@@ -105,8 +115,16 @@ class TestModelInterpreter:
     def test_feature_stability(self) -> None:
         mi = ModelInterpreter()
         preds = [
-            {"confidence": 0.9, "uncertainty": 0.1, "contributions": {"risk": 0.5, "influence": 0.5}},
-            {"confidence": 0.8, "uncertainty": 0.2, "contributions": {"risk": 0.5, "influence": 0.5}},
+            {
+                "confidence": 0.9,
+                "uncertainty": 0.1,
+                "contributions": {"risk": 0.5, "influence": 0.5},
+            },
+            {
+                "confidence": 0.8,
+                "uncertainty": 0.2,
+                "contributions": {"risk": 0.5, "influence": 0.5},
+            },
         ]
         report = mi.generate_report("m", preds)
         assert report.feature_stability["risk"] == pytest.approx(1.0, rel=1e-3)
@@ -142,6 +160,7 @@ class TestCounterfactualExplainer:
 # Safety Tests
 # ===================================================================
 
+
 class TestSeverity:
     def test_values(self) -> None:
         assert Severity.INFO.name == "INFO"
@@ -170,7 +189,9 @@ class TestSafetyReport:
 
     def test_failed(self) -> None:
         v = SafetyViolation("r", Severity.ERROR, "msg", 0.9, 0.8)
-        sr = SafetyReport("sr1", passed=False, violations=[v], fallback_used=True, fallback_value=0.5)
+        sr = SafetyReport(
+            "sr1", passed=False, violations=[v], fallback_used=True, fallback_value=0.5
+        )
         assert sr.passed is False
         assert sr.fallback_value == 0.5
 
@@ -298,6 +319,7 @@ class TestSafetyGuard:
 # Governance Tests
 # ===================================================================
 
+
 class TestAuditTrail:
     def test_record(self) -> None:
         trail = AuditTrail()
@@ -343,33 +365,48 @@ class TestComplianceChecker:
         assert report.status == ComplianceStatus.COMPLIANT
 
     def test_max_value_violation(self) -> None:
-        cc = ComplianceChecker({"max_risk": {"type": "max_value", "threshold": 0.7, "enabled": True}})
+        cc = ComplianceChecker(
+            {"max_risk": {"type": "max_value", "threshold": 0.7, "enabled": True}}
+        )
         report = cc.check("risk_forecast", 0.9)
         assert report.status == ComplianceStatus.NON_COMPLIANT
         assert len(report.violations) == 1
 
     def test_min_value_violation(self) -> None:
-        cc = ComplianceChecker({"min_risk": {"type": "min_value", "threshold": 0.3, "enabled": True}})
+        cc = ComplianceChecker(
+            {"min_risk": {"type": "min_value", "threshold": 0.3, "enabled": True}}
+        )
         report = cc.check("risk_forecast", 0.1)
         assert report.status == ComplianceStatus.NON_COMPLIANT
 
     def test_risk_based_violation(self) -> None:
-        cc = ComplianceChecker({"entity_risk": {"type": "risk_based", "threshold": 0.7, "enabled": True}})
+        cc = ComplianceChecker(
+            {"entity_risk": {"type": "risk_based", "threshold": 0.7, "enabled": True}}
+        )
         report = cc.check("risk_forecast", 0.5, entity_risk=0.9)
         assert report.status == ComplianceStatus.NON_COMPLIANT
 
     def test_skipped_type(self) -> None:
-        cc = ComplianceChecker({
-            "rule1": {"type": "max_value", "threshold": 0.7, "prediction_types": ["trend"], "enabled": True},
-        })
+        cc = ComplianceChecker(
+            {
+                "rule1": {
+                    "type": "max_value",
+                    "threshold": 0.7,
+                    "prediction_types": ["trend"],
+                    "enabled": True,
+                },
+            }
+        )
         report = cc.check("risk_forecast", 0.9)
         assert report.status == ComplianceStatus.COMPLIANT
         assert "rule1" in report.passed_rules
 
     def test_disabled_rule(self) -> None:
-        cc = ComplianceChecker({
-            "rule1": {"type": "max_value", "threshold": 0.7, "enabled": False},
-        })
+        cc = ComplianceChecker(
+            {
+                "rule1": {"type": "max_value", "threshold": 0.7, "enabled": False},
+            }
+        )
         report = cc.check("risk_forecast", 0.9)
         assert report.status == ComplianceStatus.COMPLIANT
 

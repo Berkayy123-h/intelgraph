@@ -43,7 +43,9 @@ class AntiPoisoningEngine:
     ) -> PoisoningReport:
         report = PoisoningReport()
 
-        low_trust = [s for s in source_records if s.get("trust_score", 0) < self.LOW_TRUST_THRESHOLD]
+        low_trust = [
+            s for s in source_records if s.get("trust_score", 0) < self.LOW_TRUST_THRESHOLD
+        ]
         for s in low_trust:
             report.flags.append(PoisoningFlag.LOW_TRUST_SOURCE)
             report.details.append(

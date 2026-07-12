@@ -1,21 +1,18 @@
 from __future__ import annotations
 
-import json
-import math
 import time
 
-import pytest
-
 from intelgraph.core.nlp.sanitizer import InputSanitizer, OutputSanitizer
-
 
 # ===================================================================
 # NER Engine Tests
 # ===================================================================
 
+
 class TestNEREngine:
     def test_ip_extraction(self):
         from intelgraph.core.nlp.extractor import NEREngine
+
         ner = NEREngine()
         text = "The attacker IP 192.168.1.1 was observed communicating with 10.0.0.5."
         entities = ner.extract(text)
@@ -26,6 +23,7 @@ class TestNEREngine:
 
     def test_domain_extraction(self):
         from intelgraph.core.nlp.extractor import NEREngine
+
         ner = NEREngine()
         text = "C2 traffic directed to malicious.example.com and evil.org."
         entities = ner.extract(text)
@@ -35,6 +33,7 @@ class TestNEREngine:
 
     def test_cve_extraction(self):
         from intelgraph.core.nlp.extractor import NEREngine
+
         ner = NEREngine()
         text = "The vulnerability CVE-2024-1234 was exploited. Also CVE-2023-98765."
         entities = ner.extract(text)
@@ -44,6 +43,7 @@ class TestNEREngine:
 
     def test_malware_extraction(self):
         from intelgraph.core.nlp.extractor import NEREngine
+
         ner = NEREngine()
         text = "The ransomware attack used a new trojan variant. A backdoor was also deployed."
         entities = ner.extract(text)
@@ -55,6 +55,7 @@ class TestNEREngine:
 
     def test_entity_confidence(self):
         from intelgraph.core.nlp.extractor import NEREngine
+
         ner = NEREngine()
         text = "CVE-2024-5678 is critical."
         entities = ner.extract(text)
@@ -63,11 +64,13 @@ class TestNEREngine:
 
     def test_empty_text(self):
         from intelgraph.core.nlp.extractor import NEREngine
+
         ner = NEREngine()
         assert ner.extract("") == []
 
     def test_multiple_entity_types(self):
         from intelgraph.core.nlp.extractor import NEREngine
+
         ner = NEREngine()
         text = "Attacker at 10.0.0.1 used CVE-2024-1234 to deploy ransomware on target.com."
         entities = ner.extract(text)
@@ -79,6 +82,7 @@ class TestNEREngine:
 
     def test_email_extraction(self):
         from intelgraph.core.nlp.extractor import NEREngine
+
         ner = NEREngine()
         text = "Contact threat@intel.com for reporting."
         entities = ner.extract(text)
@@ -91,9 +95,11 @@ class TestNEREngine:
 # Relationship Extraction Tests
 # ===================================================================
 
+
 class TestRelationshipExtractor:
     def test_basic_relationship(self):
         from intelgraph.core.nlp.extractor import NEREngine, RelationshipExtractor
+
         ner = NEREngine()
         rel_extractor = RelationshipExtractor()
         text = "192.168.1.1 connected to malicious.example.com."
@@ -104,6 +110,7 @@ class TestRelationshipExtractor:
 
     def test_ownership_relationship(self):
         from intelgraph.core.nlp.extractor import NEREngine, RelationshipExtractor
+
         ner = NEREngine()
         rel_extractor = RelationshipExtractor()
         text = "evil.org owns c2.example.com."
@@ -113,6 +120,7 @@ class TestRelationshipExtractor:
 
     def test_no_entities_no_relationships(self):
         from intelgraph.core.nlp.extractor import RelationshipExtractor
+
         rel_extractor = RelationshipExtractor()
         text = "The system was impacted."
         relationships = rel_extractor.extract(text)
@@ -120,6 +128,7 @@ class TestRelationshipExtractor:
 
     def test_relationship_confidence(self):
         from intelgraph.core.nlp.extractor import NEREngine, RelationshipExtractor
+
         ner = NEREngine()
         rel_extractor = RelationshipExtractor()
         text = "IP 10.0.0.1 targets example.com."
@@ -130,6 +139,7 @@ class TestRelationshipExtractor:
 
     def test_contains_relationship(self):
         from intelgraph.core.nlp.extractor import NEREngine, RelationshipExtractor
+
         ner = NEREngine()
         rel_extractor = RelationshipExtractor()
         text = "The malware ransomware contains a backdoor component."
@@ -143,9 +153,11 @@ class TestRelationshipExtractor:
 # Event Extraction Tests
 # ===================================================================
 
+
 class TestEventExtractor:
     def test_breach_event(self):
-        from intelgraph.core.nlp.extractor import NEREngine, EventExtractor
+        from intelgraph.core.nlp.extractor import EventExtractor, NEREngine
+
         ner = NEREngine()
         event_extractor = EventExtractor()
         text = "The organization suffered a data breach exposing customer data."
@@ -155,7 +167,8 @@ class TestEventExtractor:
         assert "breach" in types
 
     def test_infection_event(self):
-        from intelgraph.core.nlp.extractor import NEREngine, EventExtractor
+        from intelgraph.core.nlp.extractor import EventExtractor, NEREngine
+
         ner = NEREngine()
         event_extractor = EventExtractor()
         text = "Systems infected with ransomware trojan variant."
@@ -165,7 +178,8 @@ class TestEventExtractor:
         assert "infection" in types
 
     def test_phishing_event(self):
-        from intelgraph.core.nlp.extractor import NEREngine, EventExtractor
+        from intelgraph.core.nlp.extractor import EventExtractor, NEREngine
+
         ner = NEREngine()
         event_extractor = EventExtractor()
         text = "A sophisticated phishing campaign targeted executives."
@@ -176,6 +190,7 @@ class TestEventExtractor:
 
     def test_event_confidence(self):
         from intelgraph.core.nlp.extractor import EventExtractor
+
         event_extractor = EventExtractor()
         text = "The breach was detected."
         events = event_extractor.extract(text)
@@ -184,6 +199,7 @@ class TestEventExtractor:
 
     def test_multiple_events(self):
         from intelgraph.core.nlp.extractor import EventExtractor
+
         event_extractor = EventExtractor()
         text = "The breach occurred after phishing. Then malware infected systems."
         events = event_extractor.extract(text)
@@ -194,9 +210,11 @@ class TestEventExtractor:
 # Text Classification Tests
 # ===================================================================
 
+
 class TestTextClassifier:
     def test_malware_classification(self):
         from intelgraph.core.nlp.extractor import TextClassifier
+
         classifier = TextClassifier()
         text = "A new ransomware trojan was discovered deploying backdoors."
         result = classifier.classify(text)
@@ -205,6 +223,7 @@ class TestTextClassifier:
 
     def test_vulnerability_classification(self):
         from intelgraph.core.nlp.extractor import TextClassifier
+
         classifier = TextClassifier()
         text = "CVE-2024-1234 is a critical zero-day vulnerability."
         result = classifier.classify(text)
@@ -212,6 +231,7 @@ class TestTextClassifier:
 
     def test_phishing_classification(self):
         from intelgraph.core.nlp.extractor import TextClassifier
+
         classifier = TextClassifier()
         text = "Phishing emails are targeting users with social engineering."
         result = classifier.classify(text)
@@ -219,6 +239,7 @@ class TestTextClassifier:
 
     def test_unknown_classification(self):
         from intelgraph.core.nlp.extractor import TextClassifier
+
         classifier = TextClassifier()
         text = "The weather is nice today."
         result = classifier.classify(text)
@@ -226,6 +247,7 @@ class TestTextClassifier:
 
     def test_confidence_range(self):
         from intelgraph.core.nlp.extractor import TextClassifier
+
         classifier = TextClassifier()
         text = "CVE-2024-1234 ransomware breach."
         result = classifier.classify(text)
@@ -233,6 +255,7 @@ class TestTextClassifier:
 
     def test_severity_detection(self):
         from intelgraph.core.nlp.extractor import TextClassifier
+
         classifier = TextClassifier()
         text = "CRITICAL: emergency response required for severe breach."
         result = classifier.classify(text)
@@ -243,9 +266,11 @@ class TestTextClassifier:
 # Document Summarizer Tests
 # ===================================================================
 
+
 class TestDocumentSummarizer:
     def test_summary_generation(self):
         from intelgraph.core.nlp.extractor import DocumentSummarizer
+
         summarizer = DocumentSummarizer()
         text = "A critical vulnerability CVE-2024-1234 was discovered. It affects all versions. Ransomware campaigns are using this. The patch is available now. Organizations should update immediately. Attackers are exploiting this in the wild."
         result = summarizer.summarize(text, max_sentences=3)
@@ -256,6 +281,7 @@ class TestDocumentSummarizer:
 
     def test_short_text(self):
         from intelgraph.core.nlp.extractor import DocumentSummarizer
+
         summarizer = DocumentSummarizer()
         text = "Short text."
         result = summarizer.summarize(text)
@@ -263,6 +289,7 @@ class TestDocumentSummarizer:
 
     def test_key_findings_from_summary(self):
         from intelgraph.core.nlp.extractor import DocumentSummarizer
+
         summarizer = DocumentSummarizer()
         text = "The IP 192.168.1.1 was involved in a breach using CVE-2024-1234 on domain evil.com."
         result = summarizer.summarize(text)
@@ -274,9 +301,11 @@ class TestDocumentSummarizer:
 # Entity Linker Tests
 # ===================================================================
 
+
 class TestEntityLinker:
     def test_link_no_graph(self):
         from intelgraph.core.nlp.linker import EntityLinker
+
         linker = EntityLinker()
         result = linker.link("test", [{"text": "192.168.1.1", "label": "IP"}])
         assert result["total_mentions"] == 1
@@ -285,16 +314,21 @@ class TestEntityLinker:
 
     def test_link_with_graph(self):
         from intelgraph.core.nlp.linker import EntityLinker
+
         linker = EntityLinker()
         mock_graph = type("MockGraph", (), {"nodes": {}})()
         mock_graph.nodes["node1"] = {"name": "192.168.1.1", "properties": {"ip": "192.168.1.1"}}
         linker.set_graph(mock_graph)
-        result = linker.link("192.168.1.1 is bad", [{"text": "192.168.1.1", "label": "IP", "normalized": "192.168.1.1"}])
+        result = linker.link(
+            "192.168.1.1 is bad",
+            [{"text": "192.168.1.1", "label": "IP", "normalized": "192.168.1.1"}],
+        )
         assert result["matched_count"] == 1
         assert result["link_accuracy"] == 1.0
 
     def test_link_accuracy_stats(self):
         from intelgraph.core.nlp.linker import EntityLinker
+
         linker = EntityLinker()
         linker.link("test", [{"text": "a", "label": "IP"}])
         linker.link("test", [{"text": "b", "label": "IP"}])
@@ -304,6 +338,7 @@ class TestEntityLinker:
 
     def test_partial_match(self):
         from intelgraph.core.nlp.linker import EntityLinker
+
         linker = EntityLinker()
         mock_graph = type("MockGraph", (), {"nodes": {}})()
         mock_graph.nodes["n1"] = {"name": "known-host", "properties": {"ip": "10.0.0.1"}}
@@ -323,9 +358,11 @@ class TestEntityLinker:
 # NLP Model Registry Tests
 # ===================================================================
 
+
 class TestNLPModelRegistry:
     def test_register_model(self):
-        from intelgraph.core.nlp.models import NLPModelRegistry, ModelTask
+        from intelgraph.core.nlp.models import ModelTask, NLPModelRegistry
+
         registry = NLPModelRegistry()
         record = registry.register("spacy-ner", "3.0", ModelTask.NER)
         assert record.name == "spacy-ner"
@@ -334,7 +371,8 @@ class TestNLPModelRegistry:
         assert record.status == "registered"
 
     def test_deploy_model(self):
-        from intelgraph.core.nlp.models import NLPModelRegistry, ModelTask
+        from intelgraph.core.nlp.models import ModelTask, NLPModelRegistry
+
         registry = NLPModelRegistry()
         r1 = registry.register("model-a", "1.0", ModelTask.NER)
         r2 = registry.register("model-b", "2.0", ModelTask.NER)
@@ -344,7 +382,8 @@ class TestNLPModelRegistry:
         assert active.model_id == r1.model_id
 
     def test_hot_swap_model(self):
-        from intelgraph.core.nlp.models import NLPModelRegistry, ModelTask
+        from intelgraph.core.nlp.models import ModelTask, NLPModelRegistry
+
         registry = NLPModelRegistry()
         r1 = registry.register("model-a", "1.0", ModelTask.NER)
         r2 = registry.register("model-b", "2.0", ModelTask.NER)
@@ -354,7 +393,8 @@ class TestNLPModelRegistry:
         assert active.model_id == r2.model_id
 
     def test_list_models(self):
-        from intelgraph.core.nlp.models import NLPModelRegistry, ModelTask
+        from intelgraph.core.nlp.models import ModelTask, NLPModelRegistry
+
         registry = NLPModelRegistry()
         registry.register("a", "1", ModelTask.NER)
         registry.register("b", "1", ModelTask.CLASSIFICATION)
@@ -364,7 +404,8 @@ class TestNLPModelRegistry:
         assert len(ner_models) == 1
 
     def test_deprecate_model(self):
-        from intelgraph.core.nlp.models import NLPModelRegistry, ModelTask
+        from intelgraph.core.nlp.models import ModelTask, NLPModelRegistry
+
         registry = NLPModelRegistry()
         r = registry.register("m", "1", ModelTask.NER)
         assert registry.deprecate(r.model_id)
@@ -372,11 +413,13 @@ class TestNLPModelRegistry:
 
     def test_deploy_invalid_model(self):
         from intelgraph.core.nlp.models import NLPModelRegistry
+
         registry = NLPModelRegistry()
         assert not registry.deploy("nonexistent")
 
     def test_on_swap_callback(self):
-        from intelgraph.core.nlp.models import NLPModelRegistry, ModelTask
+        from intelgraph.core.nlp.models import ModelTask, NLPModelRegistry
+
         registry = NLPModelRegistry()
         calls = []
         registry.on_swap(lambda mid, action: calls.append((mid, action)))
@@ -390,11 +433,15 @@ class TestNLPModelRegistry:
 # NLPAnalytics Tests
 # ===================================================================
 
+
 class TestNLPAnalytics:
     def test_entity_frequency(self):
         from intelgraph.core.nlp.models import NLPAnalytics
+
         analytics = NLPAnalytics()
-        analytics.record_entities("doc1", [{"label": "IP", "text": "1.1.1.1"}, {"label": "IP", "text": "1.1.1.1"}])
+        analytics.record_entities(
+            "doc1", [{"label": "IP", "text": "1.1.1.1"}, {"label": "IP", "text": "1.1.1.1"}]
+        )
         analytics.record_entities("doc2", [{"label": "IP", "text": "2.2.2.2"}])
         freq = analytics.entity_frequency("IP")
         assert freq["IP"]["1.1.1.1"] == 2
@@ -402,14 +449,18 @@ class TestNLPAnalytics:
 
     def test_relationship_distribution(self):
         from intelgraph.core.nlp.models import NLPAnalytics
+
         analytics = NLPAnalytics()
-        analytics.record_relationships([{"relation": "connects_to"}, {"relation": "connects_to"}, {"relation": "owns"}])
+        analytics.record_relationships(
+            [{"relation": "connects_to"}, {"relation": "connects_to"}, {"relation": "owns"}]
+        )
         dist = analytics.relationship_distribution()
         assert dist["connects_to"] == 2
         assert dist["owns"] == 1
 
     def test_event_timeline(self):
         from intelgraph.core.nlp.models import NLPAnalytics
+
         analytics = NLPAnalytics()
         analytics.record_event({"event_type": "breach", "actors": ["hacker"]})
         analytics.record_event({"event_type": "phishing", "actors": ["phisher"]})
@@ -418,6 +469,7 @@ class TestNLPAnalytics:
 
     def test_event_timeline_filter(self):
         from intelgraph.core.nlp.models import NLPAnalytics
+
         analytics = NLPAnalytics()
         analytics.record_event({"event_type": "breach"})
         analytics.record_event({"event_type": "phishing"})
@@ -427,6 +479,7 @@ class TestNLPAnalytics:
 
     def test_cooccurrence_matrix(self):
         from intelgraph.core.nlp.models import NLPAnalytics
+
         analytics = NLPAnalytics()
         analytics.record_cooccurrence("IP_A", "DOMAIN_B")
         analytics.record_cooccurrence("IP_A", "DOMAIN_B")
@@ -437,9 +490,12 @@ class TestNLPAnalytics:
 
     def test_threat_patterns(self):
         from intelgraph.core.nlp.models import NLPAnalytics
+
         analytics = NLPAnalytics()
         for _ in range(3):
-            analytics.record_event({"event_type": "breach", "actors": ["threat_group"], "targets": ["bank"]})
+            analytics.record_event(
+                {"event_type": "breach", "actors": ["threat_group"], "targets": ["bank"]}
+            )
         patterns = analytics.threat_patterns(min_frequency=3)
         assert len(patterns) >= 1
         assert patterns[0]["event_type"] == "breach"
@@ -449,9 +505,11 @@ class TestNLPAnalytics:
 # Economic Governor Tests
 # ===================================================================
 
+
 class TestEconomicGovernor:
     def test_approve_high_roi(self):
         from intelgraph.core.nlp.economics import EconomicGovernor
+
         gov = EconomicGovernor({"budget_limit": 100, "min_roi": 0.5})
         roi = gov.compute_roi("q1", value=10, cost=1)
         assert roi.decision == "approve"
@@ -459,12 +517,14 @@ class TestEconomicGovernor:
 
     def test_reject_low_roi(self):
         from intelgraph.core.nlp.economics import EconomicGovernor
+
         gov = EconomicGovernor({"budget_limit": 100, "min_roi": 5.0})
         roi = gov.compute_roi("q2", value=10, cost=10)
         assert roi.decision == "reject_insufficient_roi"
 
     def test_reject_budget_exhausted(self):
         from intelgraph.core.nlp.economics import EconomicGovernor
+
         gov = EconomicGovernor({"budget_limit": 10, "min_roi": 0})
         gov.compute_roi("q1", value=5, cost=9)
         roi = gov.compute_roi("q2", value=5, cost=2)
@@ -472,6 +532,7 @@ class TestEconomicGovernor:
 
     def test_budget_status(self):
         from intelgraph.core.nlp.economics import EconomicGovernor
+
         gov = EconomicGovernor({"budget_limit": 100, "min_roi": 0})
         gov.compute_roi("q1", value=20, cost=30)
         status = gov.get_budget_status()
@@ -480,6 +541,7 @@ class TestEconomicGovernor:
 
     def test_predict_budget_exhaustion(self):
         from intelgraph.core.nlp.economics import EconomicGovernor
+
         gov = EconomicGovernor({"budget_limit": 100, "min_roi": 0})
         gov.compute_roi("q1", value=10, cost=25)
         remaining_queries = gov.predict_budget_exhaustion(25)
@@ -490,27 +552,33 @@ class TestEconomicGovernor:
 # Chaos Simulator Tests
 # ===================================================================
 
+
 class TestChaosSimulator:
     def test_chaos_disabled(self):
         from intelgraph.core.nlp.simulation import ChaosSimulator
+
         sim = ChaosSimulator(enabled=False)
         assert sim.should_fail() is None
         assert not sim.simulate_api_outage(1.0)
 
     def test_scenario_lifecycle(self):
-        from intelgraph.core.nlp.simulation import ChaosSimulator, SimulationScenario, FailureMode
+        from intelgraph.core.nlp.simulation import ChaosSimulator, FailureMode, SimulationScenario
+
         sim = ChaosSimulator(enabled=True)
-        sid = sim.add_scenario(SimulationScenario(
-            name="test-failure",
-            failure_mode=FailureMode.API_DOWN,
-            failure_probability=1.0,
-            duration_seconds=60,
-        ))
+        sid = sim.add_scenario(
+            SimulationScenario(
+                name="test-failure",
+                failure_mode=FailureMode.API_DOWN,
+                failure_probability=1.0,
+                duration_seconds=60,
+            )
+        )
         assert sim.activate_scenario(sid)
         assert sim.deactivate_scenario(sid)
 
     def test_adversarial_input(self):
         from intelgraph.core.nlp.simulation import ChaosSimulator
+
         sim = ChaosSimulator(enabled=True)
         original = "Normal text with CVE-2024-1234."
         modified = sim.get_adversarial_input(original)
@@ -518,21 +586,26 @@ class TestChaosSimulator:
 
     def test_adversarial_input_disabled(self):
         from intelgraph.core.nlp.simulation import ChaosSimulator
+
         sim = ChaosSimulator(enabled=False)
         original = "Normal text."
         assert sim.get_adversarial_input(original) == original
 
     def test_cascade(self):
         from intelgraph.core.nlp.simulation import ChaosSimulator
+
         sim = ChaosSimulator(enabled=True)
         affected = sim.simulate_cascade(depth=2)
         assert len(affected) <= 3
 
     def test_digital_twin(self):
         from intelgraph.core.nlp.simulation import ChaosSimulator
+
         sim = ChaosSimulator(enabled=False)
+
         def dummy_pipeline(text: str):
             return text.upper()
+
         score = sim.run_digital_twin(dummy_pipeline, ["hello", "world"])
         assert score.success_rate == 1.0
         assert score.grade == "A"
@@ -542,6 +615,7 @@ class TestChaosSimulator:
 # ===================================================================
 # Sanitizer Tests
 # ===================================================================
+
 
 class TestInputSanitizer:
     def test_sanitize_text(self):
@@ -584,14 +658,18 @@ class TestOutputSanitizer:
 # Batch Performance Tests
 # ===================================================================
 
+
 class TestBatchPerformance:
     def test_large_text_batch_entities(self):
         from intelgraph.core.nlp.extractor import NEREngine
+
         ner = NEREngine()
-        text = " ".join([
-            f"CVE-2024-{i} is a vulnerability at {i}.{i}.{i}.1 on domain{i}.com"
-            for i in range(100)
-        ])
+        text = " ".join(
+            [
+                f"CVE-2024-{i} is a vulnerability at {i}.{i}.{i}.1 on domain{i}.com"
+                for i in range(100)
+            ]
+        )
         start = time.perf_counter()
         entities = ner.extract(text)
         elapsed = time.perf_counter() - start
@@ -600,6 +678,7 @@ class TestBatchPerformance:
 
     def test_large_text_classification(self):
         from intelgraph.core.nlp.extractor import TextClassifier
+
         classifier = TextClassifier()
         text = " ".join(["ransomware trojan backdoor CVE-2024-1234 breach"] * 500)
         start = time.perf_counter()
@@ -613,9 +692,11 @@ class TestBatchPerformance:
 # Model Hot-Swapping Test
 # ===================================================================
 
+
 class TestModelHotSwapping:
     def test_hot_swap_chain(self):
-        from intelgraph.core.nlp.models import NLPModelRegistry, ModelTask
+        from intelgraph.core.nlp.models import ModelTask, NLPModelRegistry
+
         registry = NLPModelRegistry()
         models = []
         for i in range(5):
@@ -628,7 +709,8 @@ class TestModelHotSwapping:
         assert final.model_id == models[-1].model_id
 
     def test_hot_swap_different_tasks(self):
-        from intelgraph.core.nlp.models import NLPModelRegistry, ModelTask
+        from intelgraph.core.nlp.models import ModelTask, NLPModelRegistry
+
         registry = NLPModelRegistry()
         ner = registry.register("ner-model", "1.0", ModelTask.NER)
         cls = registry.register("cls-model", "1.0", ModelTask.CLASSIFICATION)
@@ -644,9 +726,11 @@ class TestModelHotSwapping:
 # Integration with Graph: Text-to-Graph Flow
 # ===================================================================
 
+
 class TestTextToGraphIntegration:
     def test_extract_and_classify_and_summarize(self):
-        from intelgraph.core.nlp.extractor import NEREngine, TextClassifier, DocumentSummarizer
+        from intelgraph.core.nlp.extractor import DocumentSummarizer, NEREngine, TextClassifier
+
         ner = NEREngine()
         classifier = TextClassifier()
         summarizer = DocumentSummarizer()
@@ -659,7 +743,8 @@ class TestTextToGraphIntegration:
         assert len(summary["key_findings"]) >= 1
 
     def test_full_extraction_pipeline(self):
-        from intelgraph.core.nlp.extractor import NEREngine, RelationshipExtractor, EventExtractor
+        from intelgraph.core.nlp.extractor import EventExtractor, NEREngine, RelationshipExtractor
+
         ner = NEREngine()
         rel_extractor = RelationshipExtractor()
         event_extractor = EventExtractor()
@@ -673,6 +758,7 @@ class TestTextToGraphIntegration:
 
     def test_text_to_graph_confidence(self):
         from intelgraph.core.nlp.extractor import NEREngine
+
         ner = NEREngine()
         text = "CVE-2024-1234 at 192.168.1.1."
         entities = ner.extract(text)

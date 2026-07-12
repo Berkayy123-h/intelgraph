@@ -4,12 +4,11 @@ import json
 import sqlite3
 import threading
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from intelgraph.core.source.connector import ConnectorConfig
-
 
 _SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS data_sources (
@@ -99,7 +98,7 @@ class DataSourceStore:
 
     def register_source(self, config: ConnectorConfig) -> dict[str, Any]:
         conn = self._require()
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         config_dict = config.to_dict()
         with self._lock:
             conn.execute(
@@ -108,10 +107,17 @@ class DataSourceStore:
                     retry_max_attempts, auth_type, enabled, status, created_at, updated_at)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
-                    config.id, config.name, config.connector_type,
-                    json.dumps(config_dict), config.polling_interval_seconds,
-                    config.retry_max_attempts, config.auth_type or "",
-                    1 if config.enabled else 0, "active", now, now,
+                    config.id,
+                    config.name,
+                    config.connector_type,
+                    json.dumps(config_dict),
+                    config.polling_interval_seconds,
+                    config.retry_max_attempts,
+                    config.auth_type or "",
+                    1 if config.enabled else 0,
+                    "active",
+                    now,
+                    now,
                 ),
             )
             conn.commit()
@@ -120,7 +126,8 @@ class DataSourceStore:
     def get_source(self, source_id: str) -> dict[str, Any] | None:
         conn = self._require()
         row = conn.execute(
-            "SELECT * FROM data_sources WHERE id = ?", (source_id,),
+            "SELECT * FROM data_sources WHERE id = ?",
+            (source_id,),
         ).fetchone()
         if row is None:
             return None
@@ -141,10 +148,13 @@ class DataSourceStore:
         return cur.rowcount > 0
 
     def update_source_status(
-        self, source_id: str, status: str, consecutive_failures: int | None = None,
+        self,
+        source_id: str,
+        status: str,
+        consecutive_failures: int | None = None,
     ) -> None:
         conn = self._require()
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         with self._lock:
             if consecutive_failures is not None:
                 conn.execute(
@@ -170,7 +180,7 @@ class DataSourceStore:
         error_message: str = "",
     ) -> dict[str, Any]:
         conn = self._require()
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         poll_id = str(uuid.uuid4())
         with self._lock:
             conn.execute(
@@ -179,9 +189,17 @@ class DataSourceStore:
                     nodes_ingested, edges_ingested, entities_merged, duplicates_removed, error_message)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
-                    poll_id, data_source_id, status, now, now,
-                    int(duration_ms), nodes_ingested, edges_ingested,
-                    entities_merged, duplicates_removed, error_message,
+                    poll_id,
+                    data_source_id,
+                    status,
+                    now,
+                    now,
+                    int(duration_ms),
+                    nodes_ingested,
+                    edges_ingested,
+                    entities_merged,
+                    duplicates_removed,
+                    error_message,
                 ),
             )
             conn.execute(
@@ -225,9 +243,11 @@ class DataSourceStore:
             "failures_last_24h": dict(recent_failures)["cnt"] if recent_failures else 0,
         }
 
-    def save_feed_schema(self, data_source_id: str, schema: dict[str, Any], version: int = 1) -> dict[str, Any]:
+    def save_feed_schema(
+        self, data_source_id: str, schema: dict[str, Any], version: int = 1
+    ) -> dict[str, Any]:
         conn = self._require()
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         schema_id = str(uuid.uuid4())
         with self._lock:
             conn.execute(
@@ -260,21 +280,31 @@ class DataSourceStore:
         confidence: float = 0.0,
     ) -> str:
         conn = self._require()
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         res_id = str(uuid.uuid4())
         with self._lock:
             conn.execute(
                 """INSERT INTO entity_resolutions
                    (id, source_entity_id, target_entity_id, data_source_id, merge_strategy, merged_fields, confidence_score, resolved_at)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                (res_id, source_entity_id, target_entity_id, data_source_id,
-                 merge_strategy, json.dumps(merged_fields or {}), confidence, now),
+                (
+                    res_id,
+                    source_entity_id,
+                    target_entity_id,
+                    data_source_id,
+                    merge_strategy,
+                    json.dumps(merged_fields or {}),
+                    confidence,
+                    now,
+                ),
             )
             conn.commit()
         return res_id
 
     def get_resolution_history(
-        self, entity_id: str | None = None, limit: int = 100,
+        self,
+        entity_id: str | None = None,
+        limit: int = 100,
     ) -> list[dict[str, Any]]:
         conn = self._require()
         if entity_id:

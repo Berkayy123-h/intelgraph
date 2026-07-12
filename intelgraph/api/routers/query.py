@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from fastapi import APIRouter, Depends
 
 from intelgraph.core.graph.graph import IntelligenceGraph
@@ -13,6 +11,7 @@ router = APIRouter(prefix="/query", tags=["query"])
 
 def _build_graph() -> IntelligenceGraph:
     from intelgraph.api.main import _container
+
     g = IntelligenceGraph()
     for entity in _container.backend.list_entities():
         eid = entity.id
@@ -29,16 +28,19 @@ def _build_graph() -> IntelligenceGraph:
 
 def _get_query_engine() -> GraphQueryEngine:
     from intelgraph.api.main import _container
+
     g = _build_graph()
     return GraphQueryEngine(
         g,
         verification_lookup=lambda eid: (
             _container.verification.get_verification(eid).to_dict()
-            if _container.verification.get_verification(eid) else None
+            if _container.verification.get_verification(eid)
+            else None
         ),
         chain_lookup=lambda eid: (
             _container.chain.get_chain_by_entity(eid).to_dict()
-            if _container.chain.get_chain_by_entity(eid) else None
+            if _container.chain.get_chain_by_entity(eid)
+            else None
         ),
     )
 
@@ -67,7 +69,4 @@ def query(
         limit=limit,
         offset=offset,
     )
-    return [
-        {"id": n.id, "entity_type": n.entity_type}
-        for n in nodes
-    ]
+    return [{"id": n.id, "entity_type": n.entity_type} for n in nodes]

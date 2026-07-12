@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -76,23 +75,35 @@ class ArchitectureEvolutionEngine:
         ]
         for mid, mtype in defaults:
             self._modules[mid] = ArchitectureModule(
-                module_id=mid, name=mid, module_type=mtype,
-                status="active", dependencies=[], version=1,
-                health_score=1.0, created_at=time.time(),
+                module_id=mid,
+                name=mid,
+                module_type=mtype,
+                status="active",
+                dependencies=[],
+                version=1,
+                health_score=1.0,
+                created_at=time.time(),
             )
             self._dependency_graph[mid] = []
 
-    def propose_architecture_change(self, description: str, action: str, target_module: str,
-                                    new_dependencies: list[str] | None = None,
-                                    risk_score: float = 0.5) -> ArchitectureProposal:
+    def propose_architecture_change(
+        self,
+        description: str,
+        action: str,
+        target_module: str,
+        new_dependencies: list[str] | None = None,
+        risk_score: float = 0.5,
+    ) -> ArchitectureProposal:
         proposal = ArchitectureProposal(
             proposal_id=f"arch_{uuid.uuid4().hex[:12]}",
-            description=description, action=action,
+            description=description,
+            action=action,
             target_module=target_module,
             new_dependencies=new_dependencies or [],
             risk_score=risk_score,
             expected_benefit=self._estimate_benefit(action, target_module),
-            status="pending", created_at=time.time(),
+            status="pending",
+            created_at=time.time(),
         )
         self._proposals.append(proposal)
         return proposal
@@ -115,10 +126,14 @@ class ArchitectureEvolutionEngine:
         if proposal.action == "add_module":
             old_graph = {k: list(v) for k, v in self._dependency_graph.items()}
             self._modules[proposal.target_module] = ArchitectureModule(
-                module_id=proposal.target_module, name=proposal.target_module,
-                module_type="custom", status="active",
-                dependencies=proposal.new_dependencies, version=1,
-                health_score=0.8, created_at=time.time(),
+                module_id=proposal.target_module,
+                name=proposal.target_module,
+                module_type="custom",
+                status="active",
+                dependencies=proposal.new_dependencies,
+                version=1,
+                health_score=0.8,
+                created_at=time.time(),
             )
             self._dependency_graph[proposal.target_module] = list(proposal.new_dependencies)
             if self.detect_cycles():
@@ -142,17 +157,25 @@ class ArchitectureEvolutionEngine:
                 self._modules[proposal.target_module].dependencies = list(proposal.new_dependencies)
         elif proposal.action == "merge_modules":
             self._modules[proposal.target_module] = ArchitectureModule(
-                module_id=proposal.target_module, name=proposal.target_module,
-                module_type=proposal.target_module, status="active",
-                dependencies=proposal.new_dependencies, version=1,
-                health_score=0.8, created_at=time.time(),
+                module_id=proposal.target_module,
+                name=proposal.target_module,
+                module_type=proposal.target_module,
+                status="active",
+                dependencies=proposal.new_dependencies,
+                version=1,
+                health_score=0.8,
+                created_at=time.time(),
             )
             self._dependency_graph[proposal.target_module] = list(proposal.new_dependencies)
         proposal.status = "applied"
-        self._topology_history.append({
-            "proposal_id": proposal_id, "timestamp": time.time(),
-            "action": proposal.action, "target": proposal.target_module,
-        })
+        self._topology_history.append(
+            {
+                "proposal_id": proposal_id,
+                "timestamp": time.time(),
+                "action": proposal.action,
+                "target": proposal.target_module,
+            }
+        )
         return True
 
     def detect_cycles(self) -> list[list[str]]:

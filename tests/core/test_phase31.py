@@ -2,26 +2,26 @@
 
 import os
 import sys
-import json
-import tempfile
-import copy
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 
-from intelgraph.core.scoring.threat_score import ThreatScorer, compute_threat_scores, _clear_score_cache
-from intelgraph.core.graph.graph import IntelligenceGraph
-from intelgraph.core.entity.ip_address import IPAddress
-from intelgraph.core.entity.domain import Domain
 from intelgraph.core.entity.cve import CveEntity
-from intelgraph.core.relationship.base import Relationship
+from intelgraph.core.entity.domain import Domain
+from intelgraph.core.entity.ip_address import IPAddress
 from intelgraph.core.evidence.evidence import Evidence
-
+from intelgraph.core.graph.graph import IntelligenceGraph
+from intelgraph.core.relationship.base import Relationship
+from intelgraph.core.scoring.threat_score import (
+    ThreatScorer,
+    _clear_score_cache,
+    compute_threat_scores,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_ip(ip_str, confidence=85.0, evidence=None, first_seen_delta=-2, last_seen_delta=0):
     """Create an IPAddress entity with optional evidence tuple passed at construction."""
@@ -30,8 +30,8 @@ def _make_ip(ip_str, confidence=85.0, evidence=None, first_seen_delta=-2, last_s
         ip=ip_str,
         confidence_score=confidence,
         evidence=evidence or (),
-        first_seen=datetime.now(timezone.utc) + timedelta(hours=first_seen_delta),
-        last_seen=datetime.now(timezone.utc) + timedelta(hours=last_seen_delta),
+        first_seen=datetime.now(UTC) + timedelta(hours=first_seen_delta),
+        last_seen=datetime.now(UTC) + timedelta(hours=last_seen_delta),
     )
     return e
 
@@ -42,8 +42,8 @@ def _make_domain(domain, confidence=45.0):
         domain_name=domain,
         confidence_score=confidence,
         evidence=(),
-        first_seen=datetime.now(timezone.utc) - timedelta(days=5),
-        last_seen=datetime.now(timezone.utc),
+        first_seen=datetime.now(UTC) - timedelta(days=5),
+        last_seen=datetime.now(UTC),
     )
 
 
@@ -54,8 +54,8 @@ def _make_cve(cve_id, confidence=95.0, ransomware=False):
         confidence_score=confidence,
         known_ransomware_use=ransomware,
         evidence=(),
-        first_seen=datetime.now(timezone.utc) - timedelta(days=30),
-        last_seen=datetime.now(timezone.utc),
+        first_seen=datetime.now(UTC) - timedelta(days=30),
+        last_seen=datetime.now(UTC),
     )
 
 
@@ -64,7 +64,7 @@ def _ev(source="urlhaus", tier=1):
         id=f"ev_{source}",
         source=source,
         content="malicious",
-        collected_at=datetime.now(timezone.utc),
+        collected_at=datetime.now(UTC),
         source_tier=tier,
         trust_score=90,
         reliability_score=85,
@@ -74,6 +74,7 @@ def _ev(source="urlhaus", tier=1):
 # ---------------------------------------------------------------------------
 # Test: ThreatScorer scoring
 # ---------------------------------------------------------------------------
+
 
 class TestThreatScorer:
     def test_score_zero_for_none(self):
@@ -106,7 +107,9 @@ class TestThreatScorer:
 
     def test_more_evidence_increases_score(self):
         g = IntelligenceGraph()
-        e = _make_ip("1.1.1.1", confidence=50.0, evidence=(_ev("urlhaus"), _ev("otx"), _ev("abusech")))
+        e = _make_ip(
+            "1.1.1.1", confidence=50.0, evidence=(_ev("urlhaus"), _ev("otx"), _ev("abusech"))
+        )
         g.add_entity(e)
         s = ThreatScorer()
         score_multi = s.score(g.nodes[e.id], g)
@@ -123,7 +126,9 @@ class TestThreatScorer:
         g.add_entity(e_recent)
 
         g2 = IntelligenceGraph()
-        e_old = _make_ip("2.2.2.2", confidence=50.0, first_seen_delta=-24*60, last_seen_delta=-24*60+1)
+        e_old = _make_ip(
+            "2.2.2.2", confidence=50.0, first_seen_delta=-24 * 60, last_seen_delta=-24 * 60 + 1
+        )
         g2.add_entity(e_old)
 
         s = ThreatScorer()
@@ -184,6 +189,7 @@ class TestThreatScorer:
 # Test: nodes_summary includes threat_score
 # ---------------------------------------------------------------------------
 
+
 class TestNodesSummary:
     def test_nodes_summary_has_threat_score(self):
         g = IntelligenceGraph()
@@ -195,8 +201,11 @@ class TestNodesSummary:
 
     def test_low_risk_low_score(self):
         g = IntelligenceGraph()
-        g.add_entity(_make_ip("1.1.1.1", confidence=5.0,
-                              first_seen_delta=-24*60, last_seen_delta=-24*60+1))
+        g.add_entity(
+            _make_ip(
+                "1.1.1.1", confidence=5.0, first_seen_delta=-24 * 60, last_seen_delta=-24 * 60 + 1
+            )
+        )
         assert g.nodes_summary[0]["threat_score"] < 25.0
 
     def test_high_confidence_ransomware_scores_high(self):
@@ -219,11 +228,12 @@ class TestNodesSummary:
 # Test: max_threat_score threshold in config
 # ---------------------------------------------------------------------------
 
+
 class TestConfig:
     def test_max_threat_threshold_exists(self):
         from intelgraph.core.config import DEFAULT_CONFIG
+
         t = DEFAULT_CONFIG["alerting"]["thresholds"]["max_threat_score"]
         assert t["enabled"] is True
         assert t["max"] == 75.0
         assert t["severity"] == "critical"
-

@@ -2,8 +2,7 @@ from typing import Any, Protocol
 
 
 class MigrationFn(Protocol):
-    def __call__(self, conn: Any, schema: str) -> None:
-        ...
+    def __call__(self, conn: Any, schema: str) -> None: ...
 
 
 MIGRATIONS: dict[int, MigrationFn] = {}
@@ -13,6 +12,7 @@ def register(version: int) -> MigrationFn:
     def wrapper(fn: MigrationFn) -> MigrationFn:
         MIGRATIONS[version] = fn
         return fn
+
     return wrapper
 
 

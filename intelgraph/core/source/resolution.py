@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -19,7 +18,7 @@ class ResolutionAudit:
         source_attribution: str | None = None,
     ) -> dict[str, Any]:
         entry = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "source_entity_id": source_id,
             "target_entity_id": target_id,
             "merge_strategy": strategy,
@@ -105,7 +104,9 @@ class MergeEngine:
 
     def __init__(self, default_strategy: str = "priority") -> None:
         if default_strategy not in self.STRATEGIES:
-            raise ValueError(f"Unknown strategy: {default_strategy}. Use one of: {', '.join(sorted(self.STRATEGIES))}")
+            raise ValueError(
+                f"Unknown strategy: {default_strategy}. Use one of: {', '.join(sorted(self.STRATEGIES))}"
+            )
         self._default_strategy = default_strategy
         self._audit = ResolutionAudit()
 

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import time
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 
 from intelgraph.api.auth_middleware import require_permission
 from intelgraph.core.enterprise import get_metrics as _get_metrics
@@ -191,7 +190,9 @@ async def propose_architecture(
     deps = body.get("new_dependencies", [])
     risk = float(body.get("risk_score", 0.5))
     if not description or not action or not target:
-        raise HTTPException(status_code=422, detail="description, action, and target_module are required")
+        raise HTTPException(
+            status_code=422, detail="description, action, and target_module are required"
+        )
     proposal = arch.propose_architecture_change(description, action, target, deps, risk)
     return proposal.to_dict()
 
@@ -204,11 +205,15 @@ async def apply_architecture(
 ):
     success = arch.apply_change(proposal_id)
     if not success:
-        raise HTTPException(status_code=404, detail=f"Proposal {proposal_id} not found or not pending")
+        raise HTTPException(
+            status_code=404, detail=f"Proposal {proposal_id} not found or not pending"
+        )
     return {"proposal_id": proposal_id, "status": "applied"}
 
 
-@router.post("/truth/reconcile", summary="Reconcile truth across knowledge, reasoning, and execution")
+@router.post(
+    "/truth/reconcile", summary="Reconcile truth across knowledge, reasoning, and execution"
+)
 async def reconcile_truth(
     body: dict[str, Any],
     truth: TruthConsistencyGovernor = Depends(get_truth),
@@ -247,10 +252,16 @@ async def check_alignment(
     system_output = body.get("system_output", {})
     real_world = body.get("real_world_data", {})
     if not system_output or not real_world:
-        raise HTTPException(status_code=422, detail="system_output and real_world_data are required")
+        raise HTTPException(
+            status_code=422, detail="system_output and real_world_data are required"
+        )
     scores = alignment.compare_output_vs_reality(system_output, real_world)
     drifts = alignment.detect_reality_drift(scores)
-    return {"scores": [s.to_dict() for s in scores], "drifts": drifts, "aligned": all(s.aligned for s in scores)}
+    return {
+        "scores": [s.to_dict() for s in scores],
+        "drifts": drifts,
+        "aligned": all(s.aligned for s in scores),
+    }
 
 
 @router.post("/safety/monitor", summary="Monitor a layer for safety incidents")

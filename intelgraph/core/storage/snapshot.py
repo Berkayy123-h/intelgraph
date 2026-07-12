@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from typing import Any
 
 import ulid
@@ -41,5 +40,6 @@ class SnapshotManager:
         if snapshot is None:
             return None
         import json
+
         data = json.loads(snapshot["data"])
         return data

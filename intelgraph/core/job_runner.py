@@ -29,8 +29,7 @@ class Job:
 
 class JobHandler(ABC):
     @abstractmethod
-    def handle(self, job: Job) -> Any:
-        ...
+    def handle(self, job: Job) -> Any: ...
 
 
 class JobRunner:

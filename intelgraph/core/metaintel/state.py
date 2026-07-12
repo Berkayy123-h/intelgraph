@@ -4,7 +4,7 @@ import hashlib
 import json
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -49,13 +49,15 @@ class VersionedSystemState:
         )
         self._snapshots.append(snapshot)
         self._current_state = dict(layers)
-        self._ledger.append({
-            "snapshot_id": snapshot.snapshot_id,
-            "version": snapshot.version,
-            "hash": state_hash,
-            "parent_hash": parent_hash,
-            "timestamp": time.time(),
-        })
+        self._ledger.append(
+            {
+                "snapshot_id": snapshot.snapshot_id,
+                "version": snapshot.version,
+                "hash": state_hash,
+                "parent_hash": parent_hash,
+                "timestamp": time.time(),
+            }
+        )
         return snapshot
 
     def restore(self, snapshot_id: str) -> bool:

@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Pipeline doğrulaması — AYNI Pazartesi/Salı senaryosu, TEK çağrı.
 """
-from __future__ import annotations
 
-import json
+from __future__ import annotations
 
 from intelgraph.core.pipeline.chain import Pipeline
 
@@ -73,7 +71,7 @@ print(f"\n  Çelişki sayısı:          {len(result.contradictions)}")
 for c in result.contradictions:
     print(f"    {c.contradiction_type} ({c.severity}): {c.explanation}")
 
-print(f"\n  Truth entries:")
+print("\n  Truth entries:")
 for te in result.truth_entries:
     print(f"    {te['key']}: truth={te['truth']['action']}, ssot={te['ssot']}")
 
@@ -94,19 +92,19 @@ for a in result.alerts:
     print(f"    ├─ Severity: {a['severity']}")
     print(f"    ├─ Mesaj:    {a['message']}")
     print(f"    ├─ Değer:    {a.get('current_value')} (thresh: {a.get('threshold_value')})")
-    if a.get('context'):
-        ctx = a['context']
-        if ctx.get('entity_id'):
+    if a.get("context"):
+        ctx = a["context"]
+        if ctx.get("entity_id"):
             print(f"    ├─ Entity:   {ctx['entity_id']}")
-        if ctx.get('source_summary'):
+        if ctx.get("source_summary"):
             print(f"    ├─ Kaynak:   {ctx['source_summary']}")
-        if ctx.get('confidence') is not None:
+        if ctx.get("confidence") is not None:
             print(f"    ├─ Conf:     {ctx['confidence']}")
-        if ctx.get('contradiction'):
+        if ctx.get("contradiction"):
             print(f"    ├─ Çelişki:  {ctx['contradiction']}")
-        if ctx.get('path_summary'):
+        if ctx.get("path_summary"):
             print(f"    ├─ Path:     {ctx['path_summary'][:100]}")
-        if ctx.get('raw_context'):
+        if ctx.get("raw_context"):
             print(f"    └─ Bağlam:   '{ctx['raw_context'][:80]}...'")
 
 print(f"\n  Hata sayısı:             {len(result.errors)}")

@@ -5,6 +5,7 @@ Phase 22 EntityMatcher/MergeEngine Uçtan Uca Doğrulama
 Mock'suz, gerçek veriyle — iki kaynaktan gelen aynı IP'yi graph'a ekleyip
 EntityMatcher'in devreye girip girmediğini kanıtla.
 """
+
 from __future__ import annotations
 
 from intelgraph.core.entity.ip_address import IPAddress
@@ -15,12 +16,14 @@ print("1. KOD VARLIĞI KONTROLÜ")
 print("=" * 72)
 
 from intelgraph.core.source.resolution import EntityMatcher, MergeEngine, ResolutionAudit
+
 print(f"EntityMatcher:  {EntityMatcher}")
 print(f"MergeEngine:    {MergeEngine}")
 print(f"ResolutionAudit:{ResolutionAudit}")
 
 # graph.py add_entity EntityMatcher çağırıyor mu?
 import inspect
+
 src = inspect.getsource(IntelligenceGraph.add_entity)
 if "EntityMatcher" in src or "entity_matcher" in src or "merge" in src:
     print("\ngraph.add_entity İÇİNDE EntityMatcher/MergeEngine çağrısı VAR.")
@@ -58,7 +61,7 @@ print(f"Pazartesi node ID:  {node_monday.id}")
 print(f"Salı node ID:       {node_tuesday.id}")
 print(f"ID'ler eşit mi?     {node_monday.id == node_tuesday.id}")
 print(f"Graph node sayısı:  {graph.node_count}")
-print(f"\nGraph'taki düğümler:")
+print("\nGraph'taki düğümler:")
 for nid, n in graph.nodes.items():
     print(f"  {nid} → IP={n.entity.ip}, rdns={n.entity.rdns}, conf={n.entity.confidence_score}")
 
@@ -75,12 +78,13 @@ print("=" * 72)
 # EntityMatcher dict bazlı çalışıyor — entity'leri dict'e çevirelim
 from dataclasses import fields
 
+
 def entity_to_dict(entity) -> dict:
     d = {}
     for f in fields(entity):
         if f.init:  # exclude init=False (entity_type)
             val = getattr(entity, f.name)
-            if hasattr(val, 'isoformat'):  # datetime
+            if hasattr(val, "isoformat"):  # datetime
                 val = val.isoformat()
             elif isinstance(val, tuple):
                 val = list(val)
@@ -89,13 +93,14 @@ def entity_to_dict(entity) -> dict:
     d["ip"] = entity.ip
     return d
 
+
 monday_dict = entity_to_dict(entity_monday)
 tuesday_dict = entity_to_dict(entity_tuesday)
 
 print("Pazartesi dict (özet):")
 for k, v in sorted(monday_dict.items()):
     print(f"  {k}: {v!r}")
-print(f"\nSalı dict (özet):")
+print("\nSalı dict (özet):")
 for k, v in sorted(tuesday_dict.items()):
     print(f"  {k}: {v!r}")
 
@@ -112,7 +117,7 @@ for a, b, s in duplicates:
 # Merge
 merger = MergeEngine(default_strategy="most_confident")
 merged = merger.merge(monday_dict, tuesday_dict, strategy="most_confident")
-print(f"\nMergeEngine.merge() sonucu:")
+print("\nMergeEngine.merge() sonucu:")
 for k, v in sorted(merged.items()):
     print(f"  {k}: {v!r}")
 
@@ -124,19 +129,19 @@ for entry in audit_entries:
         print(f"  {k}: {v!r}")
 
 print("\n✅ EntityMatcher manuel çağrıldığında ÇALIŞIYOR:")
-print(f"   - Aynı IP'yi (192.168.1.5) exact_fields ile eşleştirdi (skor=1.0)")
-print(f"   - MergeEngine en yüksek confidence_score olanı (85) baz aldı")
-print(f"   - Audit kaydı üretildi")
+print("   - Aynı IP'yi (192.168.1.5) exact_fields ile eşleştirdi (skor=1.0)")
+print("   - MergeEngine en yüksek confidence_score olanı (85) baz aldı")
+print("   - Audit kaydı üretildi")
 
 # Merge sonucunda her iki kaynaktan gelen bilgi korunuyor mu?
-print(f"\n✅ Merge sonrası:")
+print("\n✅ Merge sonrası:")
 print(f"   - IP: {merged.get('ip')} (kaynaklardan biri)")
 print(f"   - rdns: {merged.get('rdns')} (en yüksek confidence'li kaynaktan)")
 print(f"   - confidence_score: {merged.get('confidence_score')} (max alındı: 85)")
-print(f"   ❌ ANCAK: Pazartesi'nin rdns değeri ('suspicious-host') KAYBOLDU.")
-print(f"      MergeEngine sadece max confidence'ı baz alıp diğer kaynağın")
-print(f"      bilgisini atmıyor, farklı field'ları dolduruyor — ama bu örnekte")
-print(f"      her iki kaynak da rdns doldurduğu için yenisini kullandı.")
+print("   ❌ ANCAK: Pazartesi'nin rdns değeri ('suspicious-host') KAYBOLDU.")
+print("      MergeEngine sadece max confidence'ı baz alıp diğer kaynağın")
+print("      bilgisini atmıyor, farklı field'ları dolduruyor — ama bu örnekte")
+print("      her iki kaynak da rdns doldurduğu için yenisini kullandı.")
 
 print("\n" + "=" * 72)
 print("4. Merge SONUCU graph'a eklenebilir mi?")
@@ -156,7 +161,7 @@ graph2 = IntelligenceGraph()
 graph2.add_entity(merged_entity)
 print(f"Birleşmiş node eklendi: ID={merged_entity.id}, IP={merged_entity.ip}")
 print(f"Graph node sayısı: {graph2.node_count}")
-print(f"✅ Merge sonucu graph'a eklenebiliyor — ANCAK bu MANUEL bir süreç.")
+print("✅ Merge sonucu graph'a eklenebiliyor — ANCAK bu MANUEL bir süreç.")
 
 print("\n" + "=" * 72)
 print("SONUÇ RAPORU")

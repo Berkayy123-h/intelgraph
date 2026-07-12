@@ -3,7 +3,13 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 
 from intelgraph.api.auth import login_user, refresh_token, register_user
-from intelgraph.api.models import AuthLogin, AuthRefresh, AuthRegister, RefreshTokenResponse, TokenResponse
+from intelgraph.api.models import (
+    AuthLogin,
+    AuthRefresh,
+    AuthRegister,
+    RefreshTokenResponse,
+    TokenResponse,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

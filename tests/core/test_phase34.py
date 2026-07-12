@@ -2,30 +2,27 @@
 
 import os
 import sys
-import time
-from datetime import datetime, timezone, timedelta
-from unittest.mock import patch, MagicMock
+from datetime import UTC, datetime, timedelta
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 
-import pytest
 
-from intelgraph.core.graph.graph import IntelligenceGraph
+from intelgraph.core.entity.cve import CveEntity
+from intelgraph.core.entity.domain import Domain
+from intelgraph.core.entity.ip_address import IPAddress
+from intelgraph.core.evidence.evidence import Evidence
 from intelgraph.core.graph.anomaly import (
+    _THREAT_SCORE_CACHE,
     AnomalyDetector,
     AnomalyResult,
-    _THREAT_SCORE_CACHE,
 )
-from intelgraph.core.entity.ip_address import IPAddress
-from intelgraph.core.entity.domain import Domain
-from intelgraph.core.entity.cve import CveEntity
+from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.relationship.base import Relationship
-from intelgraph.core.evidence.evidence import Evidence
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_ip(ip_str, confidence=50.0, evidence=None, first_seen_delta=-2, last_seen_delta=0):
     return IPAddress(
@@ -33,8 +30,8 @@ def _make_ip(ip_str, confidence=50.0, evidence=None, first_seen_delta=-2, last_s
         ip=ip_str,
         confidence_score=confidence,
         evidence=evidence or (),
-        first_seen=datetime.now(timezone.utc) + timedelta(hours=first_seen_delta),
-        last_seen=datetime.now(timezone.utc) + timedelta(hours=last_seen_delta),
+        first_seen=datetime.now(UTC) + timedelta(hours=first_seen_delta),
+        last_seen=datetime.now(UTC) + timedelta(hours=last_seen_delta),
     )
 
 
@@ -44,8 +41,8 @@ def _make_domain(domain, confidence=45.0):
         domain_name=domain,
         confidence_score=confidence,
         evidence=(),
-        first_seen=datetime.now(timezone.utc) - timedelta(days=5),
-        last_seen=datetime.now(timezone.utc),
+        first_seen=datetime.now(UTC) - timedelta(days=5),
+        last_seen=datetime.now(UTC),
     )
 
 
@@ -56,8 +53,8 @@ def _make_cve(cve_id, confidence=95.0, ransomware=False):
         confidence_score=confidence,
         known_ransomware_use=ransomware,
         evidence=(),
-        first_seen=datetime.now(timezone.utc) - timedelta(days=30),
-        last_seen=datetime.now(timezone.utc),
+        first_seen=datetime.now(UTC) - timedelta(days=30),
+        last_seen=datetime.now(UTC),
     )
 
 
@@ -66,7 +63,7 @@ def _ev(source="urlhaus", tier=1, collected_at=None):
         id=f"ev_{source}",
         source=source,
         content="malicious",
-        collected_at=collected_at or datetime.now(timezone.utc),
+        collected_at=collected_at or datetime.now(UTC),
         source_tier=tier,
         trust_score=90,
         reliability_score=85,
@@ -77,11 +74,17 @@ def _ev(source="urlhaus", tier=1, collected_at=None):
 # AnomalyResult model tests
 # ---------------------------------------------------------------------------
 
+
 class TestAnomalyResult:
     def test_to_dict(self):
-        r = AnomalyResult(node_id="n1", anomaly_type="threat_score", anomaly_score=82.5,
-                          explanation="High threat score", entity_type="IPAddress",
-                          entity_identifier="1.2.3.4")
+        r = AnomalyResult(
+            node_id="n1",
+            anomaly_type="threat_score",
+            anomaly_score=82.5,
+            explanation="High threat score",
+            entity_type="IPAddress",
+            entity_identifier="1.2.3.4",
+        )
         d = r.to_dict()
         assert d["node_id"] == "n1"
         assert d["anomaly_type"] == "threat_score"
@@ -92,6 +95,7 @@ class TestAnomalyResult:
 # ---------------------------------------------------------------------------
 # Threat score anomaly tests
 # ---------------------------------------------------------------------------
+
 
 class TestThreatScoreAnomaly:
     def test_no_anomaly_when_similar_scores(self):
@@ -138,10 +142,11 @@ class TestThreatScoreAnomaly:
 # Temporal spike anomaly tests
 # ---------------------------------------------------------------------------
 
+
 class TestTemporalSpikeAnomaly:
     def test_no_spike(self):
         g = IntelligenceGraph()
-        recent = datetime.now(timezone.utc)
+        recent = datetime.now(UTC)
         old = recent - timedelta(days=20)
         evs = tuple(_ev("urlhaus", collected_at=old) for _ in range(10))
         g.add_entity(_make_ip("1.1.1.1", evidence=evs))
@@ -151,7 +156,7 @@ class TestTemporalSpikeAnomaly:
 
     def test_spike_detected(self):
         g = IntelligenceGraph()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         recent = now - timedelta(hours=2)
         old = now - timedelta(days=20)
         # 15 evidence in last 24h, 20 in last 30d
@@ -174,6 +179,7 @@ class TestTemporalSpikeAnomaly:
 # ---------------------------------------------------------------------------
 # Relationship outlier anomaly tests
 # ---------------------------------------------------------------------------
+
 
 class TestRelationshipOutlierAnomaly:
     def test_no_outlier(self):
@@ -199,11 +205,15 @@ class TestRelationshipOutlierAnomaly:
         g.add_entity(outlier)
         for dom_ent in doms:
             g.add_entity(dom_ent)
-            g.add_relationship(Relationship(source_id=outlier.id, target_id=dom_ent.id, type="resolves"))
+            g.add_relationship(
+                Relationship(source_id=outlier.id, target_id=dom_ent.id, type="resolves")
+            )
         # Normal IPs get 1 edge each
         g.add_entity(_make_domain("normal.com"))
         for ip_ent in ips:
-            g.add_relationship(Relationship(source_id=ip_ent.id, target_id="dom_normal.com", type="resolves"))
+            g.add_relationship(
+                Relationship(source_id=ip_ent.id, target_id="dom_normal.com", type="resolves")
+            )
         d = AnomalyDetector(g)
         results = d.relationship_outlier_anomaly()
         assert len(results) >= 1
@@ -216,10 +226,11 @@ class TestRelationshipOutlierAnomaly:
 # detect_all tests
 # ---------------------------------------------------------------------------
 
+
 class TestDetectAll:
     def test_detect_all_combines_anomalies(self):
         g = IntelligenceGraph()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         # Create a high-threat entity with lots of edges
         outlier = _make_ip("9.9.9.9", confidence=95.0)
         g.add_entity(outlier)
@@ -241,7 +252,7 @@ class TestDetectAll:
 
     def test_detect_all_sorted(self):
         g = IntelligenceGraph()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         evs = tuple(_ev("urlhaus", collected_at=now - timedelta(hours=1)) for _ in range(20))
         high = _make_ip("9.9.9.9", confidence=95.0, evidence=evs)
         g.add_entity(high)
@@ -268,16 +279,20 @@ class TestDetectAll:
 # Pipeline integration test (via AnomalyDetector usability)
 # ---------------------------------------------------------------------------
 
+
 class TestPipelineIntegration:
     def test_anomaly_cache_set_by_pipeline(self):
         """Verify _THREAT_SCORE_CACHE is populated by the pipeline Phase 3.9."""
+
         from intelgraph.core.pipeline.chain import Pipeline
-        import json
-        import tempfile
 
         _THREAT_SCORE_CACHE.clear()
         pipeline = Pipeline()
-        sources = [{"text": "Malicious IP 107.172.135.60 communicating with C2 server and ransomware CVE-2024-1234"}]
+        sources = [
+            {
+                "text": "Malicious IP 107.172.135.60 communicating with C2 server and ransomware CVE-2024-1234"
+            }
+        ]
         thresholds = {
             "max_threat_score": {"enabled": True, "max": 75.0, "severity": "critical"},
         }
@@ -295,6 +310,7 @@ class TestPipelineIntegration:
 # ---------------------------------------------------------------------------
 # Test data provider for scheduler
 # ---------------------------------------------------------------------------
+
 
 def teardown_module():
     _THREAT_SCORE_CACHE.clear()

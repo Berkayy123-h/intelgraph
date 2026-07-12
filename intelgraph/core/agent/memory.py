@@ -57,11 +57,16 @@ class ExecutionMemory:
         self._optimal_params: dict[str, dict[str, Any]] = {}
         self._max_records = 100000
 
-    def store(self, entity_id: str, key: str, value: Any, outcome: str, ttl: float | None = None) -> MemoryRecord:
+    def store(
+        self, entity_id: str, key: str, value: Any, outcome: str, ttl: float | None = None
+    ) -> MemoryRecord:
         rec = MemoryRecord(
             memory_id=f"mem_{uuid.uuid4().hex[:12]}",
-            entity_id=entity_id, key=key, value=value,
-            outcome=outcome, created_at=time.time(),
+            entity_id=entity_id,
+            key=key,
+            value=value,
+            outcome=outcome,
+            created_at=time.time(),
             ttl=ttl if ttl is not None else self._default_ttl,
         )
         self._records[entity_id].append(rec)
@@ -83,12 +88,21 @@ class ExecutionMemory:
         self._records[entity_id] = []
         return count
 
-    def record_behavior(self, agent_id: str, action: str, outcome: str, duration_ms: float,
-                        context: dict[str, Any] | None = None) -> BehaviorRecord:
+    def record_behavior(
+        self,
+        agent_id: str,
+        action: str,
+        outcome: str,
+        duration_ms: float,
+        context: dict[str, Any] | None = None,
+    ) -> BehaviorRecord:
         rec = BehaviorRecord(
             record_id=f"beh_{uuid.uuid4().hex[:12]}",
-            agent_id=agent_id, action=action, outcome=outcome,
-            duration_ms=duration_ms, context=context or {},
+            agent_id=agent_id,
+            action=action,
+            outcome=outcome,
+            duration_ms=duration_ms,
+            context=context or {},
             created_at=time.time(),
         )
         self._behaviors.append(rec)
@@ -126,4 +140,4 @@ class ExecutionMemory:
 
     def _trim(self, entity_id: str) -> None:
         if len(self._records[entity_id]) > self._max_records:
-            self._records[entity_id] = self._records[entity_id][-self._max_records:]
+            self._records[entity_id] = self._records[entity_id][-self._max_records :]

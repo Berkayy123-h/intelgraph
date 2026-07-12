@@ -13,16 +13,13 @@ logger = structlog.get_logger(__name__)
 class Plugin(ABC):
     @property
     @abstractmethod
-    def name(self) -> str:
-        ...
+    def name(self) -> str: ...
 
     @abstractmethod
-    def initialize(self, config: dict[str, Any]) -> None:
-        ...
+    def initialize(self, config: dict[str, Any]) -> None: ...
 
     @abstractmethod
-    def shutdown(self) -> None:
-        ...
+    def shutdown(self) -> None: ...
 
 
 class PluginLoader:
@@ -61,11 +58,7 @@ class PluginLoader:
 
     def _register_from_module(self, module: object) -> None:
         for _, obj in inspect.getmembers(module, inspect.isclass):
-            if (
-                issubclass(obj, Plugin)
-                and obj is not Plugin
-                and not inspect.isabstract(obj)
-            ):
+            if issubclass(obj, Plugin) and obj is not Plugin and not inspect.isabstract(obj):
                 instance = obj()
                 self._plugins[instance.name] = instance
                 logger.debug("plugin registered", name=instance.name)

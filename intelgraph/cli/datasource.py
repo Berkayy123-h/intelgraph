@@ -22,7 +22,13 @@ def _get_store(ctx: click.Context) -> DataSourceStore:
 
 @datasource_group.command(name="register", help="Register a new data source")
 @click.option("--name", required=True, help="Data source name")
-@click.option("--type", "connector_type", required=True, type=click.Choice(["http", "file", "database"], case_sensitive=False), help="Connector type")
+@click.option(
+    "--type",
+    "connector_type",
+    required=True,
+    type=click.Choice(["http", "file", "database"], case_sensitive=False),
+    help="Connector type",
+)
 @click.option("--endpoint", default=None, help="HTTP endpoint URL (for http type)")
 @click.option("--file-path", default=None, help="File path (for file type)")
 @click.option("--conn-string", default=None, help="Database connection string (for database type)")
@@ -53,7 +59,7 @@ def register(
     feed_schema = None
     if schema:
         try:
-            with open(schema, "r") as f:
+            with open(schema) as f:
                 feed_schema = json.load(f)
         except Exception as e:
             click.echo(f"Error loading schema: {e}", err=True)
@@ -100,7 +106,9 @@ def list_sources(ctx: click.Context) -> None:
     for src in sources:
         click.echo(f"  [{src['connector_type']}] {src['name']} (id: {src['id'][:8]}...)")
         click.echo(f"    Status: {src['status']} | Enabled: {'yes' if src['enabled'] else 'no'}")
-        click.echo(f"    Last poll: {src.get('last_poll_at', 'never')} | Status: {src.get('last_poll_status', 'N/A')}")
+        click.echo(
+            f"    Last poll: {src.get('last_poll_at', 'never')} | Status: {src.get('last_poll_status', 'N/A')}"
+        )
         click.echo(f"    Failures: {src.get('consecutive_failures', 0)}")
 
 
@@ -121,6 +129,7 @@ def remove(ctx: click.Context, source_id: str) -> None:
 @click.pass_context
 def poll(ctx: click.Context, source_id: str) -> None:
     import time as _time
+
     store = _get_store(ctx)
     source = store.get_source(source_id)
     if source is None:
@@ -128,6 +137,7 @@ def poll(ctx: click.Context, source_id: str) -> None:
         raise click.Abort()
 
     import json as _json
+
     config_dict = source.get("config", {})
     if isinstance(config_dict, str):
         config_dict = _json.loads(config_dict)
@@ -183,11 +193,15 @@ def poll(ctx: click.Context, source_id: str) -> None:
     else:
         click.echo(f"  Failed: {result.error_message}")
         store.record_poll(
-            data_source_id=source_id, status="failure",
-            duration_ms=duration * 1000, error_message=result.error_message,
+            data_source_id=source_id,
+            status="failure",
+            duration_ms=duration * 1000,
+            error_message=result.error_message,
         )
         cf = source.get("consecutive_failures", 0) + 1
-        store.update_source_status(source_id, "error" if cf >= 3 else "active", consecutive_failures=cf)
+        store.update_source_status(
+            source_id, "error" if cf >= 3 else "active", consecutive_failures=cf
+        )
 
     connector.disconnect()
 
@@ -212,7 +226,7 @@ def status(ctx: click.Context, source_id: str) -> None:
     click.echo(f"  Failures (24h):   {st['failures_last_24h']}")
     if st.get("latest_poll"):
         lp = st["latest_poll"]
-        click.echo(f"  Latest Poll:")
+        click.echo("  Latest Poll:")
         click.echo(f"    Status:     {lp['status']}")
         click.echo(f"    Duration:   {lp['duration_ms']}ms")
         click.echo(f"    Nodes:      {lp['nodes_ingested']}")

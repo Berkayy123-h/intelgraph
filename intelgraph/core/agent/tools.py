@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import hashlib
 import time
 import uuid
-from dataclasses import dataclass, field
-from enum import Enum, auto
-from typing import Any, Callable
+from collections.abc import Callable
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any
 
 
 class ToolType(Enum):
@@ -45,7 +45,10 @@ class ToolCall:
             "call_id": self.call_id,
             "tool_type": self.tool_type.value,
             "action": self.action,
-            "params": {k: "***" if k in ("password", "secret", "token", "api_key") else v for k, v in self.params.items()},
+            "params": {
+                k: "***" if k in ("password", "secret", "token", "api_key") else v
+                for k, v in self.params.items()
+            },
             "risk_score": round(self.risk_score, 4),
             "requires_approval": self.requires_approval,
             "sandbox_level": self.sandbox_level,
@@ -69,10 +72,14 @@ class ToolExecutor:
     def register_post_hook(self, hook: Callable) -> None:
         self._post_hooks.append(hook)
 
-    def execute(self, tool_type: ToolType, action: str, params: dict[str, Any], sandbox: str = "medium") -> ToolCall:
+    def execute(
+        self, tool_type: ToolType, action: str, params: dict[str, Any], sandbox: str = "medium"
+    ) -> ToolCall:
         call = ToolCall(
             call_id=f"tc_{uuid.uuid4().hex[:12]}",
-            tool_type=tool_type, action=action, params=params,
+            tool_type=tool_type,
+            action=action,
+            params=params,
             risk_score=self._compute_risk(tool_type, action),
             requires_approval=self._needs_approval(tool_type, action),
             sandbox_level=sandbox,
@@ -111,9 +118,14 @@ class ToolExecutor:
 
     def _compute_risk(self, tool_type: ToolType, action: str) -> float:
         risk_map = {
-            ToolType.REST: 0.4, ToolType.GRAPHQL: 0.5, ToolType.DATABASE: 0.7,
-            ToolType.FILE: 0.6, ToolType.WEBHOOK: 0.5, ToolType.SOC: 0.8,
-            ToolType.CLOUD: 0.9, ToolType.INTERNAL: 0.3,
+            ToolType.REST: 0.4,
+            ToolType.GRAPHQL: 0.5,
+            ToolType.DATABASE: 0.7,
+            ToolType.FILE: 0.6,
+            ToolType.WEBHOOK: 0.5,
+            ToolType.SOC: 0.8,
+            ToolType.CLOUD: 0.9,
+            ToolType.INTERNAL: 0.3,
         }
         base = risk_map.get(tool_type, 0.5)
         if "delete" in action.lower() or "drop" in action.lower():
@@ -139,7 +151,9 @@ class ToolExecutor:
             call.params = safe_params
         return call
 
-    def _simulate_execution(self, tool_type: ToolType, action: str, params: dict[str, Any]) -> dict[str, Any]:
+    def _simulate_execution(
+        self, tool_type: ToolType, action: str, params: dict[str, Any]
+    ) -> dict[str, Any]:
         if tool_type == ToolType.REST:
             return {"status": 200, "body": f"Simulated {action} on {params.get('url', 'unknown')}"}
         if tool_type == ToolType.DATABASE:

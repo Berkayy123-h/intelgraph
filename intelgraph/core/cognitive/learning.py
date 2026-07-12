@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import time
 import uuid
-from collections import defaultdict
-from dataclasses import dataclass, field
-from typing import Any, Callable
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -55,7 +55,15 @@ class SelfLearningLoop:
         self._weak_signals: list[dict[str, Any]] = []
         self._learning_rate = self._cfg.get("learning_rate", 0.1)
 
-    def ingest_feedback(self, query_id: str, analyst_id: str, feedback_type: str, score: float, correction: dict[str, Any], original: dict[str, Any]) -> FeedbackEntry:
+    def ingest_feedback(
+        self,
+        query_id: str,
+        analyst_id: str,
+        feedback_type: str,
+        score: float,
+        correction: dict[str, Any],
+        original: dict[str, Any],
+    ) -> FeedbackEntry:
         entry = FeedbackEntry(
             feedback_id=f"fb_{uuid.uuid4().hex[:12]}",
             query_id=query_id,
@@ -110,12 +118,26 @@ class SelfLearningLoop:
         candidates = [m for m in models if m.get("task") == task]
         if not candidates:
             return None
-        best = max(candidates, key=lambda m: self._model_performance.get(m["model_id"], ModelPerformance(
-            model_id=m["model_id"], task=task, accuracy=0.5, precision=0.5, recall=0.5, f1_score=0.5, sample_count=0,
-        )).accuracy)
+        best = max(
+            candidates,
+            key=lambda m: self._model_performance.get(
+                m["model_id"],
+                ModelPerformance(
+                    model_id=m["model_id"],
+                    task=task,
+                    accuracy=0.5,
+                    precision=0.5,
+                    recall=0.5,
+                    f1_score=0.5,
+                    sample_count=0,
+                ),
+            ).accuracy,
+        )
         return best["model_id"]
 
-    def record_model_performance(self, model_id: str, task: str, accuracy: float, precision: float, recall: float) -> None:
+    def record_model_performance(
+        self, model_id: str, task: str, accuracy: float, precision: float, recall: float
+    ) -> None:
         fp = accuracy * precision / max(accuracy + precision, 0.001)
         f1 = 2 * (precision * recall) / max(precision + recall, 0.001)
         existing = self._model_performance.get(model_id)
@@ -129,8 +151,13 @@ class SelfLearningLoop:
             existing.last_updated = time.time()
         else:
             self._model_performance[model_id] = ModelPerformance(
-                model_id=model_id, task=task, accuracy=accuracy,
-                precision=precision, recall=recall, f1_score=f1, sample_count=1,
+                model_id=model_id,
+                task=task,
+                accuracy=accuracy,
+                precision=precision,
+                recall=recall,
+                f1_score=f1,
+                sample_count=1,
                 last_updated=time.time(),
             )
 

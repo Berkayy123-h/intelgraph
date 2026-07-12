@@ -1,4 +1,3 @@
-import json
 import os
 import tempfile
 
@@ -12,10 +11,12 @@ class TestBackupManager:
             with open(db_path, "w") as f:
                 f.write("sqlite db content")
             backup_dir = os.path.join(tmp, "backups")
-            bm = BackupManager({
-                "storage": {"backend": "sqlite", "path": db_path},
-                "backup": {"output_dir": backup_dir},
-            })
+            bm = BackupManager(
+                {
+                    "storage": {"backend": "sqlite", "path": db_path},
+                    "backup": {"output_dir": backup_dir},
+                }
+            )
             result = bm.create_backup(label="test_backup")
             assert result.success is True
             assert result.backend == "sqlite"
@@ -25,10 +26,12 @@ class TestBackupManager:
 
     def test_sqlite_backup_missing_db(self):
         with tempfile.TemporaryDirectory() as tmp:
-            bm = BackupManager({
-                "storage": {"backend": "sqlite", "path": "/nonexistent/db.sqlite"},
-                "backup": {"output_dir": tmp},
-            })
+            bm = BackupManager(
+                {
+                    "storage": {"backend": "sqlite", "path": "/nonexistent/db.sqlite"},
+                    "backup": {"output_dir": tmp},
+                }
+            )
             result = bm.create_backup()
             assert result.success is False
             assert "not found" in result.error
@@ -38,10 +41,12 @@ class TestBackupManager:
             db_path = os.path.join(tmp, "test.db")
             with open(db_path, "w") as f:
                 f.write("data")
-            bm = BackupManager({
-                "storage": {"backend": "sqlite", "path": db_path},
-                "backup": {"output_dir": tmp},
-            })
+            bm = BackupManager(
+                {
+                    "storage": {"backend": "sqlite", "path": db_path},
+                    "backup": {"output_dir": tmp},
+                }
+            )
             result = bm.create_backup()
             assert result.success is True
             verification = bm.verify_backup(result.path)
@@ -51,6 +56,7 @@ class TestBackupManager:
 
     def test_metadata_structure(self):
         from intelgraph.core.operations.backup import BackupResult
+
         result = BackupResult(
             path="/tmp/backup.db",
             timestamp="2025-01-01T00:00:00",
@@ -66,10 +72,12 @@ class TestBackupManager:
         assert meta["success"] is True
 
     def test_verify_backup_not_found(self):
-        bm = BackupManager({
-            "storage": {"backend": "sqlite", "path": "test.db"},
-            "backup": {"output_dir": "/tmp"},
-        })
+        bm = BackupManager(
+            {
+                "storage": {"backend": "sqlite", "path": "test.db"},
+                "backup": {"output_dir": "/tmp"},
+            }
+        )
         verification = bm.verify_backup("/nonexistent/backup.db")
         assert verification["valid"] is False
         assert "not found" in verification["error"]

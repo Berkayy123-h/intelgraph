@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import APIRouter, HTTPException, Request
 
 from intelgraph.api.auth import (
     authenticate_oauth_client,

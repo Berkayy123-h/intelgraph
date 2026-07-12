@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import time
-
 import pytest
 
 from intelgraph.core.enterprise.observability import PerformanceCollector, get_performance_collector

@@ -1,31 +1,41 @@
-import pytest
 
 
 class TestAnomalyAPI:
     def _populate_graph(self, client):
         from intelgraph.api.main import _container
+
         backend = _container.backend
         from intelgraph.core.entity.person import Person
         from intelgraph.core.relationship import Relationship
         from intelgraph.core.relationship.types import RelationshipType
+
         entities = []
         for i in range(10):
             p = Person(id=f"p{i}", name=f"Person {i}", confidence_score=50, trust_score=50)
             backend.put_entity(p)
             entities.append(p)
         rels_data = [
-            ("p0", "p1", 80), ("p0", "p2", 60),
-            ("p1", "p3", 90), ("p1", "p4", 50),
-            ("p2", "p5", 70), ("p2", "p6", 40),
-            ("p3", "p7", 85), ("p4", "p8", 75),
-            ("p5", "p9", 65), ("p6", "p7", 55),
-            ("p7", "p8", 45), ("p8", "p9", 95),
+            ("p0", "p1", 80),
+            ("p0", "p2", 60),
+            ("p1", "p3", 90),
+            ("p1", "p4", 50),
+            ("p2", "p5", 70),
+            ("p2", "p6", 40),
+            ("p3", "p7", 85),
+            ("p4", "p8", 75),
+            ("p5", "p9", 65),
+            ("p6", "p7", 55),
+            ("p7", "p8", 45),
+            ("p8", "p9", 95),
         ]
         for idx, (src, tgt, conf) in enumerate(rels_data):
             r = Relationship(
-                id=f"r{idx}", source_id=src, target_id=tgt,
+                id=f"r{idx}",
+                source_id=src,
+                target_id=tgt,
                 type=RelationshipType.RELATED_TO,
-                confidence_score=conf, trust_weight=conf,
+                confidence_score=conf,
+                trust_weight=conf,
             )
             backend.put_relationship(r)
 

@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 
 from intelgraph.api.auth import (
     get_totp_manager,
-    get_user_role,
     login_with_2fa_step1,
     validate_token,  # noqa: F401
     verify_2fa_code,
@@ -19,7 +18,7 @@ def _require_user(request: Request) -> str:
     if not auth.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
     token = auth[7:]
-    from intelgraph.api.auth import validate_token as vt, decode_token
+    from intelgraph.api.auth import validate_token as vt
 
     uid = vt(token)
     if uid is None:

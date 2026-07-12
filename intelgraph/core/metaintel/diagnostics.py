@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 import uuid
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -77,8 +77,9 @@ class SystemDiagnostics:
                     self._drift_history[f"{stage}_{key}"] = history[-100:]
         return drifts
 
-    def _detect_anomalies(self, stage: str, metrics: dict[str, Any],
-                          drifts: dict[str, float]) -> list[dict[str, Any]]:
+    def _detect_anomalies(
+        self, stage: str, metrics: dict[str, Any], drifts: dict[str, float]
+    ) -> list[dict[str, Any]]:
         anomalies = []
         for key, drift in drifts.items():
             if drift > 2.0:
@@ -87,7 +88,9 @@ class SystemDiagnostics:
                 anomalies.append({"key": key, "drift": round(drift, 4), "severity": "medium"})
         return anomalies
 
-    def _root_cause_analysis(self, stage: str, anomalies: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def _root_cause_analysis(
+        self, stage: str, anomalies: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         causes = []
         for a in anomalies:
             cause = self._trace_root_cause(stage, a)
@@ -116,10 +119,14 @@ class SystemDiagnostics:
         bottlenecks = []
         latency = metrics.get("latency_ms", 0)
         if latency > 1000:
-            bottlenecks.append({"stage": stage, "type": "latency", "value": latency, "threshold": 1000})
+            bottlenecks.append(
+                {"stage": stage, "type": "latency", "value": latency, "threshold": 1000}
+            )
         error_rate = metrics.get("error_rate", 0)
         if error_rate > 0.1:
-            bottlenecks.append({"stage": stage, "type": "error_rate", "value": error_rate, "threshold": 0.1})
+            bottlenecks.append(
+                {"stage": stage, "type": "error_rate", "value": error_rate, "threshold": 0.1}
+            )
         return bottlenecks
 
     def _detect_regressions(self, stage: str, metrics: dict[str, Any]) -> list[str]:

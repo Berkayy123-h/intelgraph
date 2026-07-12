@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone
+from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -49,7 +49,7 @@ class NotificationEvent:
     title: str
     body: str
     entity_id: str = ""
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -68,7 +68,7 @@ class NotificationHistoryEntry:
     event_id: str
     channel_id: str
     status: str  # NotificationStatus value
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     error: str = ""
     attempt: int = 1
 

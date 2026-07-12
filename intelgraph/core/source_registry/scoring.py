@@ -1,14 +1,24 @@
-from datetime import datetime, timezone
-from typing import Any
 
 _KNOWN_LEGITIMATE_DOMAINS: set[str] = {
-    "github.com", "gitlab.com", "bitbucket.org",
-    "linkedin.com", "twitter.com", "x.com",
-    "crunchbase.com", "bloomberg.com", "reuters.com",
-    "sec.gov", "edgar.sec.gov", "whois.icann.org",
-    "crt.sh", "censys.io", "shodan.io",
-    "archive.org", "web.archive.org",
-    "wikipedia.org", "wikidata.org",
+    "github.com",
+    "gitlab.com",
+    "bitbucket.org",
+    "linkedin.com",
+    "twitter.com",
+    "x.com",
+    "crunchbase.com",
+    "bloomberg.com",
+    "reuters.com",
+    "sec.gov",
+    "edgar.sec.gov",
+    "whois.icann.org",
+    "crt.sh",
+    "censys.io",
+    "shodan.io",
+    "archive.org",
+    "web.archive.org",
+    "wikipedia.org",
+    "wikidata.org",
 }
 
 
@@ -66,11 +76,11 @@ class TrustScorer:
 
         if is_legitimate_domain is None:
             import urllib.parse
+
             try:
                 domain = urllib.parse.urlparse(source_url).netloc.lower()
                 is_legitimate_domain = any(
-                    domain == d or domain.endswith("." + d)
-                    for d in _KNOWN_LEGITIMATE_DOMAINS
+                    domain == d or domain.endswith("." + d) for d in _KNOWN_LEGITIMATE_DOMAINS
                 )
             except Exception:
                 is_legitimate_domain = False

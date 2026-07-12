@@ -21,7 +21,9 @@ class TaskManager:
         self._dispatcher = TaskDispatcher()
         hb_interval = float(cfg.get("worker", {}).get("heartbeat_interval", 30))
         registry = WorkerRegistry(heartbeat_interval=hb_interval)
-        self._worker = TaskWorker(self._queue, self._dispatcher, registry=registry, heartbeat_interval=hb_interval)
+        self._worker = TaskWorker(
+            self._queue, self._dispatcher, registry=registry, heartbeat_interval=hb_interval
+        )
         self._registry = registry
 
     @property
@@ -74,5 +76,6 @@ def _create_queue(config: dict[str, Any]) -> TaskQueue:
         db = int(tq.get("db", 0))
         password = tq.get("password", "")
         from intelgraph.core.orchestrator.redis_queue import RedisTaskQueue
+
         return RedisTaskQueue(host=host, port=port, db=db, password=password)
     return InMemoryTaskQueue()

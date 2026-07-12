@@ -1,23 +1,29 @@
 import pytest
 
-from intelgraph.core.entity import Person, Company, Domain
+from intelgraph.core.entity import Person
 from intelgraph.core.graph.algorithms import GraphAlgorithms
 from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.relationship import Relationship
 from intelgraph.core.relationship.types import RelationshipType
 
 
-def _add_undirected_edge(g: IntelligenceGraph, src_id: str, tgt_id: str, confidence: int = 80, trust: int = 70) -> None:
+def _add_undirected_edge(
+    g: IntelligenceGraph, src_id: str, tgt_id: str, confidence: int = 80, trust: int = 70
+) -> None:
     r1 = Relationship(
-        source_id=src_id, target_id=tgt_id,
+        source_id=src_id,
+        target_id=tgt_id,
         type=RelationshipType.RELATED_TO,
-        confidence_score=confidence, trust_weight=trust,
+        confidence_score=confidence,
+        trust_weight=trust,
     )
     g.add_relationship(r1)
     r2 = Relationship(
-        source_id=tgt_id, target_id=src_id,
+        source_id=tgt_id,
+        target_id=src_id,
         type=RelationshipType.RELATED_TO,
-        confidence_score=confidence, trust_weight=trust,
+        confidence_score=confidence,
+        trust_weight=trust,
     )
     g.add_relationship(r2)
 
@@ -79,14 +85,18 @@ def _directed_graph() -> IntelligenceGraph:
     g.add_entity(c)
     g.add_entity(d)
     rels = [
-        (a.id, b.id, 90), (b.id, c.id, 80), (c.id, a.id, 70),
+        (a.id, b.id, 90),
+        (b.id, c.id, 80),
+        (c.id, a.id, 70),
         (b.id, d.id, 85),
     ]
     for src, tgt, conf in rels:
         r = Relationship(
-            source_id=src, target_id=tgt,
+            source_id=src,
+            target_id=tgt,
             type=RelationshipType.RELATED_TO,
-            confidence_score=conf, trust_weight=70,
+            confidence_score=conf,
+            trust_weight=70,
         )
         g.add_relationship(r)
     return g
@@ -236,8 +246,20 @@ class TestSCC:
         g.add_entity(a)
         g.add_entity(b)
         g.add_entity(c)
-        r1 = Relationship(source_id=a.id, target_id=b.id, type=RelationshipType.RELATED_TO, confidence_score=80, trust_weight=70)
-        r2 = Relationship(source_id=b.id, target_id=c.id, type=RelationshipType.RELATED_TO, confidence_score=80, trust_weight=70)
+        r1 = Relationship(
+            source_id=a.id,
+            target_id=b.id,
+            type=RelationshipType.RELATED_TO,
+            confidence_score=80,
+            trust_weight=70,
+        )
+        r2 = Relationship(
+            source_id=b.id,
+            target_id=c.id,
+            type=RelationshipType.RELATED_TO,
+            confidence_score=80,
+            trust_weight=70,
+        )
         g.add_relationship(r1)
         g.add_relationship(r2)
         algs = GraphAlgorithms(g)
@@ -271,7 +293,13 @@ class TestDiameter:
         b = Person(name="B")
         g.add_entity(a)
         g.add_entity(b)
-        r = Relationship(source_id=a.id, target_id=b.id, type=RelationshipType.RELATED_TO, confidence_score=80, trust_weight=70)
+        r = Relationship(
+            source_id=a.id,
+            target_id=b.id,
+            type=RelationshipType.RELATED_TO,
+            confidence_score=80,
+            trust_weight=70,
+        )
         g.add_relationship(r)
         algs = GraphAlgorithms(g)
         result = algs.diameter()
@@ -486,13 +514,17 @@ class TestCustomWeightFunction:
         g.add_entity(a)
         g.add_entity(b)
         r = Relationship(
-            source_id=a.id, target_id=b.id,
+            source_id=a.id,
+            target_id=b.id,
             type=RelationshipType.RELATED_TO,
-            confidence_score=50, trust_weight=90,
+            confidence_score=50,
+            trust_weight=90,
         )
         g.add_relationship(r)
         algs_default = GraphAlgorithms(g)
-        algs_custom = GraphAlgorithms(g, weight_fn=lambda e: float(101 - e.relationship.trust_weight))
+        algs_custom = GraphAlgorithms(
+            g, weight_fn=lambda e: float(101 - e.relationship.trust_weight)
+        )
         r1 = algs_default.mst_kruskal()
         r2 = algs_custom.mst_kruskal()
         assert r1["total_weight"] != r2["total_weight"]

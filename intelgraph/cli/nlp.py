@@ -2,18 +2,14 @@ from __future__ import annotations
 
 import json
 import sys
-import time
 from typing import Any
 
 import click
 
 from intelgraph.core.nlp import (
-    ChaosSimulator,
     DocumentSummarizer,
-    EconomicGovernor,
     EntityLinker,
     EventExtractor,
-    InputSanitizer,
     NEREngine,
     NLPModelRegistry,
     RelationshipExtractor,
@@ -80,7 +76,7 @@ def classify_text(text: str, file: str | None) -> None:
 def summarize(file_path: str) -> None:
     """Summarize a document file."""
     try:
-        with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+        with open(file_path, encoding="utf-8", errors="replace") as f:
             content = f.read()
     except FileNotFoundError:
         click.echo(f"File not found: {file_path}", err=True)
@@ -109,7 +105,7 @@ def link_to_graph(text: str, file: str | None) -> None:
 def ingest_file(path: str) -> None:
     """Ingest a file with full auto-extraction (entities, relationships, events, classification)."""
     try:
-        with open(path, "r", encoding="utf-8", errors="replace") as f:
+        with open(path, encoding="utf-8", errors="replace") as f:
             content = f.read()
     except FileNotFoundError:
         click.echo(f"File not found: {path}", err=True)
@@ -157,7 +153,12 @@ def list_models() -> None:
 @models_group.command("register")
 @click.option("--name", required=True, help="Model name")
 @click.option("--version", required=True, help="Model version")
-@click.option("--task", required=True, type=click.Choice(["ner", "relationship", "event", "classification", "summarization"]), help="Model task")
+@click.option(
+    "--task",
+    required=True,
+    type=click.Choice(["ner", "relationship", "event", "classification", "summarization"]),
+    help="Model task",
+)
 def register_model(name: str, version: str, task: str) -> None:
     """Register a new NLP model."""
     task_map = {
@@ -188,7 +189,7 @@ def deploy_model(model_id: str) -> None:
 def _read_input(text: str, file: str | None) -> str:
     if file:
         try:
-            with open(file, "r", encoding="utf-8", errors="replace") as f:
+            with open(file, encoding="utf-8", errors="replace") as f:
                 return f.read()
         except FileNotFoundError:
             click.echo(f"File not found: {file}", err=True)

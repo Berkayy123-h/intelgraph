@@ -3,10 +3,8 @@ from __future__ import annotations
 import csv
 import json
 import os
-import sys
 import time
 from pathlib import Path
-from urllib.parse import urlparse
 
 os.environ["OTX_API_KEY"] = "bc74aac50ae436dee05bfae89647406f73eed2cf947939f9d3e25461954ea12f"
 
@@ -66,6 +64,7 @@ kev_cves = set(v["cveID"].strip().lower() for v in kev_entries)
 kev_ips = set()
 kev_domains = set()
 import re
+
 IP_RE = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 DOMAIN_RE = re.compile(r"\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}\b")
 for v in kev_entries:
@@ -76,7 +75,9 @@ for v in kev_entries:
         d = m.group().lower()
         if not d.startswith("http") and d.count(".") >= 1:
             kev_domains.add(d)
-print(f"  {len(kev_cves)} CVE, {len(kev_ips)} IP, {len(kev_domains)} domain ({time.time()-t0:.1f}s)")
+print(
+    f"  {len(kev_cves)} CVE, {len(kev_ips)} IP, {len(kev_domains)} domain ({time.time()-t0:.1f}s)"
+)
 
 # ── 5. Cross-reference: OTX ∩ URLhaus ──
 print("\n[4] Capraz referans analizi:")
@@ -133,8 +134,18 @@ if otx_urlhaus:
     print("\nOTX ↔ URLhaus eslesmeleri:")
     for val in sorted(otx_urlhaus)[:10]:
         # Find URLhaus entry
-        uh = [it for t, items in urlhaus_iocs.items() for it in items if it["indicator"].strip().lower() == val]
-        ot = [it for t, items in otx_iocs.items() for it in items if it["indicator"].strip().lower() == val]
+        uh = [
+            it
+            for t, items in urlhaus_iocs.items()
+            for it in items
+            if it["indicator"].strip().lower() == val
+        ]
+        ot = [
+            it
+            for t, items in otx_iocs.items()
+            for it in items
+            if it["indicator"].strip().lower() == val
+        ]
         print(f"\n  Ortak: {val}")
         if uh:
             print(f"    URLhaus kaynak: {uh[0].get('source','?')}")
@@ -165,12 +176,14 @@ if urlhaus_overlap:
                     matching_rows.append(row)
     if matching_rows:
         urlhaus_sample_text = "\n".join(r[2] for r in matching_rows[:100])
-        sources.append({
-            "id": "urlhaus_overlap",
-            "name": f"URLhaus (OTX overlap, {len(matching_rows)} satir)",
-            "text": urlhaus_sample_text,
-            "value": 60,
-        })
+        sources.append(
+            {
+                "id": "urlhaus_overlap",
+                "name": f"URLhaus (OTX overlap, {len(matching_rows)} satir)",
+                "text": urlhaus_sample_text,
+                "value": 60,
+            }
+        )
         print(f"  {len(matching_rows)} URLhaus satiri eslesme bulundu")
 
 if not urlhaus_sample_text:
@@ -179,12 +192,14 @@ if not urlhaus_sample_text:
         reader = csv.reader(l for l in f if not l.startswith("#"))
         urlhaus_rows = [r[2] for i, r in enumerate(reader) if i < 50]
     urlhaus_sample_text = "\n".join(urlhaus_rows)
-    sources.append({
-        "id": "urlhaus_50",
-        "name": "URLhaus (50)",
-        "text": urlhaus_sample_text,
-        "value": 60,
-    })
+    sources.append(
+        {
+            "id": "urlhaus_50",
+            "name": "URLhaus (50)",
+            "text": urlhaus_sample_text,
+            "value": 60,
+        }
+    )
 
 # KEV: use overlapping CVEs if found
 kev_overlap = otx_kev_cve
@@ -198,12 +213,14 @@ if kev_overlap:
             f'{v.get("shortDescription","")} {v.get("knownRansomwareCampaignUse","")}'
             for v in matching[:20]
         )
-        sources.append({
-            "id": "kev_overlap",
-            "name": f"CISA KEV (OTX overlap, {len(matching)} CVE)",
-            "text": kev_text,
-            "value": 90,
-        })
+        sources.append(
+            {
+                "id": "kev_overlap",
+                "name": f"CISA KEV (OTX overlap, {len(matching)} CVE)",
+                "text": kev_text,
+                "value": 90,
+            }
+        )
 
 if not kev_text:
     print("\n  (OTX ile KEV ortak CVE yok — ilk 10 KEV kaydi kullaniliyor)")
@@ -212,12 +229,14 @@ if not kev_text:
         f'{v.get("shortDescription","")} {v.get("knownRansomwareCampaignUse","")}'
         for v in kev_entries[:10]
     )
-    sources.append({
-        "id": "kev_10",
-        "name": "CISA KEV (10)",
-        "text": kev_text,
-        "value": 90,
-    })
+    sources.append(
+        {
+            "id": "kev_10",
+            "name": "CISA KEV (10)",
+            "text": kev_text,
+            "value": 90,
+        }
+    )
 
 # OTX: use all pulses (but filter indicators to IP/domain/CVE to avoid hash O(n²) explosion)
 for p in pulses:
@@ -236,11 +255,16 @@ for p in pulses:
 print(f"\n  Toplam kaynak: {len(sources)} ({sum(len(s.get('text','')) for s in sources)} chars)")
 
 # Run pipeline
-from intelgraph.core.pipeline.chain import Pipeline
 from intelgraph.api.routers.dashboard import dashboard_state
+from intelgraph.core.pipeline.chain import Pipeline
 
 thresholds = {
-    "c2_detection": {"enabled": True, "metric_key": "overall_confidence", "max": 0.4, "severity": "critical"},
+    "c2_detection": {
+        "enabled": True,
+        "metric_key": "overall_confidence",
+        "max": 0.4,
+        "severity": "critical",
+    },
 }
 
 print("\n  Pipeline calistiriliyor...")
@@ -265,15 +289,19 @@ print(f"  Hata: {len(result.errors)}")
 
 # Show CVE entities
 from intelgraph.core.entity.cve import CveEntity
+
 cve_nodes = [(nid, n) for nid, n in result.graph.nodes.items() if isinstance(n.entity, CveEntity)]
 print(f"\n  CveEntity node: {len(cve_nodes)}")
 for nid, n in cve_nodes:
     e = n.entity
-    print(f"    {nid}: conf={e.confidence_score} rw={e.known_ransomware_use} vendor={e.vendor_project}")
+    print(
+        f"    {nid}: conf={e.confidence_score} rw={e.known_ransomware_use} vendor={e.vendor_project}"
+    )
 
 # Show incidents with explain
 print("\n  Incidentler:")
 from intelgraph.core.explanation.builder import ExplanationBuilder
+
 builder = ExplanationBuilder(result_dict)
 for inc in result.incidents:
     inc_id = inc.get("alert_id", "")

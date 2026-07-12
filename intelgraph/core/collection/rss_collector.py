@@ -42,7 +42,9 @@ class RSSCollector(Collector):
                 metadata=entry,
             )
             documents.append(doc)
-            result.raw_data += f"\n---\nTitle: {entry.get('title', '')}\nLink: {entry.get('link', '')}\n"
+            result.raw_data += (
+                f"\n---\nTitle: {entry.get('title', '')}\nLink: {entry.get('link', '')}\n"
+            )
 
         if not documents:
             doc = CollectionDocument(

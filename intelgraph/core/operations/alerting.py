@@ -4,8 +4,8 @@ import json
 import logging
 import threading
 import time
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 from urllib.request import Request, urlopen
 
@@ -44,7 +44,7 @@ class AlertEngine:
         cooldown_sec = self._config.get("cooldown_seconds", 300)
         mc = self._metrics if self._metrics is not None else get_metrics()
         metrics = mc.snapshot()
-        ts = datetime.now(timezone.utc).isoformat()
+        ts = datetime.now(UTC).isoformat()
 
         error_threshold = thresholds.get("error_rate", {})
         if error_threshold.get("enabled", False):
@@ -137,7 +137,11 @@ class AlertEngine:
             mean_influence = gauges.get("influence_mean_score", 0.0)
             max_ratio = anomaly_threshold.get("max_top_to_mean_ratio", 100.0)
             key = "influence_score_anomaly"
-            if mean_influence > 0.0 and (top_influence / mean_influence) > max_ratio and self._can_alert(key, now, cooldown_sec):
+            if (
+                mean_influence > 0.0
+                and (top_influence / mean_influence) > max_ratio
+                and self._can_alert(key, now, cooldown_sec)
+            ):
                 alert = Alert(
                     category="influence_score_anomaly",
                     severity=anomaly_threshold.get("severity", "warning"),
@@ -188,7 +192,11 @@ class AlertEngine:
             mean_score = gauges.get("anomaly_mean_score", 0.0)
             max_change = anomaly_dist_shift.get("max_mean_score_change", 0.3)
             key = "anomaly_distribution_shift"
-            if mean_score > 0.0 and abs(mean_score - gauges.get("anomaly_mean_score_prev", 0.0)) > max_change and self._can_alert(key, now, cooldown_sec):
+            if (
+                mean_score > 0.0
+                and abs(mean_score - gauges.get("anomaly_mean_score_prev", 0.0)) > max_change
+                and self._can_alert(key, now, cooldown_sec)
+            ):
                 alert = Alert(
                     category="anomaly_distribution_shift",
                     severity=anomaly_dist_shift.get("severity", "warning"),
@@ -308,14 +316,16 @@ class AlertEngine:
             risk_thresh = prediction_risk_threshold.get("max_risk_score", 0.85)
             key = "prediction_risk_threshold_breach"
             if max_risk > risk_thresh and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="prediction_risk_threshold_breach",
-                    severity=prediction_risk_threshold.get("severity", "critical"),
-                    timestamp=ts,
-                    current_value=max_risk,
-                    threshold_value=risk_thresh,
-                    message=f"Max forecast risk {max_risk:.4f} exceeds threshold {risk_thresh}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="prediction_risk_threshold_breach",
+                        severity=prediction_risk_threshold.get("severity", "critical"),
+                        timestamp=ts,
+                        current_value=max_risk,
+                        threshold_value=risk_thresh,
+                        message=f"Max forecast risk {max_risk:.4f} exceeds threshold {risk_thresh}",
+                    )
+                )
 
         prediction_confidence_collapse = thresholds.get("prediction_confidence_collapse", {})
         if prediction_confidence_collapse.get("enabled", False):
@@ -324,14 +334,16 @@ class AlertEngine:
             min_thresh = prediction_confidence_collapse.get("min_confidence", 0.2)
             key = "prediction_confidence_collapse"
             if min_conf_pred < min_thresh and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="prediction_confidence_collapse",
-                    severity=prediction_confidence_collapse.get("severity", "warning"),
-                    timestamp=ts,
-                    current_value=min_conf_pred,
-                    threshold_value=min_thresh,
-                    message=f"Min prediction confidence {min_conf_pred:.4f} below threshold {min_thresh}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="prediction_confidence_collapse",
+                        severity=prediction_confidence_collapse.get("severity", "warning"),
+                        timestamp=ts,
+                        current_value=min_conf_pred,
+                        threshold_value=min_thresh,
+                        message=f"Min prediction confidence {min_conf_pred:.4f} below threshold {min_thresh}",
+                    )
+                )
 
         prediction_drift = thresholds.get("prediction_drift_breach", {})
         if prediction_drift.get("enabled", False):
@@ -340,14 +352,16 @@ class AlertEngine:
             max_drift = prediction_drift.get("max_drift", 0.3)
             key = "prediction_drift_breach"
             if drift > max_drift and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="prediction_drift_breach",
-                    severity=prediction_drift.get("severity", "warning"),
-                    timestamp=ts,
-                    current_value=drift,
-                    threshold_value=max_drift,
-                    message=f"Prediction drift {drift:.4f} exceeds threshold {max_drift}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="prediction_drift_breach",
+                        severity=prediction_drift.get("severity", "warning"),
+                        timestamp=ts,
+                        current_value=drift,
+                        threshold_value=max_drift,
+                        message=f"Prediction drift {drift:.4f} exceeds threshold {max_drift}",
+                    )
+                )
 
         prediction_model_degradation = thresholds.get("prediction_model_degradation", {})
         if prediction_model_degradation.get("enabled", False):
@@ -356,14 +370,16 @@ class AlertEngine:
             min_perf = prediction_model_degradation.get("min_performance", 0.6)
             key = "prediction_model_degradation"
             if perf < min_perf and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="prediction_model_degradation",
-                    severity=prediction_model_degradation.get("severity", "warning"),
-                    timestamp=ts,
-                    current_value=perf,
-                    threshold_value=min_perf,
-                    message=f"Model performance {perf:.4f} below threshold {min_perf}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="prediction_model_degradation",
+                        severity=prediction_model_degradation.get("severity", "warning"),
+                        timestamp=ts,
+                        current_value=perf,
+                        threshold_value=min_perf,
+                        message=f"Model performance {perf:.4f} below threshold {min_perf}",
+                    )
+                )
 
         coherence_collapse = thresholds.get("kernel_coherence_collapse", {})
         if coherence_collapse.get("enabled", False):
@@ -372,14 +388,16 @@ class AlertEngine:
             min_coherence = coherence_collapse.get("min_coherence", 0.3)
             key = "kernel_coherence_collapse"
             if coherence < min_coherence and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="kernel_coherence_collapse",
-                    severity=coherence_collapse.get("severity", "critical"),
-                    timestamp=ts,
-                    current_value=coherence,
-                    threshold_value=min_coherence,
-                    message=f"Kernel coherence {coherence:.4f} below threshold {min_coherence}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="kernel_coherence_collapse",
+                        severity=coherence_collapse.get("severity", "critical"),
+                        timestamp=ts,
+                        current_value=coherence,
+                        threshold_value=min_coherence,
+                        message=f"Kernel coherence {coherence:.4f} below threshold {min_coherence}",
+                    )
+                )
 
         safety_violation = thresholds.get("safety_violation_detected", {})
         if safety_violation.get("enabled", False):
@@ -388,14 +406,16 @@ class AlertEngine:
             max_allowed = safety_violation.get("max_violations", 5)
             key = "safety_violation_detected"
             if violation_count > max_allowed and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="safety_violation_detected",
-                    severity=safety_violation.get("severity", "critical"),
-                    timestamp=ts,
-                    current_value=float(violation_count),
-                    threshold_value=float(max_allowed),
-                    message=f"Safety violations {violation_count} exceed max {max_allowed}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="safety_violation_detected",
+                        severity=safety_violation.get("severity", "critical"),
+                        timestamp=ts,
+                        current_value=float(violation_count),
+                        threshold_value=float(max_allowed),
+                        message=f"Safety violations {violation_count} exceed max {max_allowed}",
+                    )
+                )
 
         governance_breach = thresholds.get("governance_compliance_breach", {})
         if governance_breach.get("enabled", False):
@@ -404,14 +424,16 @@ class AlertEngine:
             max_breach = governance_breach.get("max_breaches", 3)
             key = "governance_compliance_breach"
             if breach_count > max_breach and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="governance_compliance_breach",
-                    severity=governance_breach.get("severity", "critical"),
-                    timestamp=ts,
-                    current_value=float(breach_count),
-                    threshold_value=float(max_breach),
-                    message=f"Governance breaches {breach_count} exceed max {max_breach}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="governance_compliance_breach",
+                        severity=governance_breach.get("severity", "critical"),
+                        timestamp=ts,
+                        current_value=float(breach_count),
+                        threshold_value=float(max_breach),
+                        message=f"Governance breaches {breach_count} exceed max {max_breach}",
+                    )
+                )
 
         nlp_extraction_failure = thresholds.get("nlp_extraction_failure_spike", {})
         if nlp_extraction_failure.get("enabled", False):
@@ -420,14 +442,16 @@ class AlertEngine:
             max_rate = nlp_extraction_failure.get("max_failure_rate", 0.2)
             key = "nlp_extraction_failure_spike"
             if failure_rate > max_rate and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="nlp_extraction_failure_spike",
-                    severity=nlp_extraction_failure.get("severity", "warning"),
-                    timestamp=ts,
-                    current_value=failure_rate,
-                    threshold_value=max_rate,
-                    message=f"NLP extraction failure rate {failure_rate:.4f} exceeds threshold {max_rate}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="nlp_extraction_failure_spike",
+                        severity=nlp_extraction_failure.get("severity", "warning"),
+                        timestamp=ts,
+                        current_value=failure_rate,
+                        threshold_value=max_rate,
+                        message=f"NLP extraction failure rate {failure_rate:.4f} exceeds threshold {max_rate}",
+                    )
+                )
 
         nlp_model_load = thresholds.get("nlp_model_load_failure", {})
         if nlp_model_load.get("enabled", False):
@@ -436,14 +460,16 @@ class AlertEngine:
             max_fails = nlp_model_load.get("max_load_failures", 3)
             key = "nlp_model_load_failure"
             if load_fails > max_fails and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="nlp_model_load_failure",
-                    severity=nlp_model_load.get("severity", "critical"),
-                    timestamp=ts,
-                    current_value=float(load_fails),
-                    threshold_value=float(max_fails),
-                    message=f"NLP model load failures {load_fails} exceed threshold {max_fails}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="nlp_model_load_failure",
+                        severity=nlp_model_load.get("severity", "critical"),
+                        timestamp=ts,
+                        current_value=float(load_fails),
+                        threshold_value=float(max_fails),
+                        message=f"NLP model load failures {load_fails} exceed threshold {max_fails}",
+                    )
+                )
 
         nlp_link_accuracy = thresholds.get("nlp_link_accuracy_degradation", {})
         if nlp_link_accuracy.get("enabled", False):
@@ -452,14 +478,16 @@ class AlertEngine:
             min_acc = nlp_link_accuracy.get("min_accuracy", 0.5)
             key = "nlp_link_accuracy_degradation"
             if accuracy < min_acc and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="nlp_link_accuracy_degradation",
-                    severity=nlp_link_accuracy.get("severity", "warning"),
-                    timestamp=ts,
-                    current_value=accuracy,
-                    threshold_value=min_acc,
-                    message=f"NLP link accuracy {accuracy:.4f} below threshold {min_acc}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="nlp_link_accuracy_degradation",
+                        severity=nlp_link_accuracy.get("severity", "warning"),
+                        timestamp=ts,
+                        current_value=accuracy,
+                        threshold_value=min_acc,
+                        message=f"NLP link accuracy {accuracy:.4f} below threshold {min_acc}",
+                    )
+                )
 
         nlp_class_conf = thresholds.get("nlp_classification_confidence_collapse", {})
         if nlp_class_conf.get("enabled", False):
@@ -468,14 +496,16 @@ class AlertEngine:
             min_conf = nlp_class_conf.get("min_confidence", 0.3)
             key = "nlp_classification_confidence_collapse"
             if confidence < min_conf and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="nlp_classification_confidence_collapse",
-                    severity=nlp_class_conf.get("severity", "warning"),
-                    timestamp=ts,
-                    current_value=confidence,
-                    threshold_value=min_conf,
-                    message=f"NLP classification confidence {confidence:.4f} below threshold {min_conf}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="nlp_classification_confidence_collapse",
+                        severity=nlp_class_conf.get("severity", "warning"),
+                        timestamp=ts,
+                        current_value=confidence,
+                        threshold_value=min_conf,
+                        message=f"NLP classification confidence {confidence:.4f} below threshold {min_conf}",
+                    )
+                )
 
         reasoning_divergence = thresholds.get("reasoning_divergence_detected", {})
         if reasoning_divergence.get("enabled", False):
@@ -484,14 +514,16 @@ class AlertEngine:
             max_div = reasoning_divergence.get("max_divergence", 0.5)
             key = "reasoning_divergence_detected"
             if divergence > max_div and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="reasoning_divergence_detected",
-                    severity=reasoning_divergence.get("severity", "warning"),
-                    timestamp=ts,
-                    current_value=divergence,
-                    threshold_value=max_div,
-                    message=f"Reasoning divergence {divergence:.4f} exceeds threshold {max_div}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="reasoning_divergence_detected",
+                        severity=reasoning_divergence.get("severity", "warning"),
+                        timestamp=ts,
+                        current_value=divergence,
+                        threshold_value=max_div,
+                        message=f"Reasoning divergence {divergence:.4f} exceeds threshold {max_div}",
+                    )
+                )
 
         contradiction_explosion = thresholds.get("contradiction_explosion", {})
         if contradiction_explosion.get("enabled", False):
@@ -500,14 +532,16 @@ class AlertEngine:
             max_ct = contradiction_explosion.get("max_contradictions", 20)
             key = "contradiction_explosion"
             if contradictions > max_ct and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="contradiction_explosion",
-                    severity=contradiction_explosion.get("severity", "critical"),
-                    timestamp=ts,
-                    current_value=float(contradictions),
-                    threshold_value=float(max_ct),
-                    message=f"Contradiction count {contradictions} exceeds threshold {max_ct}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="contradiction_explosion",
+                        severity=contradiction_explosion.get("severity", "critical"),
+                        timestamp=ts,
+                        current_value=float(contradictions),
+                        threshold_value=float(max_ct),
+                        message=f"Contradiction count {contradictions} exceeds threshold {max_ct}",
+                    )
+                )
 
         learning_instability = thresholds.get("learning_loop_instability", {})
         if learning_instability.get("enabled", False):
@@ -516,14 +550,16 @@ class AlertEngine:
             max_inst = learning_instability.get("max_instability", 0.3)
             key = "learning_loop_instability"
             if instability > max_inst and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="learning_loop_instability",
-                    severity=learning_instability.get("severity", "warning"),
-                    timestamp=ts,
-                    current_value=instability,
-                    threshold_value=max_inst,
-                    message=f"Learning instability {instability:.4f} exceeds threshold {max_inst}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="learning_loop_instability",
+                        severity=learning_instability.get("severity", "warning"),
+                        timestamp=ts,
+                        current_value=instability,
+                        threshold_value=max_inst,
+                        message=f"Learning instability {instability:.4f} exceeds threshold {max_inst}",
+                    )
+                )
 
         hypothesis_collapse = thresholds.get("hypothesis_confidence_collapse", {})
         if hypothesis_collapse.get("enabled", False):
@@ -532,14 +568,16 @@ class AlertEngine:
             min_conf = hypothesis_collapse.get("min_confidence", 0.2)
             key = "hypothesis_confidence_collapse"
             if conf < min_conf and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="hypothesis_confidence_collapse",
-                    severity=hypothesis_collapse.get("severity", "warning"),
-                    timestamp=ts,
-                    current_value=conf,
-                    threshold_value=min_conf,
-                    message=f"Hypothesis mean confidence {conf:.4f} below threshold {min_conf}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="hypothesis_confidence_collapse",
+                        severity=hypothesis_collapse.get("severity", "warning"),
+                        timestamp=ts,
+                        current_value=conf,
+                        threshold_value=min_conf,
+                        message=f"Hypothesis mean confidence {conf:.4f} below threshold {min_conf}",
+                    )
+                )
 
         inference_drift = thresholds.get("inference_drift_detected", {})
         if inference_drift.get("enabled", False):
@@ -548,14 +586,16 @@ class AlertEngine:
             max_drift = inference_drift.get("max_drift", 0.15)
             key = "inference_drift_detected"
             if drift > max_drift and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="inference_drift_detected",
-                    severity=inference_drift.get("severity", "warning"),
-                    timestamp=ts,
-                    current_value=drift,
-                    threshold_value=max_drift,
-                    message=f"Inference drift {drift:.4f} exceeds threshold {max_drift}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="inference_drift_detected",
+                        severity=inference_drift.get("severity", "warning"),
+                        timestamp=ts,
+                        current_value=drift,
+                        threshold_value=max_drift,
+                        message=f"Inference drift {drift:.4f} exceeds threshold {max_drift}",
+                    )
+                )
 
         agent_deadlock = thresholds.get("agent_deadlock_detected", {})
         if agent_deadlock.get("enabled", False):
@@ -564,13 +604,16 @@ class AlertEngine:
             max_dl = agent_deadlock.get("max_deadlocks", 5)
             key = "agent_deadlock_detected"
             if deadlock_count > max_dl and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="agent_deadlock_detected",
-                    severity=agent_deadlock.get("severity", "critical"),
-                    timestamp=ts, current_value=float(deadlock_count),
-                    threshold_value=float(max_dl),
-                    message=f"Agent deadlock count {deadlock_count} exceeds threshold {max_dl}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="agent_deadlock_detected",
+                        severity=agent_deadlock.get("severity", "critical"),
+                        timestamp=ts,
+                        current_value=float(deadlock_count),
+                        threshold_value=float(max_dl),
+                        message=f"Agent deadlock count {deadlock_count} exceeds threshold {max_dl}",
+                    )
+                )
 
         agent_execution_failure = thresholds.get("agent_execution_failure_spike", {})
         if agent_execution_failure.get("enabled", False):
@@ -579,13 +622,16 @@ class AlertEngine:
             max_rate = agent_execution_failure.get("max_failure_rate", 0.3)
             key = "agent_execution_failure_spike"
             if failure_rate > max_rate and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="agent_execution_failure_spike",
-                    severity=agent_execution_failure.get("severity", "critical"),
-                    timestamp=ts, current_value=failure_rate,
-                    threshold_value=max_rate,
-                    message=f"Agent execution failure rate {failure_rate:.4f} exceeds threshold {max_rate}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="agent_execution_failure_spike",
+                        severity=agent_execution_failure.get("severity", "critical"),
+                        timestamp=ts,
+                        current_value=failure_rate,
+                        threshold_value=max_rate,
+                        message=f"Agent execution failure rate {failure_rate:.4f} exceeds threshold {max_rate}",
+                    )
+                )
 
         agent_safety_violation = thresholds.get("agent_safety_violation_surge", {})
         if agent_safety_violation.get("enabled", False):
@@ -594,13 +640,16 @@ class AlertEngine:
             max_v = agent_safety_violation.get("max_violations", 10)
             key = "agent_safety_violation_surge"
             if violations > max_v and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="agent_safety_violation_surge",
-                    severity=agent_safety_violation.get("severity", "critical"),
-                    timestamp=ts, current_value=float(violations),
-                    threshold_value=float(max_v),
-                    message=f"Agent safety violations {violations} exceeds threshold {max_v}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="agent_safety_violation_surge",
+                        severity=agent_safety_violation.get("severity", "critical"),
+                        timestamp=ts,
+                        current_value=float(violations),
+                        threshold_value=float(max_v),
+                        message=f"Agent safety violations {violations} exceeds threshold {max_v}",
+                    )
+                )
 
         agent_kill_switch_engaged = thresholds.get("agent_kill_switch_engaged", {})
         if agent_kill_switch_engaged.get("enabled", False):
@@ -608,12 +657,16 @@ class AlertEngine:
             engaged = gauges.get("agent_kill_switch_engaged", False)
             key = "agent_kill_switch_engaged"
             if engaged and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="agent_kill_switch_engaged",
-                    severity=agent_kill_switch_engaged.get("severity", "critical"),
-                    timestamp=ts, current_value=1.0, threshold_value=0.0,
-                    message="Agent kill switch has been engaged",
-                ))
+                triggered.append(
+                    Alert(
+                        category="agent_kill_switch_engaged",
+                        severity=agent_kill_switch_engaged.get("severity", "critical"),
+                        timestamp=ts,
+                        current_value=1.0,
+                        threshold_value=0.0,
+                        message="Agent kill switch has been engaged",
+                    )
+                )
 
         agent_feedback_drift = thresholds.get("agent_feedback_drift_detected", {})
         if agent_feedback_drift.get("enabled", False):
@@ -622,13 +675,16 @@ class AlertEngine:
             max_drift = agent_feedback_drift.get("max_drift", 0.2)
             key = "agent_feedback_drift_detected"
             if drift > max_drift and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="agent_feedback_drift_detected",
-                    severity=agent_feedback_drift.get("severity", "warning"),
-                    timestamp=ts, current_value=drift,
-                    threshold_value=max_drift,
-                    message=f"Agent feedback drift {drift:.4f} exceeds threshold {max_drift}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="agent_feedback_drift_detected",
+                        severity=agent_feedback_drift.get("severity", "warning"),
+                        timestamp=ts,
+                        current_value=drift,
+                        threshold_value=max_drift,
+                        message=f"Agent feedback drift {drift:.4f} exceeds threshold {max_drift}",
+                    )
+                )
 
         agent_simulation_risk = thresholds.get("agent_simulation_risk_breach", {})
         if agent_simulation_risk.get("enabled", False):
@@ -637,13 +693,16 @@ class AlertEngine:
             max_risk = agent_simulation_risk.get("max_risk", 0.8)
             key = "agent_simulation_risk_breach"
             if risk > max_risk and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="agent_simulation_risk_breach",
-                    severity=agent_simulation_risk.get("severity", "warning"),
-                    timestamp=ts, current_value=risk,
-                    threshold_value=max_risk,
-                    message=f"Agent simulation risk {risk:.4f} exceeds threshold {max_risk}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="agent_simulation_risk_breach",
+                        severity=agent_simulation_risk.get("severity", "warning"),
+                        timestamp=ts,
+                        current_value=risk,
+                        threshold_value=max_risk,
+                        message=f"Agent simulation risk {risk:.4f} exceeds threshold {max_risk}",
+                    )
+                )
 
         agent_memory_corruption = thresholds.get("agent_memory_corruption_detected", {})
         if agent_memory_corruption.get("enabled", False):
@@ -652,18 +711,27 @@ class AlertEngine:
             max_c = agent_memory_corruption.get("max_corruption", 0.1)
             key = "agent_memory_corruption_detected"
             if corruption > max_c and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="agent_memory_corruption_detected",
-                    severity=agent_memory_corruption.get("severity", "critical"),
-                    timestamp=ts, current_value=corruption,
-                    threshold_value=max_c,
-                    message=f"Agent memory corruption {corruption:.4f} exceeds threshold {max_c}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="agent_memory_corruption_detected",
+                        severity=agent_memory_corruption.get("severity", "critical"),
+                        timestamp=ts,
+                        current_value=corruption,
+                        threshold_value=max_c,
+                        message=f"Agent memory corruption {corruption:.4f} exceeds threshold {max_c}",
+                    )
+                )
 
-        for metaintel_key in ["reasoning_collapse", "cross_phase_inconsistency",
-                               "execution_reasoning_mismatch", "knowledge_corruption",
-                               "policy_conflict_explosion", "autonomous_instability",
-                               "global_drift_exceeded", "architecture_divergence"]:
+        for metaintel_key in [
+            "reasoning_collapse",
+            "cross_phase_inconsistency",
+            "execution_reasoning_mismatch",
+            "knowledge_corruption",
+            "policy_conflict_explosion",
+            "autonomous_instability",
+            "global_drift_exceeded",
+            "architecture_divergence",
+        ]:
             mt_threshold = thresholds.get(metaintel_key, {})
             if mt_threshold.get("enabled", False):
                 gauges = metrics.get("gauges", {})
@@ -672,17 +740,25 @@ class AlertEngine:
                 max_val = mt_threshold.get("max", 1.0)
                 key = metaintel_key
                 if current > max_val and self._can_alert(key, now, cooldown_sec):
-                    triggered.append(Alert(
-                        category=metaintel_key,
-                        severity=mt_threshold.get("severity", "warning"),
-                        timestamp=ts, current_value=current,
-                        threshold_value=float(max_val),
-                        message=f"Meta-intel alert [{metaintel_key}]: {current:.4f} exceeds {max_val}",
-                    ))
+                    triggered.append(
+                        Alert(
+                            category=metaintel_key,
+                            severity=mt_threshold.get("severity", "warning"),
+                            timestamp=ts,
+                            current_value=current,
+                            threshold_value=float(max_val),
+                            message=f"Meta-intel alert [{metaintel_key}]: {current:.4f} exceeds {max_val}",
+                        )
+                    )
 
-        for ucos_key in ["duplicate_engine_detected", "reasoning_divergence",
-                          "execution_inconsistency", "governance_conflict",
-                          "system_complexity_growth", "uncontrolled_self_modification"]:
+        for ucos_key in [
+            "duplicate_engine_detected",
+            "reasoning_divergence",
+            "execution_inconsistency",
+            "governance_conflict",
+            "system_complexity_growth",
+            "uncontrolled_self_modification",
+        ]:
             ucos_threshold = thresholds.get(ucos_key, {})
             if ucos_threshold.get("enabled", False):
                 gauges = metrics.get("gauges", {})
@@ -691,13 +767,16 @@ class AlertEngine:
                 max_val = ucos_threshold.get("max", 1.0)
                 key = ucos_key
                 if current > max_val and self._can_alert(key, now, cooldown_sec):
-                    triggered.append(Alert(
-                        category=ucos_key,
-                        severity=ucos_threshold.get("severity", "warning"),
-                        timestamp=ts, current_value=current,
-                        threshold_value=float(max_val),
-                        message=f"UCOS alert [{ucos_key}]: {current:.4f} exceeds {max_val}",
-                    ))
+                    triggered.append(
+                        Alert(
+                            category=ucos_key,
+                            severity=ucos_threshold.get("severity", "warning"),
+                            timestamp=ts,
+                            current_value=current,
+                            threshold_value=float(max_val),
+                            message=f"UCOS alert [{ucos_key}]: {current:.4f} exceeds {max_val}",
+                        )
+                    )
 
         cross_disagreement = thresholds.get("kernel_cross_model_disagreement", {})
         if cross_disagreement.get("enabled", False):
@@ -706,14 +785,16 @@ class AlertEngine:
             max_dis = cross_disagreement.get("max_disagreement", 0.4)
             key = "kernel_cross_model_disagreement"
             if disagreement > max_dis and self._can_alert(key, now, cooldown_sec):
-                triggered.append(Alert(
-                    category="kernel_cross_model_disagreement",
-                    severity=cross_disagreement.get("severity", "warning"),
-                    timestamp=ts,
-                    current_value=disagreement,
-                    threshold_value=max_dis,
-                    message=f"Kernel model disagreement {disagreement:.4f} exceeds threshold {max_dis}",
-                ))
+                triggered.append(
+                    Alert(
+                        category="kernel_cross_model_disagreement",
+                        severity=cross_disagreement.get("severity", "warning"),
+                        timestamp=ts,
+                        current_value=disagreement,
+                        threshold_value=max_dis,
+                        message=f"Kernel model disagreement {disagreement:.4f} exceeds threshold {max_dis}",
+                    )
+                )
 
         with self._lock:
             self._alerts.extend(triggered)
@@ -763,9 +844,7 @@ class AlertEngine:
         except Exception as exc:
             logger.error("webhook failed for %s: %s", webhook_url, exc)
 
-    def get_alerts(
-        self, category: str | None = None, limit: int = 100
-    ) -> list[dict[str, Any]]:
+    def get_alerts(self, category: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
         with self._lock:
             result = [
                 {

@@ -3,9 +3,10 @@ from __future__ import annotations
 import math
 import time
 import uuid
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Callable
+from typing import Any
 
 SAFETY_SCHEMA_VERSION = "1.0"
 
@@ -53,7 +54,9 @@ class SafetyReport:
             "passed": self.passed,
             "violations": [v.to_dict() for v in self.violations],
             "fallback_used": self.fallback_used,
-            "fallback_value": round(self.fallback_value, 4) if self.fallback_value is not None else None,
+            "fallback_value": (
+                round(self.fallback_value, 4) if self.fallback_value is not None else None
+            ),
             "timestamp": self.timestamp or time.time(),
             "schema_version": self.schema_version,
         }

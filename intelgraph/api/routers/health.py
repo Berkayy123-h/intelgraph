@@ -36,6 +36,7 @@ def live():
 )
 def ready():
     from intelgraph.api.main import _container
+
     backend = _container.backend
     storage_ok = False
     try:

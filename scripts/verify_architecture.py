@@ -5,15 +5,14 @@ Bağımsız Gerçek Davranış Doğrulama Testi — architecture.py
 Mevcut hiçbir unit test referans alınmamıştır.
 Mock kullanılmamıştır. Gerçek ArchitectureEvolutionEngine ile çalışılır.
 """
+
 from __future__ import annotations
 
 import sys
-import time
 
 # --- Gerçek modülü import et ---
 from intelgraph.core.metaintel.architecture import (
     ArchitectureEvolutionEngine,
-    ArchitectureModule,
 )
 
 engine = ArchitectureEvolutionEngine()
@@ -33,7 +32,8 @@ print("=" * 72)
 engine.apply_change(
     engine.propose_architecture_change(
         "Set NLP→reasoning dependency",
-        "modify_dependencies", "nlp",
+        "modify_dependencies",
+        "nlp",
         new_dependencies=["reasoning"],
         risk_score=0.2,
     ).proposal_id
@@ -42,7 +42,8 @@ engine.apply_change(
 engine.apply_change(
     engine.propose_architecture_change(
         "Set reasoning→execution dependency",
-        "modify_dependencies", "reasoning",
+        "modify_dependencies",
+        "reasoning",
         new_dependencies=["execution"],
         risk_score=0.2,
     ).proposal_id
@@ -51,7 +52,8 @@ engine.apply_change(
 engine.apply_change(
     engine.propose_architecture_change(
         "Set execution→governance dependency",
-        "modify_dependencies", "execution",
+        "modify_dependencies",
+        "execution",
         new_dependencies=["governance"],
         risk_score=0.2,
     ).proposal_id
@@ -60,7 +62,8 @@ engine.apply_change(
 engine.apply_change(
     engine.propose_architecture_change(
         "Set governance→metaintel dependency",
-        "modify_dependencies", "governance",
+        "modify_dependencies",
+        "governance",
         new_dependencies=["metaintel"],
         risk_score=0.2,
     ).proposal_id
@@ -69,7 +72,8 @@ engine.apply_change(
 engine.apply_change(
     engine.propose_architecture_change(
         "Set storage dependency",
-        "modify_dependencies", "storage",
+        "modify_dependencies",
+        "storage",
         new_dependencies=[],
         risk_score=0.1,
     ).proposal_id
@@ -78,7 +82,8 @@ engine.apply_change(
 engine.apply_change(
     engine.propose_architecture_change(
         "Set api dependency",
-        "modify_dependencies", "api",
+        "modify_dependencies",
+        "api",
         new_dependencies=["storage"],
         risk_score=0.1,
     ).proposal_id
@@ -105,8 +110,12 @@ print("=" * 72)
 engine.apply_change(
     engine.propose_architecture_change(
         "INJECT CYCLE: execution → nlp",
-        "modify_dependencies", "execution",
-        new_dependencies=["governance", "nlp"],  # nlp zaten execution'a bağımlı değil ama execution→nlp olunca döngü: nlp→reasoning→execution→nlp
+        "modify_dependencies",
+        "execution",
+        new_dependencies=[
+            "governance",
+            "nlp",
+        ],  # nlp zaten execution'a bağımlı değil ama execution→nlp olunca döngü: nlp→reasoning→execution→nlp
         risk_score=1.0,
     ).proposal_id
 )
@@ -141,7 +150,8 @@ print("=" * 72)
 engine.apply_change(
     engine.propose_architecture_change(
         "Fix execution dependency (remove cycle)",
-        "modify_dependencies", "execution",
+        "modify_dependencies",
+        "execution",
         new_dependencies=["governance"],
         risk_score=0.2,
     ).proposal_id
@@ -151,7 +161,8 @@ engine.apply_change(
 engine.apply_change(
     engine.propose_architecture_change(
         "INJECT CYCLE: storage → api",
-        "modify_dependencies", "storage",
+        "modify_dependencies",
+        "storage",
         new_dependencies=["api"],
         risk_score=1.0,
     ).proposal_id
@@ -187,7 +198,8 @@ topo_count_before = len(engine.get_topology())
 
 proposal = engine.propose_architecture_change(
     "Add new AI verification module",
-    "add_module", "ai_verifier",
+    "add_module",
+    "ai_verifier",
     new_dependencies=["reasoning", "storage"],
     risk_score=0.4,
 )
@@ -233,7 +245,8 @@ topo_count_before = len(engine.get_topology())
 
 proposal = engine.propose_architecture_change(
     "Remove AI verification module",
-    "remove_module", "ai_verifier",
+    "remove_module",
+    "ai_verifier",
     risk_score=0.2,
 )
 applied = engine.apply_change(proposal.proposal_id)
@@ -263,6 +276,7 @@ print("ADIM 6: Kod analizi — Gerçek graph algoritması var mı?")
 print("=" * 72)
 
 import inspect
+
 from intelgraph.core.metaintel import architecture as arch_mod
 
 # detect_cycles kaynak kodunu incele

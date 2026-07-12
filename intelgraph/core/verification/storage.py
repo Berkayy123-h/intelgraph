@@ -1,8 +1,12 @@
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
-from intelgraph.core.verification.base import OperationalState, VerificationRecord, VerificationState
+from intelgraph.core.verification.base import (
+    OperationalState,
+    VerificationRecord,
+    VerificationState,
+)
 
 VERIFICATION_SCHEMA_SQL = """
 
@@ -64,14 +68,25 @@ class VerificationStorage:
                 matched_rules, reasoning, computation_steps, version, is_high_impact,
                 created_at, updated_at)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (record.verification_id, record.entity_id, record.entity_type,
-             record.verification_state.name_lower, record.operational_state.name_lower,
-             record.confidence, record.consensus, record.contradiction,
-             record.source_count, record.human_review_boost,
-             _serialize(record.matched_rules), record.reasoning,
-             _serialize(record.computation_steps), record.version,
-             1 if record.is_high_impact else 0,
-             record.created_at.isoformat(), record.updated_at.isoformat()),
+            (
+                record.verification_id,
+                record.entity_id,
+                record.entity_type,
+                record.verification_state.name_lower,
+                record.operational_state.name_lower,
+                record.confidence,
+                record.consensus,
+                record.contradiction,
+                record.source_count,
+                record.human_review_boost,
+                _serialize(record.matched_rules),
+                record.reasoning,
+                _serialize(record.computation_steps),
+                record.version,
+                1 if record.is_high_impact else 0,
+                record.created_at.isoformat(),
+                record.updated_at.isoformat(),
+            ),
         )
         conn.commit()
 
@@ -82,10 +97,17 @@ class VerificationStorage:
                (verification_id, version, entity_id, verification_state, operational_state,
                 confidence, reasoning, created_at, operation)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (record.verification_id, record.version, record.entity_id,
-             record.verification_state.name_lower, record.operational_state.name_lower,
-             record.confidence, record.reasoning,
-             datetime.now(timezone.utc).isoformat(), operation),
+            (
+                record.verification_id,
+                record.version,
+                record.entity_id,
+                record.verification_state.name_lower,
+                record.operational_state.name_lower,
+                record.confidence,
+                record.reasoning,
+                datetime.now(UTC).isoformat(),
+                operation,
+            ),
         )
         conn.commit()
 

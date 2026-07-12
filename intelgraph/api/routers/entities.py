@@ -4,7 +4,6 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from intelgraph.api.dependencies import ServiceContainer
 from intelgraph.api.models import EntityCreate, EntityUpdate
 from intelgraph.core.storage.audit import AuditEntry
 
@@ -13,6 +12,7 @@ router = APIRouter(prefix="/entities", tags=["entities"])
 
 def _get_backend() -> Any:
     from intelgraph.api.main import _container
+
     return _container.backend
 
 
@@ -21,8 +21,29 @@ _ENTITY_CLASSES: dict[str, type] = {}
 
 def _get_entity_class(entity_type: str) -> type | None:
     if not _ENTITY_CLASSES:
-        from intelgraph.core.entity import Person, Company, Domain, Email, Username, IPAddress, Technology, Certificate, CveEntity
-        for cls in (Person, Company, Domain, Email, Username, IPAddress, Technology, Certificate, CveEntity):
+        from intelgraph.core.entity import (
+            Certificate,
+            Company,
+            CveEntity,
+            Domain,
+            Email,
+            IPAddress,
+            Person,
+            Technology,
+            Username,
+        )
+
+        for cls in (
+            Person,
+            Company,
+            Domain,
+            Email,
+            Username,
+            IPAddress,
+            Technology,
+            Certificate,
+            CveEntity,
+        ):
             _ENTITY_CLASSES[cls.__name__.lower()] = cls
             _ENTITY_CLASSES[cls.__name__] = cls
     return _ENTITY_CLASSES.get(entity_type.lower()) or _ENTITY_CLASSES.get(entity_type)
@@ -42,6 +63,7 @@ def get_entity(entity_id: str, backend: Any = Depends(_get_backend)):
 
 def _get_audit() -> Any:
     from intelgraph.api.main import _container
+
     return _container.audit
 
 
@@ -55,8 +77,10 @@ def _get_actor(request: Request) -> str:
     summary="Create entity",
     description="Create a new entity with a given type and attributes.",
 )
-def create_entity(body: EntityCreate, backend: Any = Depends(_get_backend), request: Request = None):
-    from intelgraph.core.storage.serializers import _entity_to_dict
+def create_entity(
+    body: EntityCreate, backend: Any = Depends(_get_backend), request: Request = None
+):
+
     cls = _get_entity_class(body.entity_type)
     if cls is None:
         raise HTTPException(status_code=400, detail=f"Unknown entity type: {body.entity_type}")
@@ -79,7 +103,12 @@ def create_entity(body: EntityCreate, backend: Any = Depends(_get_backend), requ
     summary="Update entity",
     description="Update an existing entity's attributes.",
 )
-def update_entity(entity_id: str, body: EntityUpdate, backend: Any = Depends(_get_backend), request: Request = None):
+def update_entity(
+    entity_id: str,
+    body: EntityUpdate,
+    backend: Any = Depends(_get_backend),
+    request: Request = None,
+):
     existing = backend.get_entity(entity_id)
     if existing is None:
         raise HTTPException(status_code=404, detail=f"Entity {entity_id} not found")

@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import time
-import uuid
-from collections import defaultdict
 from typing import Any
 
 
@@ -38,11 +35,13 @@ class DependencyValidator:
                 _dfs(node, [])
         cycle_ids = [c[0] for c in cycles] if cycles else []
         if cycles:
-            self._violations.append({
-                "type": "circular_dependency",
-                "cycles": cycles,
-                "severity": "critical",
-            })
+            self._violations.append(
+                {
+                    "type": "circular_dependency",
+                    "cycles": cycles,
+                    "severity": "critical",
+                }
+            )
         return cycle_ids
 
     def validate_all_registered(self, registered_modules: set[str]) -> list[str]:
@@ -52,20 +51,24 @@ class DependencyValidator:
                 if dep not in registered_modules:
                     unregistered.append(f"{module_id} depends on unregistered {dep}")
         if unregistered:
-            self._violations.append({
-                "type": "unregistered_dependency",
-                "details": unregistered,
-                "severity": "high",
-            })
+            self._violations.append(
+                {
+                    "type": "unregistered_dependency",
+                    "details": unregistered,
+                    "severity": "high",
+                }
+            )
         return unregistered
 
     def validate_no_unsafe_injection(self, module_id: str, proposed_dep: str) -> bool:
         if module_id == proposed_dep:
-            self._violations.append({
-                "type": "self_dependency",
-                "module": module_id,
-                "severity": "critical",
-            })
+            self._violations.append(
+                {
+                    "type": "self_dependency",
+                    "module": module_id,
+                    "severity": "critical",
+                }
+            )
             return False
         temp = dict(self._dependencies)
         temp.setdefault(module_id, [])
@@ -74,12 +77,14 @@ class DependencyValidator:
         checker._dependencies = temp
         cycles = checker.validate_no_circular()
         if cycles:
-            self._violations.append({
-                "type": "unsafe_dependency_injection",
-                "module": module_id,
-                "proposed_dep": proposed_dep,
-                "severity": "critical",
-            })
+            self._violations.append(
+                {
+                    "type": "unsafe_dependency_injection",
+                    "module": module_id,
+                    "proposed_dep": proposed_dep,
+                    "severity": "critical",
+                }
+            )
             return False
         return True
 

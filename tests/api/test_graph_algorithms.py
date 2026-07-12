@@ -8,9 +8,14 @@ from intelgraph.api.main import create_app
 def _admin_token():
     app = create_app({"storage": {"path": ":memory:"}})
     with TestClient(app) as c:
-        resp = c.post("/auth/register", json={
-            "username": "admin", "password": "admin123", "role": "admin",
-        })
+        resp = c.post(
+            "/auth/register",
+            json={
+                "username": "admin",
+                "password": "admin123",
+                "role": "admin",
+            },
+        )
         assert resp.status_code == 200
         return resp.json()["access_token"]
 
@@ -31,22 +36,48 @@ def auth_client(client, _admin_token):
 @pytest.fixture
 def seeded_client(client, _admin_token):
     client.headers["Authorization"] = f"Bearer {_admin_token}"
-    alice = client.post("/entities", json={"entity_type": "person", "attributes": {"name": "Alice"}}).json()["id"]
-    bob = client.post("/entities", json={"entity_type": "person", "attributes": {"name": "Bob"}}).json()["id"]
-    carol = client.post("/entities", json={"entity_type": "person", "attributes": {"name": "Carol"}}).json()["id"]
-    dave = client.post("/entities", json={"entity_type": "person", "attributes": {"name": "Dave"}}).json()["id"]
-    client.post("/relationships", json={
-        "type": "RELATED_TO", "source_id": alice, "target_id": bob,
-        "confidence_score": 90, "trust_weight": 80,
-    }).raise_for_status()
-    client.post("/relationships", json={
-        "type": "RELATED_TO", "source_id": bob, "target_id": carol,
-        "confidence_score": 80, "trust_weight": 70,
-    }).raise_for_status()
-    client.post("/relationships", json={
-        "type": "RELATED_TO", "source_id": carol, "target_id": dave,
-        "confidence_score": 70, "trust_weight": 60,
-    }).raise_for_status()
+    alice = client.post(
+        "/entities", json={"entity_type": "person", "attributes": {"name": "Alice"}}
+    ).json()["id"]
+    bob = client.post(
+        "/entities", json={"entity_type": "person", "attributes": {"name": "Bob"}}
+    ).json()["id"]
+    carol = client.post(
+        "/entities", json={"entity_type": "person", "attributes": {"name": "Carol"}}
+    ).json()["id"]
+    dave = client.post(
+        "/entities", json={"entity_type": "person", "attributes": {"name": "Dave"}}
+    ).json()["id"]
+    client.post(
+        "/relationships",
+        json={
+            "type": "RELATED_TO",
+            "source_id": alice,
+            "target_id": bob,
+            "confidence_score": 90,
+            "trust_weight": 80,
+        },
+    ).raise_for_status()
+    client.post(
+        "/relationships",
+        json={
+            "type": "RELATED_TO",
+            "source_id": bob,
+            "target_id": carol,
+            "confidence_score": 80,
+            "trust_weight": 70,
+        },
+    ).raise_for_status()
+    client.post(
+        "/relationships",
+        json={
+            "type": "RELATED_TO",
+            "source_id": carol,
+            "target_id": dave,
+            "confidence_score": 70,
+            "trust_weight": 60,
+        },
+    ).raise_for_status()
     return client, alice, bob, carol, dave
 
 
@@ -149,7 +180,15 @@ class TestShortestPathAPI:
         client, *_ = seeded_client
         resp = client.post(
             "/graph/algorithms/shortest-path",
-            params={"source_id": "nonexistent", "target_id": list(client.post("/entities", json={"entity_type": "person", "attributes": {"name": "X"}}).json()["id"] for _ in range(1))[0]},
+            params={
+                "source_id": "nonexistent",
+                "target_id": list(
+                    client.post(
+                        "/entities", json={"entity_type": "person", "attributes": {"name": "X"}}
+                    ).json()["id"]
+                    for _ in range(1)
+                )[0],
+            },
         )
         assert resp.status_code == 404
 
@@ -189,6 +228,7 @@ class TestAnalyticsAPI:
 class TestMetricsIntegration:
     def test_mst_records_gauge(self, seeded_client):
         from intelgraph.core.enterprise import get_metrics
+
         client, *_ = seeded_client
         client.post("/graph/algorithms/mst", params={"algorithm": "kruskal"})
         snap = get_metrics().snapshot()
@@ -197,6 +237,7 @@ class TestMetricsIntegration:
 
     def test_diameter_records_gauge(self, seeded_client):
         from intelgraph.core.enterprise import get_metrics
+
         client, *_ = seeded_client
         client.post("/graph/algorithms/diameter")
         snap = get_metrics().snapshot()

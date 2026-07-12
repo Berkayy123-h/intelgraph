@@ -1,6 +1,11 @@
 from typing import Any
 
-from intelgraph.core.evidence_chain.base import EvidenceChain, EvidenceItem, EvidenceStatus, SupportType
+from intelgraph.core.evidence_chain.base import (
+    EvidenceChain,
+    EvidenceItem,
+    EvidenceStatus,
+    SupportType,
+)
 
 
 class ConfidenceComputer:
@@ -17,10 +22,7 @@ class ConfidenceComputer:
         # Only non-NEUTRAL evidence participates in the weighted average.
         # NEUTRAL evidence is "no opinion" — it provides context but doesn't
         # affect the confidence score directly.
-        opinion_items = [
-            e for e in chain.evidence
-            if e.support_type != SupportType.NEUTRAL
-        ]
+        opinion_items = [e for e in chain.evidence if e.support_type != SupportType.NEUTRAL]
 
         for item in opinion_items:
             base_conf = item.confidence
@@ -29,13 +31,15 @@ class ConfidenceComputer:
             adjusted = base_conf * weight
             weighted_sum += adjusted
             total_weight += weight
-            explanation.append({
-                "evidence_id": item.evidence_id,
-                "base_confidence": base_conf,
-                "source_trust": source_trust,
-                "weight": round(weight, 4),
-                "adjusted": round(adjusted, 2),
-            })
+            explanation.append(
+                {
+                    "evidence_id": item.evidence_id,
+                    "base_confidence": base_conf,
+                    "source_trust": source_trust,
+                    "weight": round(weight, 4),
+                    "adjusted": round(adjusted, 2),
+                }
+            )
 
         base_aggregated = weighted_sum / total_weight if total_weight > 0 else 0.0
 

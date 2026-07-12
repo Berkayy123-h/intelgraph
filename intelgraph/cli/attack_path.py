@@ -4,13 +4,14 @@ import json
 
 import click
 
+from intelgraph.core.graph.attack_path import AttackPathAnalyzer
 from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.graph.node import Node
-from intelgraph.core.graph.attack_path import AttackPathAnalyzer
 
 
 def _build_graph(ctx: click.Context) -> IntelligenceGraph:
     from intelgraph.core.storage.sqlite_backend import SQLiteBackend
+
     cfg = ctx.obj["config"]
     db_path = cfg.get("storage", {}).get("path", "intelgraph.db")
     backend = SQLiteBackend(db_path)
@@ -28,6 +29,7 @@ def _build_graph(ctx: click.Context) -> IntelligenceGraph:
         tgt = rel.target_id
         if src in g.nodes and tgt in g.nodes:
             from intelgraph.core.graph.edge import Edge
+
             g.adjacency.setdefault(src, set()).add(tgt)
             g.adjacency.setdefault(tgt, set()).add(src)
             g.forward_adjacency.setdefault(src, set()).add(tgt)
@@ -67,7 +69,9 @@ def find(ctx: click.Context, source: str, target: str, output: str | None) -> No
 @click.option("--max-depth", default=5, type=int, help="Maximum path depth")
 @click.option("--output", "-o", default=None, help="Output file path (JSON)")
 @click.pass_context
-def all_paths(ctx: click.Context, source: str, target: str | None, max_depth: int, output: str | None) -> None:
+def all_paths(
+    ctx: click.Context, source: str, target: str | None, max_depth: int, output: str | None
+) -> None:
     if max_depth < 1 or max_depth > 10:
         click.echo("max-depth must be between 1 and 10", err=True)
         raise click.Abort()

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 # UTE import — SSOT delegates storage to UnifiedTruthEngine
@@ -31,7 +31,9 @@ class UnifiedStateEntry:
 
 
 class SingleSourceOfTruth:
-    def __init__(self, config: dict[str, Any] | None = None, truth_engine: UnifiedTruthEngine | None = None) -> None:
+    def __init__(
+        self, config: dict[str, Any] | None = None, truth_engine: UnifiedTruthEngine | None = None
+    ) -> None:
         self._cfg = config or {}
         self._engine = truth_engine or UnifiedTruthEngine(config)
         self._state: dict[str, UnifiedStateEntry] = {}
@@ -41,7 +43,9 @@ class SingleSourceOfTruth:
 
     def set(self, key: str, value: Any, source: str, confidence: float = 0.5) -> dict[str, Any]:
         # Delegate write to UnifiedTruthEngine (single source of truth)
-        engine_result = self._engine.write(key=key, value=value, source=source, confidence=confidence)
+        engine_result = self._engine.write(
+            key=key, value=value, source=source, confidence=confidence
+        )
         # Map UTE action names to SSOT action names for backward compat
         action_map = {"written": "set", "overwritten": "reconciled"}
         if engine_result.get("action") in action_map:
@@ -58,7 +62,8 @@ class SingleSourceOfTruth:
             return existing
         entry = UnifiedStateEntry(
             entry_id=f"us_{uuid.uuid4().hex[:12]}",
-            key=key, value=raw.get("value"),
+            key=key,
+            value=raw.get("value"),
             source=raw.get("source", "unknown"),
             confidence=raw.get("confidence", 0.0),
             timestamp=raw.get("updated_at", time.time()),
@@ -79,7 +84,8 @@ class SingleSourceOfTruth:
         for k, v in all_raw.items():
             entry = UnifiedStateEntry(
                 entry_id=f"us_{uuid.uuid4().hex[:12]}",
-                key=k, value=v.get("value"),
+                key=k,
+                value=v.get("value"),
                 source=v.get("source", "unknown"),
                 confidence=v.get("confidence", 0.0),
                 timestamp=v.get("updated_at", time.time()),

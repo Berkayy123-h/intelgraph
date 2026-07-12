@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import threading
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from intelgraph.core.entity import BaseEntity
@@ -16,6 +16,7 @@ try:
     import psycopg2
     import psycopg2.extras
     from psycopg2 import pool as pg_pool
+
     HAS_PSYCOPG2 = True
 except ImportError:
     HAS_PSYCOPG2 = False
@@ -111,7 +112,7 @@ class PostgresBackend(StorageBackend):
         conn = self._require()
         try:
             data = _entity_to_dict(entity)
-            now = datetime.now(timezone.utc).isoformat()
+            now = datetime.now(UTC).isoformat()
             with self._lock:
                 with conn.cursor() as cur:
                     cur.execute(
@@ -122,17 +123,32 @@ class PostgresBackend(StorageBackend):
                            version = EXCLUDED.version, data = EXCLUDED.data,
                            confidence_score = EXCLUDED.confidence_score, trust_score = EXCLUDED.trust_score,
                            updated_at = EXCLUDED.updated_at, is_latest = 1""",
-                        (entity.id, entity.entity_type.type_name, entity.version,
-                         json.dumps(data, default=str), entity.confidence_score,
-                         entity.trust_score, entity.created_at.isoformat(), now),
+                        (
+                            entity.id,
+                            entity.entity_type.type_name,
+                            entity.version,
+                            json.dumps(data, default=str),
+                            entity.confidence_score,
+                            entity.trust_score,
+                            entity.created_at.isoformat(),
+                            now,
+                        ),
                     )
                     cur.execute(
                         """INSERT INTO entity_versions
                            (id, version, entity_type, data, confidence_score, trust_score, created_at, updated_at, operation)
                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                        (entity.id, entity.version, entity.entity_type.type_name,
-                         json.dumps(data, default=str), entity.confidence_score,
-                         entity.trust_score, entity.created_at.isoformat(), now, operation),
+                        (
+                            entity.id,
+                            entity.version,
+                            entity.entity_type.type_name,
+                            json.dumps(data, default=str),
+                            entity.confidence_score,
+                            entity.trust_score,
+                            entity.created_at.isoformat(),
+                            now,
+                            operation,
+                        ),
                     )
                 conn.commit()
         finally:
@@ -171,7 +187,7 @@ class PostgresBackend(StorageBackend):
     def delete_entity(self, entity_id: str) -> None:
         conn = self._require()
         try:
-            now = datetime.now(timezone.utc).isoformat()
+            now = datetime.now(UTC).isoformat()
             with self._lock:
                 with conn.cursor() as cur:
                     entity = self.get_entity(entity_id)
@@ -181,10 +197,16 @@ class PostgresBackend(StorageBackend):
                             """INSERT INTO entity_versions
                                (id, version, entity_type, data, confidence_score, trust_score, created_at, updated_at, operation)
                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'DELETE')""",
-                            (entity.id, entity.version + 1, entity.entity_type.type_name,
-                             json.dumps(_entity_to_dict(entity), default=str),
-                             entity.confidence_score, entity.trust_score,
-                             entity.created_at.isoformat(), now),
+                            (
+                                entity.id,
+                                entity.version + 1,
+                                entity.entity_type.type_name,
+                                json.dumps(_entity_to_dict(entity), default=str),
+                                entity.confidence_score,
+                                entity.trust_score,
+                                entity.created_at.isoformat(),
+                                now,
+                            ),
                         )
                 conn.commit()
         finally:
@@ -200,9 +222,7 @@ class PostgresBackend(StorageBackend):
                         (entity_type,),
                     )
                 else:
-                    cur.execute(
-                        "SELECT data, entity_type FROM entities WHERE is_latest = 1"
-                    )
+                    cur.execute("SELECT data, entity_type FROM entities WHERE is_latest = 1")
                 return [_dict_to_entity(json.loads(r[0]), r[1]) for r in cur.fetchall()]
         finally:
             self._release(conn)
@@ -225,7 +245,7 @@ class PostgresBackend(StorageBackend):
         conn = self._require()
         try:
             data = _relationship_to_dict(relationship)
-            now = datetime.now(timezone.utc).isoformat()
+            now = datetime.now(UTC).isoformat()
             with self._lock:
                 with conn.cursor() as cur:
                     cur.execute(
@@ -236,20 +256,34 @@ class PostgresBackend(StorageBackend):
                            version = EXCLUDED.version, data = EXCLUDED.data,
                            confidence_score = EXCLUDED.confidence_score, trust_weight = EXCLUDED.trust_weight,
                            created_at = EXCLUDED.created_at, is_latest = 1""",
-                        (relationship.id, relationship.type.type_name,
-                         relationship.source_id, relationship.target_id,
-                         relationship.version, json.dumps(data, default=str),
-                         relationship.confidence_score, relationship.trust_weight, now),
+                        (
+                            relationship.id,
+                            relationship.type.type_name,
+                            relationship.source_id,
+                            relationship.target_id,
+                            relationship.version,
+                            json.dumps(data, default=str),
+                            relationship.confidence_score,
+                            relationship.trust_weight,
+                            now,
+                        ),
                     )
                     cur.execute(
                         """INSERT INTO relationship_versions
                            (id, version, type, source_id, target_id, data, confidence_score, trust_weight, created_at, operation)
                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                        (relationship.id, relationship.version,
-                         relationship.type.type_name, relationship.source_id,
-                         relationship.target_id, json.dumps(data, default=str),
-                         relationship.confidence_score, relationship.trust_weight,
-                         now, operation),
+                        (
+                            relationship.id,
+                            relationship.version,
+                            relationship.type.type_name,
+                            relationship.source_id,
+                            relationship.target_id,
+                            json.dumps(data, default=str),
+                            relationship.confidence_score,
+                            relationship.trust_weight,
+                            now,
+                            operation,
+                        ),
                     )
                 conn.commit()
         finally:
@@ -273,7 +307,7 @@ class PostgresBackend(StorageBackend):
     def delete_relationship(self, relationship_id: str) -> None:
         conn = self._require()
         try:
-            now = datetime.now(timezone.utc).isoformat()
+            now = datetime.now(UTC).isoformat()
             with self._lock:
                 with conn.cursor() as cur:
                     rel = self.get_relationship(relationship_id)
@@ -286,10 +320,17 @@ class PostgresBackend(StorageBackend):
                             """INSERT INTO relationship_versions
                                (id, version, type, source_id, target_id, data, confidence_score, trust_weight, created_at, operation)
                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'DELETE')""",
-                            (rel.id, rel.version + 1, rel.type.type_name,
-                             rel.source_id, rel.target_id,
-                             json.dumps(_relationship_to_dict(rel), default=str),
-                             rel.confidence_score, rel.trust_weight, now),
+                            (
+                                rel.id,
+                                rel.version + 1,
+                                rel.type.type_name,
+                                rel.source_id,
+                                rel.target_id,
+                                json.dumps(_relationship_to_dict(rel), default=str),
+                                rel.confidence_score,
+                                rel.trust_weight,
+                                now,
+                            ),
                         )
                 conn.commit()
         finally:
@@ -312,9 +353,7 @@ class PostgresBackend(StorageBackend):
                         (target_id,),
                     )
                 else:
-                    cur.execute(
-                        "SELECT data, type FROM relationships WHERE is_latest = 1"
-                    )
+                    cur.execute("SELECT data, type FROM relationships WHERE is_latest = 1")
                 return [_dict_to_relationship(json.loads(r[0]), r[1]) for r in cur.fetchall()]
         finally:
             self._release(conn)
@@ -330,9 +369,15 @@ class PostgresBackend(StorageBackend):
                        (id, entity_id, collection_id, collector_name, collected_at, source_lineage, raw_data_hash)
                        VALUES (%s, %s, %s, %s, %s, %s, %s)
                        ON CONFLICT (id) DO NOTHING""",
-                    (provenance.collection_id, entity_id, provenance.collection_id,
-                     provenance.collector_name, provenance.collected_at.isoformat(),
-                     json.dumps(_provenance_to_dict(provenance), default=str), ""),
+                    (
+                        provenance.collection_id,
+                        entity_id,
+                        provenance.collection_id,
+                        provenance.collector_name,
+                        provenance.collected_at.isoformat(),
+                        json.dumps(_provenance_to_dict(provenance), default=str),
+                        "",
+                    ),
                 )
             conn.commit()
         finally:
@@ -342,18 +387,18 @@ class PostgresBackend(StorageBackend):
         conn = self._require()
         try:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-                cur.execute(
-                    "SELECT * FROM provenance WHERE entity_id = %s", (entity_id,)
-                )
+                cur.execute("SELECT * FROM provenance WHERE entity_id = %s", (entity_id,))
                 result = []
                 for r in cur.fetchall():
                     sl = json.loads(r["source_lineage"]) if r["source_lineage"] else None
-                    result.append(Provenance(
-                        collection_id=r["collection_id"],
-                        collector_name=r["collector_name"],
-                        collected_at=datetime.fromisoformat(r["collected_at"]),
-                        source_lineage=sl,
-                    ))
+                    result.append(
+                        Provenance(
+                            collection_id=r["collection_id"],
+                            collector_name=r["collector_name"],
+                            collected_at=datetime.fromisoformat(r["collected_at"]),
+                            source_lineage=sl,
+                        )
+                    )
                 return result
         finally:
             self._release(conn)
@@ -372,9 +417,16 @@ class PostgresBackend(StorageBackend):
                        ON CONFLICT (id) DO UPDATE SET
                        trust_score = EXCLUDED.trust_score,
                        reliability_score = EXCLUDED.reliability_score""",
-                    (evidence.id, eid, evidence.source,
-                     evidence.content, evidence.collected_at.isoformat(),
-                     evidence.source_tier, evidence.trust_score, evidence.reliability_score),
+                    (
+                        evidence.id,
+                        eid,
+                        evidence.source,
+                        evidence.content,
+                        evidence.collected_at.isoformat(),
+                        evidence.source_tier,
+                        evidence.trust_score,
+                        evidence.reliability_score,
+                    ),
                 )
             conn.commit()
         finally:
@@ -384,9 +436,7 @@ class PostgresBackend(StorageBackend):
         conn = self._require()
         try:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-                cur.execute(
-                    "SELECT * FROM collection_evidence WHERE entity_id = %s", (entity_id,)
-                )
+                cur.execute("SELECT * FROM collection_evidence WHERE entity_id = %s", (entity_id,))
                 return [
                     Evidence(
                         id=r["id"],
@@ -417,10 +467,17 @@ class PostgresBackend(StorageBackend):
                        source_tier = EXCLUDED.source_tier, trust_score = EXCLUDED.trust_score,
                        reliability_score = EXCLUDED.reliability_score,
                        last_validated = EXCLUDED.last_validated""",
-                    (source["id"], source["source_name"], source["source_url"],
-                     source["source_tier"], source["trust_score"], source["reliability_score"],
-                     source.get("last_validated", ""), source.get("classification", ""),
-                     source.get("metadata", "{}")),
+                    (
+                        source["id"],
+                        source["source_name"],
+                        source["source_url"],
+                        source["source_tier"],
+                        source["trust_score"],
+                        source["reliability_score"],
+                        source.get("last_validated", ""),
+                        source.get("classification", ""),
+                        source.get("metadata", "{}"),
+                    ),
                 )
             conn.commit()
         finally:
@@ -430,9 +487,7 @@ class PostgresBackend(StorageBackend):
         conn = self._require()
         try:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-                cur.execute(
-                    "SELECT * FROM source_registry WHERE id = %s", (source_id,)
-                )
+                cur.execute("SELECT * FROM source_registry WHERE id = %s", (source_id,))
                 row = cur.fetchone()
                 return dict(row) if row else None
         finally:
@@ -463,15 +518,18 @@ class PostgresBackend(StorageBackend):
                        highest_confidence = EXCLUDED.highest_confidence,
                        highest_trust = EXCLUDED.highest_trust,
                        updated_at = EXCLUDED.updated_at""",
-                    (canonical["canonical_id"], canonical["entity_type"],
-                     canonical["canonical_name"],
-                     json.dumps(list(canonical.get("linked_entity_ids", set()))),
-                     json.dumps(list(canonical.get("aliases", set()))),
-                     canonical.get("highest_confidence", 0),
-                     canonical.get("highest_trust", 0),
-                     canonical.get("created_at", datetime.now(timezone.utc).isoformat()),
-                     datetime.now(timezone.utc).isoformat(),
-                     json.dumps(canonical.get("properties", {}), default=str)),
+                    (
+                        canonical["canonical_id"],
+                        canonical["entity_type"],
+                        canonical["canonical_name"],
+                        json.dumps(list(canonical.get("linked_entity_ids", set()))),
+                        json.dumps(list(canonical.get("aliases", set()))),
+                        canonical.get("highest_confidence", 0),
+                        canonical.get("highest_trust", 0),
+                        canonical.get("created_at", datetime.now(UTC).isoformat()),
+                        datetime.now(UTC).isoformat(),
+                        json.dumps(canonical.get("properties", {}), default=str),
+                    ),
                 )
             conn.commit()
         finally:
@@ -513,8 +571,13 @@ class PostgresBackend(StorageBackend):
     # ── Snapshots ──
 
     def create_snapshot(
-        self, snapshot_id: str, label: str, data: dict[str, Any],
-        entity_count: int, relationship_count: int, metadata: dict[str, Any] | None = None,
+        self,
+        snapshot_id: str,
+        label: str,
+        data: dict[str, Any],
+        entity_count: int,
+        relationship_count: int,
+        metadata: dict[str, Any] | None = None,
     ) -> str:
         conn = self._require()
         try:
@@ -523,9 +586,15 @@ class PostgresBackend(StorageBackend):
                     """INSERT INTO snapshots
                        (id, label, entity_count, relationship_count, data, created_at, metadata)
                        VALUES (%s, %s, %s, %s, %s, %s, %s)""",
-                    (snapshot_id, label, entity_count, relationship_count,
-                     json.dumps(data, default=str), datetime.now(timezone.utc).isoformat(),
-                     json.dumps(metadata or {}, default=str)),
+                    (
+                        snapshot_id,
+                        label,
+                        entity_count,
+                        relationship_count,
+                        json.dumps(data, default=str),
+                        datetime.now(UTC).isoformat(),
+                        json.dumps(metadata or {}, default=str),
+                    ),
                 )
             conn.commit()
             return snapshot_id
@@ -563,17 +632,23 @@ class PostgresBackend(StorageBackend):
                     """INSERT INTO audit_log
                        (id, entity_id, entity_type, operation, old_data, new_data, actor, correlation_id, timestamp)
                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                    (entry["id"], entry.get("entity_id"), entry.get("entity_type"),
-                     entry["operation"], entry.get("old_data"), entry.get("new_data"),
-                     entry.get("actor"), entry.get("correlation_id"), entry["timestamp"]),
+                    (
+                        entry["id"],
+                        entry.get("entity_id"),
+                        entry.get("entity_type"),
+                        entry["operation"],
+                        entry.get("old_data"),
+                        entry.get("new_data"),
+                        entry.get("actor"),
+                        entry.get("correlation_id"),
+                        entry["timestamp"],
+                    ),
                 )
             conn.commit()
         finally:
             self._release(conn)
 
-    def query_audit(
-        self, entity_id: str | None = None, limit: int = 100
-    ) -> list[dict[str, Any]]:
+    def query_audit(self, entity_id: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
         conn = self._require()
         try:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -599,7 +674,7 @@ class PostgresBackend(StorageBackend):
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
                 cur.execute(
                     "SELECT * FROM cache WHERE key = %s AND (expires_at IS NULL OR expires_at >= %s)",
-                    (key, datetime.now(timezone.utc).isoformat()),
+                    (key, datetime.now(UTC).isoformat()),
                 )
                 row = cur.fetchone()
                 return dict(row) if row else None
@@ -612,7 +687,7 @@ class PostgresBackend(StorageBackend):
             with conn.cursor() as cur:
                 cur.execute(
                     "INSERT INTO cache (key, value, expires_at, created_at) VALUES (%s, %s, %s, %s) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, expires_at = EXCLUDED.expires_at",
-                    (key, value, expires_at, datetime.now(timezone.utc).isoformat()),
+                    (key, value, expires_at, datetime.now(UTC).isoformat()),
                 )
             conn.commit()
         finally:

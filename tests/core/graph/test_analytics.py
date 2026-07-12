@@ -9,13 +9,19 @@ from intelgraph.core.relationship.types import RelationshipType
 
 def _add_undirected_edge(g: IntelligenceGraph, src_id: str, tgt_id: str) -> None:
     r1 = Relationship(
-        source_id=src_id, target_id=tgt_id,
-        type=RelationshipType.RELATED_TO, confidence_score=80, trust_weight=70,
+        source_id=src_id,
+        target_id=tgt_id,
+        type=RelationshipType.RELATED_TO,
+        confidence_score=80,
+        trust_weight=70,
     )
     g.add_relationship(r1)
     r2 = Relationship(
-        source_id=tgt_id, target_id=src_id,
-        type=RelationshipType.RELATED_TO, confidence_score=80, trust_weight=70,
+        source_id=tgt_id,
+        target_id=src_id,
+        type=RelationshipType.RELATED_TO,
+        confidence_score=80,
+        trust_weight=70,
     )
     g.add_relationship(r2)
 
@@ -66,7 +72,13 @@ class TestDegreeCentrality:
         b = Person(name="B")
         g.add_entity(a)
         g.add_entity(b)
-        r = Relationship(source_id=a.id, target_id=b.id, type=RelationshipType.RELATED_TO, confidence_score=80, trust_weight=70)
+        r = Relationship(
+            source_id=a.id,
+            target_id=b.id,
+            type=RelationshipType.RELATED_TO,
+            confidence_score=80,
+            trust_weight=70,
+        )
         g.add_relationship(r)
         an = GraphAnalytics(g)
         assert an.degree_centrality(a.id) == 1.0
@@ -248,7 +260,13 @@ class TestBetweennessCentrality:
         b = Person(name="B")
         g.add_entity(a)
         g.add_entity(b)
-        r = Relationship(source_id=a.id, target_id=b.id, type=RelationshipType.RELATED_TO, confidence_score=80, trust_weight=70)
+        r = Relationship(
+            source_id=a.id,
+            target_id=b.id,
+            type=RelationshipType.RELATED_TO,
+            confidence_score=80,
+            trust_weight=70,
+        )
         g.add_relationship(r)
         an = GraphAnalytics(g)
         assert an.betweenness_centrality(a.id) == 0.0
@@ -310,7 +328,13 @@ class TestClosenessCentrality:
         b = Person(name="B")
         g.add_entity(a)
         g.add_entity(b)
-        r = Relationship(source_id=a.id, target_id=b.id, type=RelationshipType.RELATED_TO, confidence_score=80, trust_weight=70)
+        r = Relationship(
+            source_id=a.id,
+            target_id=b.id,
+            type=RelationshipType.RELATED_TO,
+            confidence_score=80,
+            trust_weight=70,
+        )
         g.add_relationship(r)
         an = GraphAnalytics(g)
         assert an.closeness_centrality(a.id) == pytest.approx(1.0, abs=1e-4)
@@ -341,7 +365,13 @@ class TestClosenessCentrality:
         g.add_entity(a)
         g.add_entity(b)
         g.add_entity(c)
-        r = Relationship(source_id=a.id, target_id=b.id, type=RelationshipType.RELATED_TO, confidence_score=80, trust_weight=70)
+        r = Relationship(
+            source_id=a.id,
+            target_id=b.id,
+            type=RelationshipType.RELATED_TO,
+            confidence_score=80,
+            trust_weight=70,
+        )
         g.add_relationship(r)
         an = GraphAnalytics(g)
         cc_a = an.closeness_centrality(a.id)
@@ -380,7 +410,13 @@ class TestLocalClustering:
         b = Person(name="B")
         g.add_entity(a)
         g.add_entity(b)
-        r = Relationship(source_id=a.id, target_id=b.id, type=RelationshipType.RELATED_TO, confidence_score=80, trust_weight=70)
+        r = Relationship(
+            source_id=a.id,
+            target_id=b.id,
+            type=RelationshipType.RELATED_TO,
+            confidence_score=80,
+            trust_weight=70,
+        )
         g.add_relationship(r)
         an = GraphAnalytics(g)
         assert an.local_clustering(a.id) == 0.0

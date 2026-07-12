@@ -1,17 +1,15 @@
 import random
 from typing import Any
 
-import pytest
-
 from intelgraph.core.entity.person import Person
-from intelgraph.core.graph.graph import IntelligenceGraph
-from intelgraph.core.graph.edge import Edge
-from intelgraph.core.graph.node import Node
 from intelgraph.core.graph.attack_path import (
+    ATTACK_PATH_SCHEMA_VERSION,
     AttackPathAnalyzer,
     AttackPathCache,
-    ATTACK_PATH_SCHEMA_VERSION,
 )
+from intelgraph.core.graph.edge import Edge
+from intelgraph.core.graph.graph import IntelligenceGraph
+from intelgraph.core.graph.node import Node
 
 
 def _make_graph(seed: int = 42) -> IntelligenceGraph:
@@ -19,7 +17,12 @@ def _make_graph(seed: int = 42) -> IntelligenceGraph:
     g = IntelligenceGraph()
     for i in range(12):
         nid = f"node_{i}"
-        ent = Person(id=nid, name=f"Person {i}", confidence_score=min(50 + i * 5, 95), trust_score=min(40 + i * 5, 90))
+        ent = Person(
+            id=nid,
+            name=f"Person {i}",
+            confidence_score=min(50 + i * 5, 95),
+            trust_score=min(40 + i * 5, 90),
+        )
         n = Node(entity=ent)
         g.nodes[nid] = n
         g.adjacency[nid] = set()
@@ -27,14 +30,22 @@ def _make_graph(seed: int = 42) -> IntelligenceGraph:
         g.reverse_adjacency[nid] = set()
         g.node_edges[nid] = set()
     edges_data = [
-        ("node_0", "node_1", 80), ("node_0", "node_2", 60),
-        ("node_1", "node_3", 90), ("node_1", "node_4", 50),
-        ("node_2", "node_5", 70), ("node_2", "node_6", 40),
-        ("node_3", "node_7", 85), ("node_4", "node_8", 75),
-        ("node_5", "node_9", 65), ("node_6", "node_7", 55),
-        ("node_7", "node_8", 45), ("node_8", "node_9", 95),
-        ("node_3", "node_0", 30), ("node_5", "node_6", 35),
-        ("node_9", "node_10", 80), ("node_10", "node_11", 90),
+        ("node_0", "node_1", 80),
+        ("node_0", "node_2", 60),
+        ("node_1", "node_3", 90),
+        ("node_1", "node_4", 50),
+        ("node_2", "node_5", 70),
+        ("node_2", "node_6", 40),
+        ("node_3", "node_7", 85),
+        ("node_4", "node_8", 75),
+        ("node_5", "node_9", 65),
+        ("node_6", "node_7", 55),
+        ("node_7", "node_8", 45),
+        ("node_8", "node_9", 95),
+        ("node_3", "node_0", 30),
+        ("node_5", "node_6", 35),
+        ("node_9", "node_10", 80),
+        ("node_10", "node_11", 90),
     ]
     for idx, (src, tgt, conf) in enumerate(edges_data):
         eid = f"edge_{idx}"
@@ -54,6 +65,7 @@ def _make_graph(seed: int = 42) -> IntelligenceGraph:
 def _make_rel(eid: str, src: str, tgt: str, conf: int) -> Any:
     from intelgraph.core.relationship import Relationship
     from intelgraph.core.relationship.types import RelationshipType
+
     return Relationship(
         id=eid,
         source_id=src,
@@ -148,7 +160,9 @@ class TestAttackPathAnalyzer:
         g2 = _make_graph()
         analyzer2 = AttackPathAnalyzer(g2)
         # Find a path that doesn't exist by clearing edges for specific nodes
-        result2 = analyzer2.find_shortest_path("node_11", "node_0")  # no outgoing edges from node_11
+        result2 = analyzer2.find_shortest_path(
+            "node_11", "node_0"
+        )  # no outgoing edges from node_11
         assert "found" in result2
 
     def test_shortest_path_deterministic(self):

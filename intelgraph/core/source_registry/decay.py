@@ -1,7 +1,5 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
-
-from intelgraph.core.source_registry.scoring import TrustScorer
 
 
 class TrustDecayModel:
@@ -24,7 +22,7 @@ class TrustDecayModel:
         return 2.0 ** (-days_since_validation / half_life)
 
     def apply_decay(self, source_record: dict[str, Any]) -> dict[str, Any]:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         last_val = source_record.get("last_validated")
         if not last_val:
             return source_record
@@ -40,7 +38,9 @@ class TrustDecayModel:
 
         tier = source_record.get("source_tier", 3)
         factor = self.decay_factor(tier, days)
-        original_trust = source_record.get("_original_trust_score", source_record.get("trust_score", 0))
+        original_trust = source_record.get(
+            "_original_trust_score", source_record.get("trust_score", 0)
+        )
         source_record["_original_trust_score"] = original_trust
         decayed = round(original_trust * factor)
         source_record["trust_score"] = max(0, min(100, decayed))
@@ -58,7 +58,7 @@ class TrustDecayModel:
             last_dt = datetime.fromisoformat(str(last_val))
         except (ValueError, TypeError):
             return True
-        days = (datetime.now(timezone.utc) - last_dt).total_seconds() / 86400.0
+        days = (datetime.now(UTC) - last_dt).total_seconds() / 86400.0
         return days > half_life
 
     def effective_trust(self, source_record: dict[str, Any]) -> int:

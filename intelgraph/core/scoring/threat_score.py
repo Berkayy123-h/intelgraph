@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from intelgraph.core.entity.base import BaseEntity
@@ -30,14 +30,18 @@ def _unique_source_tiers(entity: BaseEntity) -> set[int]:
 def _evidence_source_count(entity: BaseEntity) -> int:
     sources: set[str] = set()
     for ev in getattr(entity, "evidence", ()):
-        src = ev.source if isinstance(ev, Evidence) else (ev.get("source", "") if isinstance(ev, dict) else "")
+        src = (
+            ev.source
+            if isinstance(ev, Evidence)
+            else (ev.get("source", "") if isinstance(ev, dict) else "")
+        )
         if src:
             sources.add(src)
     return len(sources)
 
 
 def _temporal_score(entity: BaseEntity) -> float:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     first = getattr(entity, "first_seen", None) or getattr(entity, "created_at", None)
     last = getattr(entity, "last_seen", None) or getattr(entity, "updated_at", None)
     score = 0.0
@@ -122,15 +126,17 @@ class ThreatScorer:
                 or getattr(entity, "cve_id", None)
                 or node_id
             )
-            results.append({
-                "node_id": node_id,
-                "entity_type": type(entity).__name__,
-                "entity_identifier": identifier,
-                "threat_score": s,
-                "confidence": getattr(entity, "confidence_score", 0),
-                "evidence_count": len(getattr(entity, "evidence", ())),
-                "edge_count": _node_edge_count(node_id, graph),
-            })
+            results.append(
+                {
+                    "node_id": node_id,
+                    "entity_type": type(entity).__name__,
+                    "entity_identifier": identifier,
+                    "threat_score": s,
+                    "confidence": getattr(entity, "confidence_score", 0),
+                    "evidence_count": len(getattr(entity, "evidence", ())),
+                    "edge_count": _node_edge_count(node_id, graph),
+                }
+            )
         results.sort(key=lambda r: -r["threat_score"])
         return results
 
@@ -148,6 +154,7 @@ def compute_threat_scores(graph: Any) -> dict[str, float]:
 
 
 _SCORE_CACHE: dict[int, dict[str, float]] = {}
+
 
 def _compute_node_scores(graph: Any) -> dict[str, float]:
     """Cached node score computation for graph.nodes_summary."""

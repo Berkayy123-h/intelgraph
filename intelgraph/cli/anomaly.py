@@ -4,13 +4,14 @@ import json
 
 import click
 
+from intelgraph.core.graph.anomaly import AnomalyDetector
 from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.graph.node import Node
-from intelgraph.core.graph.anomaly import AnomalyDetector
 
 
 def _build_graph(ctx: click.Context) -> IntelligenceGraph:
     from intelgraph.core.storage.sqlite_backend import SQLiteBackend
+
     cfg = ctx.obj["config"]
     db_path = cfg.get("storage", {}).get("path", "intelgraph.db")
     backend = SQLiteBackend(db_path)
@@ -28,6 +29,7 @@ def _build_graph(ctx: click.Context) -> IntelligenceGraph:
         tgt = rel.target_id
         if src in g.nodes and tgt in g.nodes:
             from intelgraph.core.graph.edge import Edge
+
             g.adjacency.setdefault(src, set()).add(tgt)
             g.adjacency.setdefault(tgt, set()).add(src)
             g.forward_adjacency.setdefault(src, set()).add(tgt)

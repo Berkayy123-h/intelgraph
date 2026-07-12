@@ -9,6 +9,7 @@ router = APIRouter(prefix="/sources", tags=["sources"])
 
 def _get_sr() -> Any:
     from intelgraph.api.main import _container
+
     return _container.source_registry
 
 

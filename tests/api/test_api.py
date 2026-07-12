@@ -8,9 +8,14 @@ from intelgraph.api.main import create_app
 def _admin_token():
     app = create_app({"storage": {"path": ":memory:"}})
     with TestClient(app) as c:
-        resp = c.post("/auth/register", json={
-            "username": "admin", "password": "admin123", "role": "admin",
-        })
+        resp = c.post(
+            "/auth/register",
+            json={
+                "username": "admin",
+                "password": "admin123",
+                "role": "admin",
+            },
+        )
         assert resp.status_code == 200
         return resp.json()["access_token"]
 
@@ -71,7 +76,9 @@ class TestAuth:
 
 class TestEntities:
     def test_create_entity(self, auth_client):
-        resp = auth_client.post("/entities", json={"entity_type": "person", "attributes": {"name": "Alice"}})
+        resp = auth_client.post(
+            "/entities", json={"entity_type": "person", "attributes": {"name": "Alice"}}
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert "id" in data
@@ -82,13 +89,17 @@ class TestEntities:
         assert resp.status_code == 404
 
     def test_get_entity(self, auth_client):
-        create = auth_client.post("/entities", json={"entity_type": "person", "attributes": {"name": "Bob"}})
+        create = auth_client.post(
+            "/entities", json={"entity_type": "person", "attributes": {"name": "Bob"}}
+        )
         eid = create.json()["id"]
         resp = auth_client.get(f"/entities/{eid}")
         assert resp.status_code == 200
 
     def test_update_entity(self, auth_client):
-        create = auth_client.post("/entities", json={"entity_type": "person", "attributes": {"name": "Carol"}})
+        create = auth_client.post(
+            "/entities", json={"entity_type": "person", "attributes": {"name": "Carol"}}
+        )
         eid = create.json()["id"]
         resp = auth_client.put(f"/entities/{eid}", json={"attributes": {"name": "Carol Updated"}})
         assert resp.status_code == 200
@@ -98,7 +109,9 @@ class TestEntities:
         assert resp.status_code == 404
 
     def test_delete_entity(self, auth_client):
-        create = auth_client.post("/entities", json={"entity_type": "person", "attributes": {"name": "Dave"}})
+        create = auth_client.post(
+            "/entities", json={"entity_type": "person", "attributes": {"name": "Dave"}}
+        )
         eid = create.json()["id"]
         resp = auth_client.delete(f"/entities/{eid}")
         assert resp.status_code == 200
@@ -110,12 +123,22 @@ class TestEntities:
 
 class TestRelationships:
     def test_create_relationship(self, auth_client):
-        src = auth_client.post("/entities", json={"entity_type": "person", "attributes": {"name": "A"}}).json()["id"]
-        tgt = auth_client.post("/entities", json={"entity_type": "person", "attributes": {"name": "B"}}).json()["id"]
-        resp = auth_client.post("/relationships", json={
-            "type": "RELATED_TO", "source_id": src, "target_id": tgt,
-            "confidence_score": 80, "trust_weight": 70,
-        })
+        src = auth_client.post(
+            "/entities", json={"entity_type": "person", "attributes": {"name": "A"}}
+        ).json()["id"]
+        tgt = auth_client.post(
+            "/entities", json={"entity_type": "person", "attributes": {"name": "B"}}
+        ).json()["id"]
+        resp = auth_client.post(
+            "/relationships",
+            json={
+                "type": "RELATED_TO",
+                "source_id": src,
+                "target_id": tgt,
+                "confidence_score": 80,
+                "trust_weight": 70,
+            },
+        )
         assert resp.status_code == 200
         assert "id" in resp.json()
 
@@ -124,11 +147,20 @@ class TestRelationships:
         assert resp.status_code == 404
 
     def test_delete_relationship(self, auth_client):
-        src = auth_client.post("/entities", json={"entity_type": "person", "attributes": {"name": "C"}}).json()["id"]
-        tgt = auth_client.post("/entities", json={"entity_type": "person", "attributes": {"name": "D"}}).json()["id"]
-        rid = auth_client.post("/relationships", json={
-            "type": "RELATED_TO", "source_id": src, "target_id": tgt,
-        }).json()["id"]
+        src = auth_client.post(
+            "/entities", json={"entity_type": "person", "attributes": {"name": "C"}}
+        ).json()["id"]
+        tgt = auth_client.post(
+            "/entities", json={"entity_type": "person", "attributes": {"name": "D"}}
+        ).json()["id"]
+        rid = auth_client.post(
+            "/relationships",
+            json={
+                "type": "RELATED_TO",
+                "source_id": src,
+                "target_id": tgt,
+            },
+        ).json()["id"]
         resp = auth_client.delete(f"/relationships/{rid}")
         assert resp.status_code == 200
 
@@ -157,7 +189,9 @@ class TestSources:
 
 class TestQuery:
     def test_query_all(self, auth_client):
-        auth_client.post("/entities", json={"entity_type": "person", "attributes": {"name": "Alice"}})
+        auth_client.post(
+            "/entities", json={"entity_type": "person", "attributes": {"name": "Alice"}}
+        )
         resp = auth_client.get("/query")
         assert resp.status_code == 200
         assert isinstance(resp.json(), list)
@@ -165,7 +199,9 @@ class TestQuery:
 
 class TestSearch:
     def test_search(self, auth_client):
-        auth_client.post("/entities", json={"entity_type": "person", "attributes": {"name": "Alice"}})
+        auth_client.post(
+            "/entities", json={"entity_type": "person", "attributes": {"name": "Alice"}}
+        )
         resp = auth_client.get("/search")
         assert resp.status_code == 200
 

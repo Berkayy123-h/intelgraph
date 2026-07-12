@@ -54,6 +54,7 @@ dev = [
     "ruff>=0.13.0",
     "bandit>=1.7.0",
     "black>=24.0.0",
+    "psycopg2-binary>=2.9.12",
 ]
 
 # -------------------------
@@ -136,7 +137,7 @@ select = [
 ]
 
 ignore = [
-    "E501",
+    "E501",  # line too long (handled by formatter)
 ]
 
 # -------------------------

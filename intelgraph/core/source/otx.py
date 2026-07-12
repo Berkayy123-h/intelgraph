@@ -4,9 +4,8 @@ import json
 import os
 import time
 import urllib.request
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
-
 
 OTX_BASE = "https://otx.alienvault.com"
 
@@ -26,8 +25,7 @@ class OtxPulse:
 
     def to_source_dict(self) -> dict[str, Any]:
         indicators_text = "; ".join(
-            f"{i.get('type','?')}:{i.get('indicator','')}"
-            for i in self.indicators[:50]
+            f"{i.get('type','?')}:{i.get('indicator','')}" for i in self.indicators[:50]
         )
         tags_text = ", ".join(self.tags)
         text = (
@@ -50,9 +48,7 @@ class OtxClient:
     def __init__(self, api_key: str | None = None) -> None:
         self._api_key = api_key or os.environ.get("OTX_API_KEY", "")
         if not self._api_key:
-            raise ValueError(
-                "OTX_API_KEY not set. Set the OTX_API_KEY environment variable."
-            )
+            raise ValueError("OTX_API_KEY not set. Set the OTX_API_KEY environment variable.")
 
     def _request(self, path: str) -> dict[str, Any]:
         url = f"{OTX_BASE}{path}"
@@ -74,21 +70,25 @@ class OtxClient:
 
         pulses: list[OtxPulse] = []
         for p in pulses_raw[:limit]:
-            pulses.append(OtxPulse(
-                pulse_id=p.get("id", ""),
-                name=p.get("name", ""),
-                description=p.get("description", ""),
-                author=p.get("author", {}).get("username", ""),
-                created=p.get("created", ""),
-                modified=p.get("modified", ""),
-                tags=[t.lower() for t in p.get("tags", [])],
-                indicators=p.get("indicators", [])[:50],
-                malware_families=[m.lower() for m in p.get("malware_families", [])],
-                tlp=p.get("tlp", ""),
-            ))
+            pulses.append(
+                OtxPulse(
+                    pulse_id=p.get("id", ""),
+                    name=p.get("name", ""),
+                    description=p.get("description", ""),
+                    author=p.get("author", {}).get("username", ""),
+                    created=p.get("created", ""),
+                    modified=p.get("modified", ""),
+                    tags=[t.lower() for t in p.get("tags", [])],
+                    indicators=p.get("indicators", [])[:50],
+                    malware_families=[m.lower() for m in p.get("malware_families", [])],
+                    tlp=p.get("tlp", ""),
+                )
+            )
         return pulses
 
-    def get_pulses_all(self, max_pages: int = 5, limit: int = 20, delay: float = 0.5) -> list[OtxPulse]:
+    def get_pulses_all(
+        self, max_pages: int = 5, limit: int = 20, delay: float = 0.5
+    ) -> list[OtxPulse]:
         all_pulses: list[OtxPulse] = []
         for page in range(1, max_pages + 1):
             try:
@@ -100,16 +100,27 @@ class OtxClient:
                     time.sleep(delay)
             except Exception as exc:
                 import structlog
-                structlog.get_logger(__name__).warning("OTX page fetch failed", page=page, error=str(exc))
+
+                structlog.get_logger(__name__).warning(
+                    "OTX page fetch failed", page=page, error=str(exc)
+                )
                 break
         return all_pulses
 
     def extract_iocs(
-        self, pulses: list[OtxPulse],
+        self,
+        pulses: list[OtxPulse],
     ) -> dict[str, list[dict[str, Any]]]:
         iocs: dict[str, list[dict[str, Any]]] = {
-            "IPv4": [], "domain": [], "URL": [], "MD5": [], "SHA1": [],
-            "SHA256": [], "email": [], "hostname": [], "CVE": [],
+            "IPv4": [],
+            "domain": [],
+            "URL": [],
+            "MD5": [],
+            "SHA1": [],
+            "SHA256": [],
+            "email": [],
+            "hostname": [],
+            "CVE": [],
         }
         for pulse in pulses:
             for ind in pulse.indicators:
@@ -149,11 +160,14 @@ class OtxClient:
 
 def fetch_urlhaus_iocs(csv_path: str) -> dict[str, list[dict[str, Any]]]:
     import csv
+
     iocs: dict[str, list[dict[str, Any]]] = {
-        "IPv4": [], "domain": [], "URL": [],
+        "IPv4": [],
+        "domain": [],
+        "URL": [],
     }
     with open(csv_path) as f:
-        lines = [l for l in f if not l.startswith('#')]
+        lines = [l for l in f if not l.startswith("#")]
     for r in csv.reader(lines):
         url = r[2] if len(r) > 2 else ""
         ip = r[3] if len(r) > 3 else ""
@@ -169,6 +183,7 @@ def fetch_urlhaus_iocs(csv_path: str) -> dict[str, list[dict[str, Any]]]:
         # Extract domain from URL
         if url:
             from urllib.parse import urlparse
+
             try:
                 hostname = urlparse(url).hostname or ""
                 if hostname and hostname not in (ip, ""):

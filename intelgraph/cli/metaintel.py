@@ -55,7 +55,9 @@ def policy(do_generate: bool, name: str, description: str) -> None:
     """Manage governance policies."""
     engine = PolicyEvolutionEngine()
     if do_generate:
-        record = engine.generate_policy(name, description, [{"action": "block", "condition": "risk > 0.7"}])
+        record = engine.generate_policy(
+            name, description, [{"action": "block", "condition": "risk > 0.7"}]
+        )
         _print_json(record.to_dict())
     else:
         policies = engine.get_policies()
@@ -78,7 +80,9 @@ def hypothesis(observation: str, target_layer: str) -> None:
 @click.option("--description", default="", help="Optimization description")
 @click.option("--expected-gain", type=float, default=0.1, help="Expected gain")
 @click.option("--risk", type=float, default=0.3, help="Risk score")
-def optimize(do_propose: bool, target: str, description: str, expected_gain: float, risk: float) -> None:
+def optimize(
+    do_propose: bool, target: str, description: str, expected_gain: float, risk: float
+) -> None:
     """Propose and manage system optimizations."""
     ctrl = SelfImprovementController()
     if do_propose:
@@ -94,7 +98,11 @@ def optimize(do_propose: bool, target: str, description: str, expected_gain: flo
 
 @metaintel_group.command("architecture")
 @click.option("--propose", "do_propose", is_flag=True, help="Propose architecture change")
-@click.option("--action", type=click.Choice(["add_module", "remove_module", "modify_dependencies"]), help="Action type")
+@click.option(
+    "--action",
+    type=click.Choice(["add_module", "remove_module", "modify_dependencies"]),
+    help="Action type",
+)
 @click.option("--target", default="", help="Target module")
 @click.option("--description", default="", help="Change description")
 def architecture(do_propose: bool, action: str, target: str, description: str) -> None:
@@ -117,7 +125,9 @@ def truth(do_reconcile: bool) -> None:
     """Manage truth consistency."""
     t = TruthConsistencyGovernor()
     if do_reconcile:
-        unified = t.reconcile({"key": "value", "key_confidence": 0.8}, {"key": "value2", "key_confidence": 0.6}, {})
+        unified = t.reconcile(
+            {"key": "value", "key_confidence": 0.8}, {"key": "value2", "key_confidence": 0.6}, {}
+        )
         snap = t.snapshot(unified)
         _print_json({"unified": unified, "snapshot": snap.to_dict()})
     else:
@@ -207,17 +217,19 @@ def dashboard() -> None:
 def snapshot(reasoning: float, execution: float, consistency: float) -> None:
     """Record an observability snapshot."""
     obs = GlobalObservabilityDashboard()
-    snap = obs.record_snapshot({
-        "reasoning_quality": reasoning,
-        "execution_reliability": execution,
-        "knowledge_consistency": consistency,
-        "system_drift": 0.0,
-        "cross_phase_alignment": 0.8,
-        "stability_index": 0.8,
-        "governance_conflict_rate": 0.0,
-        "improvement_velocity": 0.0,
-        "architecture_mutation_rate": 0.0,
-    })
+    snap = obs.record_snapshot(
+        {
+            "reasoning_quality": reasoning,
+            "execution_reliability": execution,
+            "knowledge_consistency": consistency,
+            "system_drift": 0.0,
+            "cross_phase_alignment": 0.8,
+            "stability_index": 0.8,
+            "governance_conflict_rate": 0.0,
+            "improvement_velocity": 0.0,
+            "architecture_mutation_rate": 0.0,
+        }
+    )
     _print_json(snap.to_dict())
 
 

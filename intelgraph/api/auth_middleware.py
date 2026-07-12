@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import Depends, HTTPException, Request
 
 from intelgraph.api.auth import get_user_role, validate_token
-from intelgraph.core.enterprise.authz import Role, has_permission
+from intelgraph.core.enterprise.authz import has_permission
 
 
 def require_auth(request: Request) -> str | None:
@@ -24,4 +24,5 @@ def require_permission(permission: str) -> Any:
         role = get_user_role(uid)
         if not has_permission(role, permission):
             raise HTTPException(status_code=403, detail=f"Forbidden: {permission} required")
+
     return Depends(_checker)

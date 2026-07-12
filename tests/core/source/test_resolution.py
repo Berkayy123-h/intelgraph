@@ -1,6 +1,6 @@
 import pytest
 
-from intelgraph.core.source.resolution import EntityMatcher, MergeEngine, ResolutionAudit
+from intelgraph.core.source.resolution import EntityMatcher, MergeEngine
 
 
 class TestEntityMatcher:
@@ -141,6 +141,6 @@ class TestMergeEngine:
         assert history[-1]["source_entity_id"] == src_id
 
     def test_invalid_strategy(self):
-        import pytest
+
         with pytest.raises(ValueError):
             MergeEngine(default_strategy="invalid")

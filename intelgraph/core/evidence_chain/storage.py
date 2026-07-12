@@ -1,8 +1,6 @@
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
-
-import ulid
 
 from intelgraph.core.evidence_chain.base import (
     EvidenceChain,
@@ -81,20 +79,34 @@ class EvidenceChainStorage:
             """INSERT OR REPLACE INTO evidence_chains
                (chain_id, entity_id, confidence, contradiction_score, status, version, source_count, created_at, updated_at)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (chain.chain_id, chain.entity_id, chain.confidence,
-             chain.contradiction_score, chain.status.name_lower,
-             chain.version, chain.source_count,
-             chain.created_at.isoformat(), chain.updated_at.isoformat()),
+            (
+                chain.chain_id,
+                chain.entity_id,
+                chain.confidence,
+                chain.contradiction_score,
+                chain.status.name_lower,
+                chain.version,
+                chain.source_count,
+                chain.created_at.isoformat(),
+                chain.updated_at.isoformat(),
+            ),
         )
         for item in chain.evidence:
             conn.execute(
                 """INSERT OR REPLACE INTO evidence_items
                    (evidence_id, chain_id, source_id, document_id, claim, support_type, confidence, extracted_at, metadata)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (item.evidence_id, chain.chain_id, item.source_id,
-                 item.document_id, item.claim, item.support_type.name_lower,
-                 item.confidence, item.extracted_at.isoformat(),
-                 json.dumps(item.metadata, default=str)),
+                (
+                    item.evidence_id,
+                    chain.chain_id,
+                    item.source_id,
+                    item.document_id,
+                    item.claim,
+                    item.support_type.name_lower,
+                    item.confidence,
+                    item.extracted_at.isoformat(),
+                    json.dumps(item.metadata, default=str),
+                ),
             )
         conn.commit()
 
@@ -104,8 +116,13 @@ class EvidenceChainStorage:
             """INSERT INTO chain_versions
                (chain_id, version, data, created_at, operation)
                VALUES (?, ?, ?, ?, ?)""",
-            (chain.chain_id, chain.version, json.dumps(chain.to_dict(), default=str),
-             datetime.now(timezone.utc).isoformat(), operation),
+            (
+                chain.chain_id,
+                chain.version,
+                json.dumps(chain.to_dict(), default=str),
+                datetime.now(UTC).isoformat(),
+                operation,
+            ),
         )
         conn.commit()
 
@@ -116,9 +133,17 @@ class EvidenceChainStorage:
                 """INSERT OR REPLACE INTO contradictions
                    (id, chain_id, evidence_id_a, evidence_id_b, contradiction_type, score, detected_at, resolved_at, resolution)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (r.id, r.chain_id, r.evidence_id_a, r.evidence_id_b,
-                 r.contradiction_type, r.score, r.detected_at.isoformat(),
-                 r.resolved_at.isoformat() if r.resolved_at else None, r.resolution or ""),
+                (
+                    r.id,
+                    r.chain_id,
+                    r.evidence_id_a,
+                    r.evidence_id_b,
+                    r.contradiction_type,
+                    r.score,
+                    r.detected_at.isoformat(),
+                    r.resolved_at.isoformat() if r.resolved_at else None,
+                    r.resolution or "",
+                ),
             )
         conn.commit()
 
@@ -170,7 +195,10 @@ class EvidenceChainStorage:
         return True
 
     def _get_conn(self) -> Any:
-        conn = getattr(self._backend, "_conn", None) or getattr(self._backend, "_require", lambda: None)()
+        conn = (
+            getattr(self._backend, "_conn", None)
+            or getattr(self._backend, "_require", lambda: None)()
+        )
         if conn is None:
             raise RuntimeError("Backend not connected")
         return conn

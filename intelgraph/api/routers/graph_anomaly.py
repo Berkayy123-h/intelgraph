@@ -4,8 +4,8 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
-from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.graph.anomaly import AnomalyDetector
+from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.graph.node import Node
 
 router = APIRouter(prefix="/graph/anomaly", tags=["graph"])
@@ -13,6 +13,7 @@ router = APIRouter(prefix="/graph/anomaly", tags=["graph"])
 
 def _build_graph() -> IntelligenceGraph:
     from intelgraph.api.main import _container
+
     g = IntelligenceGraph()
     for entity in _container.backend.list_entities():
         eid = entity.id
@@ -33,6 +34,7 @@ def _build_graph() -> IntelligenceGraph:
             g.node_edges.setdefault(tgt, set()).add(rel.id)
             g.edge_node_map[rel.id] = (src, tgt)
             from intelgraph.core.graph.edge import Edge
+
             g.edges[rel.id] = Edge(relationship=rel)
     return g
 
@@ -86,7 +88,10 @@ def explain_anomaly(node_id: str):
     return result
 
 
-@router.get("/explain/detail/{node_id}", summary="Get detailed anomaly explanation with full signal breakdown")
+@router.get(
+    "/explain/detail/{node_id}",
+    summary="Get detailed anomaly explanation with full signal breakdown",
+)
 def explain_anomaly_detail(node_id: str):
     detector = AnomalyDetector(_build_graph())
     result = detector.explain_detail(node_id)

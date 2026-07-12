@@ -4,23 +4,20 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
+from intelgraph.api.auth_middleware import require_permission
+from intelgraph.core.enterprise import get_metrics as _get_metrics
 from intelgraph.core.nlp import (
-    ClassificationResult,
-    CostAwareInferenceRouter,
     DocumentSummarizer,
     EconomicGovernor,
     EntityLinker,
     EventExtractor,
     InputSanitizer,
     NEREngine,
-    NLPModelRecord,
     NLPModelRegistry,
     OutputSanitizer,
     RelationshipExtractor,
     TextClassifier,
 )
-from intelgraph.api.auth_middleware import require_permission
-from intelgraph.core.enterprise import get_metrics as _get_metrics
 
 router = APIRouter(prefix="/nlp", tags=["NLP"])
 
@@ -205,7 +202,11 @@ async def list_models(
     return {"models": [m.to_dict() for m in models], "count": len(models)}
 
 
-@router.post("/models/{model_id}/deploy", status_code=status.HTTP_200_OK, summary="Deploy or hot-swap an NLP model")
+@router.post(
+    "/models/{model_id}/deploy",
+    status_code=status.HTTP_200_OK,
+    summary="Deploy or hot-swap an NLP model",
+)
 async def deploy_model(
     model_id: str,
     registry: NLPModelRegistry = Depends(get_model_registry),

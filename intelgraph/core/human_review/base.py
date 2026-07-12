@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum, auto
 from typing import Any
 
@@ -31,7 +31,7 @@ class ReviewRecord:
     previous_chain_version: int = 0
     new_chain_version: int = 0
     source_evidence_ids: list[str] = field(default_factory=list)
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     reviewed_at: datetime | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 

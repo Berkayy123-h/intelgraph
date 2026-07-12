@@ -1,10 +1,10 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from intelgraph.core.evidence_chain import ChainManager
 from intelgraph.core.human_review.base import ReviewOutcome, ReviewRecord
 from intelgraph.core.human_review.queue import ReviewQueue
-from intelgraph.core.human_review.review import ReviewEngine, ReviewInfluence
+from intelgraph.core.human_review.review import ReviewEngine
 from intelgraph.core.human_review.thresholds import ReviewThresholds, ThresholdResult
 
 REVIEW_TABLE_SQL = """
@@ -101,7 +101,7 @@ class ReviewManager:
             new_chain_confidence=chain.confidence,
             previous_chain_version=prev_version,
             new_chain_version=chain.version,
-            reviewed_at=datetime.now(timezone.utc),
+            reviewed_at=datetime.now(UTC),
         )
 
         self._persist_record(record)
@@ -161,31 +161,47 @@ class ReviewManager:
                 previous_chain_version, new_chain_version,
                 source_evidence_ids, created_at, reviewed_at, metadata)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (record.review_id, record.entity_id, record.entity_type,
-             record.outcome.name_lower, record.reviewer, record.review_notes,
-             record.confidence_influence, record.contradiction_influence,
-             record.previous_chain_confidence, record.new_chain_confidence,
-             record.previous_chain_version, record.new_chain_version,
-             _serialize(record.source_evidence_ids),
-             record.created_at.isoformat(),
-             record.reviewed_at.isoformat() if record.reviewed_at else None,
-             _serialize(record.metadata)),
+            (
+                record.review_id,
+                record.entity_id,
+                record.entity_type,
+                record.outcome.name_lower,
+                record.reviewer,
+                record.review_notes,
+                record.confidence_influence,
+                record.contradiction_influence,
+                record.previous_chain_confidence,
+                record.new_chain_confidence,
+                record.previous_chain_version,
+                record.new_chain_version,
+                _serialize(record.source_evidence_ids),
+                record.created_at.isoformat(),
+                record.reviewed_at.isoformat() if record.reviewed_at else None,
+                _serialize(record.metadata),
+            ),
         )
         conn.commit()
 
     def _log_audit(self, record: ReviewRecord) -> None:
         try:
-            self._storage.write_audit({
-                "id": str(__import__("ulid").new()),
-                "entity_id": record.entity_id,
-                "entity_type": record.entity_type,
-                "operation": f"HUMAN_REVIEW_{record.outcome.name}",
-                "old_data": _serialize({"confidence": record.previous_chain_confidence}),
-                "new_data": _serialize({"confidence": record.new_chain_confidence, "outcome": record.outcome.name_lower}),
-                "actor": record.reviewer,
-                "correlation_id": record.review_id,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
+            self._storage.write_audit(
+                {
+                    "id": str(__import__("ulid").new()),
+                    "entity_id": record.entity_id,
+                    "entity_type": record.entity_type,
+                    "operation": f"HUMAN_REVIEW_{record.outcome.name}",
+                    "old_data": _serialize({"confidence": record.previous_chain_confidence}),
+                    "new_data": _serialize(
+                        {
+                            "confidence": record.new_chain_confidence,
+                            "outcome": record.outcome.name_lower,
+                        }
+                    ),
+                    "actor": record.reviewer,
+                    "correlation_id": record.review_id,
+                    "timestamp": datetime.now(UTC).isoformat(),
+                }
+            )
         except Exception:
             pass
 
@@ -198,4 +214,5 @@ class ReviewManager:
 
 def _serialize(obj: object) -> str:
     import json
+
     return json.dumps(obj, default=str) if obj else ""

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import time
-import uuid
 from collections import defaultdict
 from dataclasses import dataclass, field
-from enum import Enum, auto
-from typing import Any, Callable
+from enum import Enum
+from typing import Any
 
 METAINTEL_SCHEMA_VERSION = "1.0"
 
@@ -59,8 +58,13 @@ class GlobalGovernanceEngine:
                 layer_id=layer, health=SystemHealth.HEALTHY, score=1.0, last_check=time.time()
             )
 
-    def record_layer_health(self, layer_id: str, health: SystemHealth, score: float,
-                            anomalies: list[dict[str, Any]] | None = None) -> None:
+    def record_layer_health(
+        self,
+        layer_id: str,
+        health: SystemHealth,
+        score: float,
+        anomalies: list[dict[str, Any]] | None = None,
+    ) -> None:
         layer = self._layers.get(layer_id)
         if not layer:
             return
@@ -74,7 +78,9 @@ class GlobalGovernanceEngine:
         anomalies = []
         for layer_id, layer in self._layers.items():
             if layer.score < 0.3:
-                anomalies.append({"layer": layer_id, "type": "critical_degradation", "score": layer.score})
+                anomalies.append(
+                    {"layer": layer_id, "type": "critical_degradation", "score": layer.score}
+                )
             elif layer.score < 0.6:
                 anomalies.append({"layer": layer_id, "type": "degradation", "score": layer.score})
         cross_corr = self._cross_layer_correlation()
@@ -101,7 +107,11 @@ class GlobalGovernanceEngine:
         for al in affected_layers:
             layer = self._layers.get(al)
             if layer and layer.score < 0.3:
-                return {"allowed": False, "reason": f"Layer {al} is critical", "action": action_type}
+                return {
+                    "allowed": False,
+                    "reason": f"Layer {al} is critical",
+                    "action": action_type,
+                }
         return {"allowed": True, "reason": "Policy check passed", "action": action_type}
 
     def detect_conflicts(self) -> list[dict[str, Any]]:

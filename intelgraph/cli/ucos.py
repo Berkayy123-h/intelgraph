@@ -11,7 +11,6 @@ from intelgraph.core.ucos import (
     ConsolidationEngine,
     DependencyValidator,
     GlobalHealthIndex,
-    SelfStabilizingMetaControl,
     SimplificationEngine,
     SingleSourceOfTruth,
     UnifiedAlertingCore,
@@ -20,7 +19,6 @@ from intelgraph.core.ucos import (
     UnifiedPolicyControlPlane,
     UnifiedSafetyLayer,
     UnifiedTelemetryCore,
-    UnifiedTruthEngine,
 )
 
 
@@ -129,11 +127,13 @@ def simplify() -> None:
     sim = SimplificationEngine()
     dups = sim.check_no_duplicates()
     owners = sim.check_single_owner()
-    _print_json({
-        "duplicate_violations": dups,
-        "owner_violations": owners,
-        "complexity_index": round(sim.compute_system_complexity(), 4),
-    })
+    _print_json(
+        {
+            "duplicate_violations": dups,
+            "owner_violations": owners,
+            "complexity_index": round(sim.compute_system_complexity(), 4),
+        }
+    )
 
 
 @ucos_group.command("closed-loop")

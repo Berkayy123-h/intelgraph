@@ -7,36 +7,28 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from intelgraph import __version__
-from intelgraph.api.auth import refresh_token, validate_token
 from intelgraph.api.authz_middleware import create_authz_middleware
 from intelgraph.api.dependencies import ServiceContainer
 from intelgraph.api.errors import (
     AppError,
-    _error_body,
     app_error_handler,
     generic_error_handler,
     validation_error_handler,
 )
-from intelgraph.api.models import AuthRefresh, RefreshTokenResponse, TokenResponse
 from intelgraph.api.rate_limit import setup_rate_limiting
 from intelgraph.api.routers import (
     agent as agent_router,
+)
+from intelgraph.api.routers import (
     auth_2fa as auth_2fa_router,
+)
+from intelgraph.api.routers import (
     auth_router,
     cognitive,
-    dashboard as dashboard_router,
-    export_graph as export_graph_router,
-    me as me_router,
-    metaintel as metaintel_router,
-    monitoring as monitoring_router,
-    oauth as oauth_router,
-    playbooks as playbooks_router,
-    taxii as taxii_router,
-    ucos as ucos_router,
     datasources,
     entities,
     evidence,
@@ -50,16 +42,51 @@ from intelgraph.api.routers import (
     graph_prediction,
     graph_reasoning,
     health,
-    metrics as metrics_router,
     query,
     relationships,
     search,
     sources,
     tasks,
-    notifications as notifications_router,
-    reports as reports_router,
-    tenants as tenants_router,
     verification,
+)
+from intelgraph.api.routers import (
+    dashboard as dashboard_router,
+)
+from intelgraph.api.routers import (
+    export_graph as export_graph_router,
+)
+from intelgraph.api.routers import (
+    me as me_router,
+)
+from intelgraph.api.routers import (
+    metaintel as metaintel_router,
+)
+from intelgraph.api.routers import (
+    metrics as metrics_router,
+)
+from intelgraph.api.routers import (
+    monitoring as monitoring_router,
+)
+from intelgraph.api.routers import (
+    notifications as notifications_router,
+)
+from intelgraph.api.routers import (
+    oauth as oauth_router,
+)
+from intelgraph.api.routers import (
+    playbooks as playbooks_router,
+)
+from intelgraph.api.routers import (
+    reports as reports_router,
+)
+from intelgraph.api.routers import (
+    taxii as taxii_router,
+)
+from intelgraph.api.routers import (
+    tenants as tenants_router,
+)
+from intelgraph.api.routers import (
+    ucos as ucos_router,
 )
 from intelgraph.core.enterprise import (
     get_metrics,
@@ -67,7 +94,6 @@ from intelgraph.core.enterprise import (
     load_env_overrides,
     validate_config,
 )
-from intelgraph.core.correlation import CorrelationID
 
 _container: ServiceContainer = None  # type: ignore[assignment]
 
@@ -76,6 +102,7 @@ def create_app(config: dict[str, Any] | None = None) -> FastAPI:
     global _container
 
     from intelgraph.core.config import DEFAULT_CONFIG
+
     cfg = copy.deepcopy(DEFAULT_CONFIG)
     if config:
         _deep_merge(cfg, config)
@@ -88,10 +115,12 @@ def create_app(config: dict[str, Any] | None = None) -> FastAPI:
     _deep_merge(cfg, profile_cfg)
 
     from intelgraph.core.enterprise.config_validator import ConfigValidationError
+
     try:
         validate_config(cfg)
     except ConfigValidationError as e:
         import structlog
+
         structlog.get_logger(__name__).error("configuration validation failed", error=str(e))
         raise
 
@@ -115,7 +144,7 @@ def create_app(config: dict[str, Any] | None = None) -> FastAPI:
             allow_headers=["*"],
         )
 
-    from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
+    from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 
     @app.get("/docs", include_in_schema=False)
     async def swagger_ui():
@@ -176,6 +205,7 @@ def create_app(config: dict[str, Any] | None = None) -> FastAPI:
     app.include_router(dashboard_router.router)
 
     import os as _os
+
     _base_dir = _os.path.dirname(_os.path.dirname(__file__))
     _web_dir = _os.path.join(_base_dir, "web")
     if _os.path.isdir(_web_dir):
@@ -217,7 +247,7 @@ def create_app(config: dict[str, Any] | None = None) -> FastAPI:
         path = request.url.path
         if path.startswith("/web/") or path == "/":
             response.headers["Content-Security-Policy"] = _DASHBOARD_CSP
-        elif path in ("/docs", "/redoc") or path.startswith(("/static/")):
+        elif path in ("/docs", "/redoc") or path.startswith("/static/"):
             csp = "default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://fastapi.tiangolo.com; connect-src 'self'"
             response.headers["Content-Security-Policy"] = csp
         else:
@@ -226,6 +256,7 @@ def create_app(config: dict[str, Any] | None = None) -> FastAPI:
                 response.headers["Content-Security-Policy"] = csp
         get_metrics().record_request(request.url.path, duration, response.status_code)
         from intelgraph.core.enterprise import get_performance_collector
+
         get_performance_collector().record_api_latency(request.url.path, round(duration * 1000, 2))
         return response
 

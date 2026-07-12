@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Any
 
 
 @dataclass
@@ -24,7 +23,11 @@ class ReviewThresholds:
     ) -> ThresholdResult:
         if single_source is None:
             single_source = source_count < 2
-        if confidence >= ReviewThresholds.AUTO_APPROVE_MIN_CONFIDENCE and source_count >= 2 and not single_source:
+        if (
+            confidence >= ReviewThresholds.AUTO_APPROVE_MIN_CONFIDENCE
+            and source_count >= 2
+            and not single_source
+        ):
             return ThresholdResult(
                 needs_review=False,
                 reason="High confidence with multi-source corroboration",

@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -67,9 +66,15 @@ class ContradictionDetector:
             return None
         if fa.get("value") == fb.get("value"):
             return None
-        if not (fa.get("confidence", 0) > self._threshold and fb.get("confidence", 0) > self._threshold):
+        if not (
+            fa.get("confidence", 0) > self._threshold and fb.get("confidence", 0) > self._threshold
+        ):
             return None
-        severity = "critical" if abs(float(fa.get("value", 0)) - float(fb.get("value", 0))) > 50 else "warning"
+        severity = (
+            "critical"
+            if abs(float(fa.get("value", 0)) - float(fb.get("value", 0))) > 50
+            else "warning"
+        )
         return Contradiction(
             contradiction_id=f"ct_{uuid.uuid4().hex[:12]}",
             fact_a=fa,

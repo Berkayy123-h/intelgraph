@@ -1,31 +1,31 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Faz 9 — Tam Ölçek Stres Testi
 Full URLhaus dataset (22,365 rows) through 14-motor pipeline.
 Profiles each bridge independently to find bottlenecks.
 """
+
 from __future__ import annotations
 
 import csv
 import gc
 import hashlib
 import json
-import os
-import sys
 import time
 import tracemalloc
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 CSV_PATH = "/tmp/opencode/phase9/urlhaus_full.csv"
 REPORT_PATH = "/tmp/opencode/phase9/stress_report.json"
 
+
 def section(title):
     print(f"\n{'='*72}")
     print(f"  {title}")
     print(f"{'='*72}")
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 0. CSV Load
@@ -107,7 +107,7 @@ print(f"  Sure:       {ner_time:.2f}s")
 print(f"  Bellek:     {ner_mem_mb:.1f} MB peak")
 print(f"  Entity:     {len(entities)}")
 print(f"  Verim:      {len(text)/1024/1024/ner_time:.2f} MB/s")
-print(f"  Dagilim:")
+print("  Dagilim:")
 for lbl, cnt in ner_labels.most_common():
     print(f"    {lbl:12s} {cnt:>7d}  ({cnt/len(entities)*100:5.1f}%)")
 
@@ -115,16 +115,32 @@ dom = ner_labels.get("DOMAIN", 0)
 fn = ner_labels.get("FILENAME", 0)
 unk = ner_labels.get("UNKNOWN", 0)
 print(f"\n  FP rate:    {fn/(dom+fn)*100:.1f}% FILENAME vs DOMAIN")
-print(f"  (Faz 5.5:   ~51% FILENAME, ~45% DOMAIN, ~4% UNKNOWN)")
+print("  (Faz 5.5:   ~51% FILENAME, ~45% DOMAIN, ~4% UNKNOWN)")
 
 # Profile individual NER patterns
-print(f"\n  Pattern profili (10K satirlik ornek):")
+print("\n  Pattern profili (10K satirlik ornek):")
 sample_for_profile = "\n".join(rows[:10000])
-import re as _re
-from intelgraph.core.nlp.extractor import URL_RE, DOMAIN_RE, IP_RE, CVE_RE, EMAIL_RE, MD5_RE, SHA1_RE, SHA256_RE
 from urllib.parse import urlparse as _urlparse
-for pname, pat in [("URL_RE", URL_RE), ("DOMAIN_RE", DOMAIN_RE), ("IP_RE", IP_RE),
-                   ("CVE_RE", CVE_RE), ("EMAIL_RE", EMAIL_RE), ("HASH_RE(s)", [MD5_RE, SHA1_RE, SHA256_RE])]:
+
+from intelgraph.core.nlp.extractor import (
+    CVE_RE,
+    DOMAIN_RE,
+    EMAIL_RE,
+    IP_RE,
+    MD5_RE,
+    SHA1_RE,
+    SHA256_RE,
+    URL_RE,
+)
+
+for pname, pat in [
+    ("URL_RE", URL_RE),
+    ("DOMAIN_RE", DOMAIN_RE),
+    ("IP_RE", IP_RE),
+    ("CVE_RE", CVE_RE),
+    ("EMAIL_RE", EMAIL_RE),
+    ("HASH_RE(s)", [MD5_RE, SHA1_RE, SHA256_RE]),
+]:
     t0 = time.perf_counter()
     if isinstance(pat, list):
         for p in pat:
@@ -173,21 +189,23 @@ for sz in sizes:
 
 # Project to full dataset
 full_pairs = total * (total - 1) / 2
-avg_us = sum(t[1] / (t[0] * (t[0]-1) / 2) * 1_000_000 for t in cd_times) / len(cd_times)
+avg_us = sum(t[1] / (t[0] * (t[0] - 1) / 2) * 1_000_000 for t in cd_times) / len(cd_times)
 projected_s = full_pairs * avg_us / 1_000_000
-print(f"\n  {total:>10d}  (projeksiyon) ~{projected_s/3600:.1f} saat  {full_pairs:>12.0f}  {avg_us:>13.2f}")
+print(
+    f"\n  {total:>10d}  (projeksiyon) ~{projected_s/3600:.1f} saat  {full_pairs:>12.0f}  {avg_us:>13.2f}"
+)
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 3. EntityMatcher / Graph O(n) Profile
 # ═══════════════════════════════════════════════════════════════════════════
 section("Faz 9.3 — EntityMatcher Olcekleme (Graph)")
 
-from intelgraph.core.ucos.truth import UnifiedTruthEngine
-from intelgraph.core.ucos.state import SingleSourceOfTruth
-from intelgraph.core.graph.graph import IntelligenceGraph
-from intelgraph.core.entity.ip_address import IPAddress
 from intelgraph.core.entity.domain import Domain
+from intelgraph.core.entity.ip_address import IPAddress
 from intelgraph.core.evidence import Evidence
+from intelgraph.core.graph.graph import IntelligenceGraph
+from intelgraph.core.ucos.state import SingleSourceOfTruth
+from intelgraph.core.ucos.truth import UnifiedTruthEngine
 
 ute = UnifiedTruthEngine()
 ssot = SingleSourceOfTruth(truth_engine=ute)
@@ -232,8 +250,10 @@ for sz in gm_sizes:
             id=f"ev_{hashlib.md5(ek.encode()).hexdigest()[:8]}",
             source="urlhaus",
             content=str(val.get("classification", "")),
-            collected_at=datetime.now(timezone.utc),
-            source_tier=1, trust_score=60, reliability_score=60,
+            collected_at=datetime.now(UTC),
+            source_tier=1,
+            trust_score=60,
+            reliability_score=60,
         )
         entity_id = ek.replace(".", "_").replace(":", "_")
         if "." not in ek:
@@ -271,13 +291,85 @@ edges = {
 }
 
 # Top file extensions in URLs
-non_domain_exts = Counter({k: v for k, v in filename_exts.items()
-                   if k not in ("com","net","org","io","xyz","top","cn","ru","tk","ml","ga","cf","gq",
-                                "de","uk","jp","fr","br","au","ca","in","nl","eu","ch","at","be","dk",
-                                "se","no","fi","pl","cz","sk","hu","ro","bg","gr","tr","il","za","eg",
-                                "ar","mx","co","cl","pe","ve","ng","ke","ma","tn","dz","sa","ae","hk",
-                                "sg","my","id","ph","th","vn","kr","tw","nz","ir","pk","bd","lk","np")})
-print(f"\n  Dosya uzantilari (non-TLD):")
+non_domain_exts = Counter(
+    {
+        k: v
+        for k, v in filename_exts.items()
+        if k
+        not in (
+            "com",
+            "net",
+            "org",
+            "io",
+            "xyz",
+            "top",
+            "cn",
+            "ru",
+            "tk",
+            "ml",
+            "ga",
+            "cf",
+            "gq",
+            "de",
+            "uk",
+            "jp",
+            "fr",
+            "br",
+            "au",
+            "ca",
+            "in",
+            "nl",
+            "eu",
+            "ch",
+            "at",
+            "be",
+            "dk",
+            "se",
+            "no",
+            "fi",
+            "pl",
+            "cz",
+            "sk",
+            "hu",
+            "ro",
+            "bg",
+            "gr",
+            "tr",
+            "il",
+            "za",
+            "eg",
+            "ar",
+            "mx",
+            "co",
+            "cl",
+            "pe",
+            "ve",
+            "ng",
+            "ke",
+            "ma",
+            "tn",
+            "dz",
+            "sa",
+            "ae",
+            "hk",
+            "sg",
+            "my",
+            "id",
+            "ph",
+            "th",
+            "vn",
+            "kr",
+            "tw",
+            "nz",
+            "ir",
+            "pk",
+            "bd",
+            "lk",
+            "np",
+        )
+    }
+)
+print("\n  Dosya uzantilari (non-TLD):")
 for ext, cnt in non_domain_exts.most_common(15):
     print(f"    .{ext:6s} {cnt:>6d}")
 
@@ -298,16 +390,17 @@ for u in weird_urls[:5]:
 # ═══════════════════════════════════════════════════════════════════════════
 section("Faz 9.5 — Pipeline Ornek Calistirma (ilk 5000 satir)")
 
+
 from intelgraph.core.pipeline.chain import Pipeline
-import tempfile
 
 sample_text = "\n".join(rows[:5000])
 p = Pipeline()
 t0 = time.perf_counter()
 result = p.run(
-    sources=[{"id": "urlhaus_5k", "name": "URLhaus 5K Test",
-              "text": sample_text, "value": 60}],
-    thresholds={}, query_ip="", query_target="",
+    sources=[{"id": "urlhaus_5k", "name": "URLhaus 5K Test", "text": sample_text, "value": 60}],
+    thresholds={},
+    query_ip="",
+    query_target="",
 )
 t1 = time.perf_counter()
 print(f"  Sure:      {t1-t0:.2f}s")
@@ -324,29 +417,27 @@ for e in result.errors[:5]:
 report = {
     "phase": "9",
     "dataset": {
-        "total_rows": total, "unique_urls": len(seen_urls),
-        "ipv6_urls": ipv6_count, "unique_hosts": len(hosts),
+        "total_rows": total,
+        "unique_urls": len(seen_urls),
+        "ipv6_urls": ipv6_count,
+        "unique_hosts": len(hosts),
     },
     "ner": {
         "time_s": round(ner_time, 2),
         "peak_memory_mb": round(ner_mem_mb, 1),
         "total_entities": len(entities),
         "labels": dict(ner_labels),
-        "fp_rate_pct": round(fn/(dom+fn)*100, 1) if (dom+fn) else 0,
+        "fp_rate_pct": round(fn / (dom + fn) * 100, 1) if (dom + fn) else 0,
     },
     "contradiction_profile": [
-        {"facts": s, "time_s": round(t, 3), "contradictions": c}
-        for s, t, c in cd_times
+        {"facts": s, "time_s": round(t, 3), "contradictions": c} for s, t, c in cd_times
     ],
-    "contradiction_projection_hours": round(projected_s/3600, 2),
-    "graph_profile": [
-        {"entities": a, "time_s": round(t, 3), "nodes": n}
-        for a, t, n in gm_times
-    ],
-    "graph_projection_s": round(projected_graph_s, 1) if 'projected_graph_s' in dir() else 0,
+    "contradiction_projection_hours": round(projected_s / 3600, 2),
+    "graph_profile": [{"entities": a, "time_s": round(t, 3), "nodes": n} for a, t, n in gm_times],
+    "graph_projection_s": round(projected_graph_s, 1) if "projected_graph_s" in dir() else 0,
     "edge_cases": edges,
     "pipeline_sample": {
-        "time_s": round(t1-t0, 2),
+        "time_s": round(t1 - t0, 2),
         "nodes": len(result.graph.nodes) if result.graph else 0,
         "contradictions": len(result.contradictions),
         "alerts": len(result.alerts),
@@ -361,4 +452,4 @@ print(f"\n  Rapor: {REPORT_PATH}")
 
 section("FAZ 9 TAMAM")
 print(f"  {total} satir, {len(entities)} entity, {ner_time:.1f}s, {ner_mem_mb:.1f}MB")
-print(f"  2 O(n²) dar bogaz tespit edildi: Celiski + Graph")
+print("  2 O(n²) dar bogaz tespit edildi: Celiski + Graph")

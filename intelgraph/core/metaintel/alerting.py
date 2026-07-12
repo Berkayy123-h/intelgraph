@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -43,8 +42,12 @@ class IncidentControlCenter:
         self._cooldowns: dict[str, float] = {}
         self._resolved_count = 0
 
-    def evaluate(self, metrics: dict[str, Any], thresholds: dict[str, dict[str, Any]],
-                 context: dict[str, Any] | None = None) -> list[MetaAlert]:
+    def evaluate(
+        self,
+        metrics: dict[str, Any],
+        thresholds: dict[str, dict[str, Any]],
+        context: dict[str, Any] | None = None,
+    ) -> list[MetaAlert]:
         triggered = []
         now = time.time()
         ctx = context or {}
@@ -61,7 +64,8 @@ class IncidentControlCenter:
                     severity=threshold.get("severity", "warning"),
                     message=threshold.get("message", f"{key} exceeded threshold"),
                     source_layers=threshold.get("layers", ["metaintel"]),
-                    current_value=current, threshold_value=max_val,
+                    current_value=current,
+                    threshold_value=max_val,
                     triggered_at=now,
                     entity_id=ctx.get("entity_id", ""),
                 )

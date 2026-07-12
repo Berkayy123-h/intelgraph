@@ -3,9 +3,8 @@ from __future__ import annotations
 import hashlib
 import time
 from collections import defaultdict
-from datetime import datetime, timezone
-from typing import Any, Callable
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
@@ -38,10 +37,22 @@ class FeatureStore:
         self._lineage: dict[str, list[str]] = defaultdict(list)
         self._integrity_hashes: dict[str, str] = {}
 
-    def set(self, entity_id: str, name: str, value: float, source: str = "internal", ttl: float = 3600.0, lineage: list[str] | None = None) -> FeatureRecord:
+    def set(
+        self,
+        entity_id: str,
+        name: str,
+        value: float,
+        source: str = "internal",
+        ttl: float = 3600.0,
+        lineage: list[str] | None = None,
+    ) -> FeatureRecord:
         rec = FeatureRecord(
-            name=name, value=value, timestamp=time.time(),
-            entity_id=entity_id, source=source, ttl_seconds=ttl,
+            name=name,
+            value=value,
+            timestamp=time.time(),
+            entity_id=entity_id,
+            source=source,
+            ttl_seconds=ttl,
             lineage=lineage or [],
         )
         self._features[entity_id].append(rec)

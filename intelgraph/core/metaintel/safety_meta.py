@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 import uuid
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -48,9 +48,12 @@ class SafetyMetaControlLayer:
             incident = SecurityIncident(
                 incident_id=f"sec_{uuid.uuid4().hex[:12]}",
                 incident_type="high_error_rate",
-                severity="high", source_layer=layer_id,
+                severity="high",
+                source_layer=layer_id,
                 description=f"Error rate {error_rate:.2f} exceeds threshold in {layer_id}",
-                contains_threat=True, resolved=False, timestamp=time.time(),
+                contains_threat=True,
+                resolved=False,
+                timestamp=time.time(),
             )
             self._incidents.append(incident)
             incidents.append(incident)
@@ -58,9 +61,12 @@ class SafetyMetaControlLayer:
             incident = SecurityIncident(
                 incident_id=f"sec_{uuid.uuid4().hex[:12]}",
                 incident_type="anomaly_spike",
-                severity="medium", source_layer=layer_id,
+                severity="medium",
+                source_layer=layer_id,
                 description=f"Anomaly spike ({anomaly_count}) in {layer_id}",
-                contains_threat=True, resolved=False, timestamp=time.time(),
+                contains_threat=True,
+                resolved=False,
+                timestamp=time.time(),
             )
             self._incidents.append(incident)
             incidents.append(incident)
@@ -72,7 +78,9 @@ class SafetyMetaControlLayer:
         for trace in execution_traces:
             action = trace.get("action", "")
             if action in seen:
-                loops.append({"action": action, "repeated": True, "trace_id": trace.get("trace_id", "")})
+                loops.append(
+                    {"action": action, "repeated": True, "trace_id": trace.get("trace_id", "")}
+                )
             seen.add(action)
         if loops:
             self._contained_loops.extend(loops)
@@ -94,11 +102,17 @@ class SafetyMetaControlLayer:
         self._quarantine_mode = False
         return True
 
-    def record_policy_violation(self, policy_id: str, agent_id: str, details: dict[str, Any]) -> None:
-        self._policy_violations.append({
-            "policy_id": policy_id, "agent_id": agent_id,
-            "details": details, "time": time.time(),
-        })
+    def record_policy_violation(
+        self, policy_id: str, agent_id: str, details: dict[str, Any]
+    ) -> None:
+        self._policy_violations.append(
+            {
+                "policy_id": policy_id,
+                "agent_id": agent_id,
+                "details": details,
+                "time": time.time(),
+            }
+        )
 
     def get_active_threats(self) -> list[SecurityIncident]:
         return [i for i in self._incidents if i.contains_threat and not i.resolved]

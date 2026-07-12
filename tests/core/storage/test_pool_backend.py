@@ -1,6 +1,6 @@
 import pytest
 
-from intelgraph.core.storage.postgres_backend import PostgresBackend, HAS_PSYCOPG2
+from intelgraph.core.storage.postgres_backend import HAS_PSYCOPG2, PostgresBackend
 
 
 class TestPostgresPoolBackend:

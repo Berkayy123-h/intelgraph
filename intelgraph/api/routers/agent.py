@@ -1,23 +1,24 @@
 from __future__ import annotations
 
-import time
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from intelgraph.api.auth_middleware import require_permission
 from intelgraph.core.agent.audit import ExecutionAudit
 from intelgraph.core.agent.compiler import ReasoningCompiler
-from intelgraph.core.agent.distributed import MultiNodeOrchestrator, SharedWorkQueue
+from intelgraph.core.agent.distributed import SharedWorkQueue
 from intelgraph.core.agent.feedback import ExecutionFeedbackLoop
-from intelgraph.core.agent.hierarchy import AgentOrchestrator, AgentRole, ExecutionPlan, TaskNode, TaskStatus
+from intelgraph.core.agent.hierarchy import (
+    AgentOrchestrator,
+    TaskStatus,
+)
 from intelgraph.core.agent.memory import ExecutionMemory
 from intelgraph.core.agent.safety import SafetyGovernor
 from intelgraph.core.agent.simulation import ChaosInjector, SimulationEngine
 from intelgraph.core.agent.tools import ToolExecutor, ToolType
 from intelgraph.core.enterprise import get_metrics as _get_metrics
-from intelgraph.core.nlp.sanitizer import InputSanitizer
 
 router = APIRouter(prefix="/agent", tags=["Agent"])
 
@@ -96,12 +97,15 @@ async def execute_goal(
         call = executor.execute(ToolType.INTERNAL, action_type, {"task": task.description}, sandbox)
         outcome = "success" if call.success else "failure"
         task.status = TaskStatus.COMPLETED if call.success else TaskStatus.FAILED
-        audit.record(call.call_id, agent_id, task_id, action_type, task.description,
-                     outcome, risk, 0.0)
+        audit.record(
+            call.call_id, agent_id, task_id, action_type, task.description, outcome, risk, 0.0
+        )
         results.append({"task_id": task_id, "agent_id": agent_id, "status": outcome})
     _get_metrics().set_gauge("agent_execution_count", len(results))
-    _get_metrics().set_gauge("agent_execution_success_rate",
-                             sum(1 for r in results if r["status"] == "success") / max(len(results), 1))
+    _get_metrics().set_gauge(
+        "agent_execution_success_rate",
+        sum(1 for r in results if r["status"] == "success") / max(len(results), 1),
+    )
     return {"plan_id": plan.plan_id, "goal": goal, "results": results}
 
 
@@ -122,7 +126,11 @@ async def rollback_plan(
     return {"plan_id": plan_id, "rolled_back": rolled, "count": len(rolled)}
 
 
-@router.post("/task/submit", status_code=status.HTTP_201_CREATED, summary="Submit a task to the distributed queue")
+@router.post(
+    "/task/submit",
+    status_code=status.HTTP_201_CREATED,
+    summary="Submit a task to the distributed queue",
+)
 async def submit_task(
     body: dict[str, Any],
     _=require_permission("agent:write"),
@@ -170,7 +178,10 @@ async def validate_execution(
     plans = orchestrator.list_plans()
     results = []
     for p in plans:
-        safe = all(safety.check_action("validate", f"Task {tid}", 0.3).approved for tid in p.agent_assignments)
+        safe = all(
+            safety.check_action("validate", f"Task {tid}", 0.3).approved
+            for tid in p.agent_assignments
+        )
         results.append({"plan_id": p.plan_id, "safe": safe})
     return {"plans": results}
 
@@ -226,7 +237,9 @@ async def kill_switch(
         success = safety.engage_kill_switch(scope, target)
         action = "engaged"
     if not success:
-        raise HTTPException(status_code=400, detail=f"Failed to {action} kill switch ({scope}/{target})")
+        raise HTTPException(
+            status_code=400, detail=f"Failed to {action} kill switch ({scope}/{target})"
+        )
     return {"status": f"kill_switch_{action}", "scope": scope, "target": target}
 
 
@@ -280,4 +293,11 @@ async def query_memory(
     _=require_permission("agent:read"),
 ):
     records = memory.recall(entity_id, key or None)
-    return {"entity_id": entity_id, "records": [{"memory_id": r.memory_id, "key": r.key, "value": r.value, "outcome": r.outcome} for r in records], "count": len(records)}
+    return {
+        "entity_id": entity_id,
+        "records": [
+            {"memory_id": r.memory_id, "key": r.key, "value": r.value, "outcome": r.outcome}
+            for r in records
+        ],
+        "count": len(records),
+    }

@@ -3,10 +3,11 @@ from __future__ import annotations
 import heapq
 import time
 from collections import deque
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
-from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.enterprise.observability import get_metrics
+from intelgraph.core.graph.graph import IntelligenceGraph
 
 
 class _DSU:
@@ -87,12 +88,14 @@ class GraphAlgorithms:
             ui = index_of[src]
             vi = index_of[tgt]
             if dsu.union(ui, vi):
-                mst_edges.append({
-                    "edge_id": eid,
-                    "source": src,
-                    "target": tgt,
-                    "weight": round(weight, 4),
-                })
+                mst_edges.append(
+                    {
+                        "edge_id": eid,
+                        "source": src,
+                        "target": tgt,
+                        "weight": round(weight, 4),
+                    }
+                )
                 total_weight += weight
         duration = time.perf_counter_ns() - t0
         self._record_duration("mst_kruskal", duration)
@@ -109,7 +112,13 @@ class GraphAlgorithms:
         node_ids = list(self._graph.nodes.keys())
         n = len(node_ids)
         if n == 0:
-            return {"algorithm": "prim", "edges": [], "edge_count": 0, "total_weight": 0.0, "execution_time_ms": 0.0}
+            return {
+                "algorithm": "prim",
+                "edges": [],
+                "edge_count": 0,
+                "total_weight": 0.0,
+                "execution_time_ms": 0.0,
+            }
         visited: set[str] = set()
         pq: list[tuple[float, str, str | None, str | None]] = []
         start = node_ids[0]
@@ -131,12 +140,14 @@ class GraphAlgorithms:
             if tgt in visited:
                 continue
             visited.add(tgt)
-            mst_edges.append({
-                "edge_id": eid,
-                "source": src,
-                "target": tgt,
-                "weight": round(weight, 4),
-            })
+            mst_edges.append(
+                {
+                    "edge_id": eid,
+                    "source": src,
+                    "target": tgt,
+                    "weight": round(weight, 4),
+                }
+            )
             total_weight += weight
             node = tgt
             for nb in self._graph.adjacency.get(node, set()):
@@ -313,7 +324,12 @@ class GraphAlgorithms:
 
         duration = time.perf_counter_ns() - t0
         self._record_duration("astar", duration)
-        return {"path": [], "length": 0, "execution_time_ms": round(duration / 1_000_000, 2), "nodes_visited": visited_count}
+        return {
+            "path": [],
+            "length": 0,
+            "execution_time_ms": round(duration / 1_000_000, 2),
+            "nodes_visited": visited_count,
+        }
 
     def path_length_statistics(self) -> dict[str, Any]:
         t0 = time.perf_counter_ns()
@@ -325,6 +341,7 @@ class GraphAlgorithms:
         lengths: list[int] = []
         sample_size = min(n, 50)
         import random
+
         random.seed(42)
         samples = random.sample(node_ids, sample_size) if sample_size < n else node_ids
         for src in samples:
@@ -345,7 +362,7 @@ class GraphAlgorithms:
         mean = sum(lengths) / len(lengths)
         median = lengths[len(lengths) // 2] if lengths else 0
         variance = sum((x - mean) ** 2 for x in lengths) / len(lengths)
-        stddev = variance ** 0.5
+        stddev = variance**0.5
         duration = time.perf_counter_ns() - t0
         self._record_duration("path_stats", duration)
         return {

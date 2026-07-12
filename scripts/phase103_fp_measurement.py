@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 """Phase 10.3: Large-scale RelationshipExtractor FP measurement + threshold."""
+
 from __future__ import annotations
 
 import csv
 import json
 import random
-import re
-import sys
 import time
-from collections import Counter, defaultdict
 
 REPORT_PATH = "/tmp/opencode/phase10/phase103_report.json"
 
@@ -36,12 +34,14 @@ with open(URLHAUS_CSV) as f:
             continue
         parts = next(csv.reader([line]))
         if len(parts) >= 3:
-            urlhaus_rows.append({
-                "id": parts[0],
-                "url": parts[2].strip('"'),
-                "threat": parts[5] if len(parts) > 5 else "",
-                "tags": parts[6] if len(parts) > 6 else "",
-            })
+            urlhaus_rows.append(
+                {
+                    "id": parts[0],
+                    "url": parts[2].strip('"'),
+                    "threat": parts[5] if len(parts) > 5 else "",
+                    "tags": parts[6] if len(parts) > 6 else "",
+                }
+            )
 print(f"  URLhaus satir: {len(urlhaus_rows)}")
 
 kev_entries = []
@@ -80,22 +80,31 @@ for i, row in enumerate(urlhaus_rows):
     entity_count += len(entities)
     rels = rex.extract(text, entities)
     for r in rels:
-        conf_bucket = "verb_0.6" if r.confidence >= 0.55 else ("sentence_0.5" if r.confidence >= 0.4 else "doc_0.35")
+        conf_bucket = (
+            "verb_0.6"
+            if r.confidence >= 0.55
+            else ("sentence_0.5" if r.confidence >= 0.4 else "doc_0.35")
+        )
         level_stats[conf_bucket]["total"] += 1
         rd = r.to_dict()
         rd["_source"] = "urlhaus"
         rd["_conf_bucket"] = conf_bucket
+
         # Check if nodes would exist
         def nid(txt):
             return txt.replace(".", "_").replace(":", "_")
+
         src_t = (rd.get("source") or {}).get("normalized", "") or rd.get("subject", "")
         tgt_t = (rd.get("target") or {}).get("normalized", "") or rd.get("object", "")
         rd["_src_nid"] = nid(src_t)
         rd["_tgt_nid"] = nid(tgt_t)
         all_relationships.append(rd)
     if (i + 1) % 5000 == 0:
-        print(f"  URLhaus: {i+1}/{len(urlhaus_rows)} satir, "
-              f"{entity_count} entity, {len(all_relationships)} iliski", end="\r")
+        print(
+            f"  URLhaus: {i+1}/{len(urlhaus_rows)} satir, "
+            f"{entity_count} entity, {len(all_relationships)} iliski",
+            end="\r",
+        )
 
 t1 = time.perf_counter()
 urlhaus_time = t1 - t0
@@ -108,27 +117,38 @@ kev_rels_start = len(all_relationships)
 kev_ent_count = 0
 t0 = time.perf_counter()
 for i, v in enumerate(kev_entries):
-    text = f"CVE-{v['cveID']}: {v.get('vendorProject','')} {v.get('product','')} " \
-           f"{v.get('vulnerabilityName','')}. {v.get('shortDescription','')}"
+    text = (
+        f"CVE-{v['cveID']}: {v.get('vendorProject','')} {v.get('product','')} "
+        f"{v.get('vulnerabilityName','')}. {v.get('shortDescription','')}"
+    )
     entities = ner.extract(text)
     kev_ent_count += len(entities)
     rels = rex.extract(text, entities)
     for r in rels:
-        conf_bucket = "verb_0.6" if r.confidence >= 0.55 else ("sentence_0.5" if r.confidence >= 0.4 else "doc_0.35")
+        conf_bucket = (
+            "verb_0.6"
+            if r.confidence >= 0.55
+            else ("sentence_0.5" if r.confidence >= 0.4 else "doc_0.35")
+        )
         level_stats[conf_bucket]["total"] += 1
         rd = r.to_dict()
         rd["_source"] = "kev"
         rd["_conf_bucket"] = conf_bucket
+
         def nid(txt):
             return txt.replace(".", "_").replace(":", "_")
+
         src_t = (rd.get("source") or {}).get("normalized", "") or rd.get("subject", "")
         tgt_t = (rd.get("target") or {}).get("normalized", "") or rd.get("object", "")
         rd["_src_nid"] = nid(src_t)
         rd["_tgt_nid"] = nid(tgt_t)
         all_relationships.append(rd)
     if (i + 1) % 500 == 0:
-        print(f"  KEV: {i+1}/{len(kev_entries)} kayit, "
-              f"{kev_ent_count} entity, {len(all_relationships)-kev_rels_start} iliski", end="\r")
+        print(
+            f"  KEV: {i+1}/{len(kev_entries)} kayit, "
+            f"{kev_ent_count} entity, {len(all_relationships)-kev_rels_start} iliski",
+            end="\r",
+        )
 
 t1 = time.perf_counter()
 kev_time = t1 - t0
@@ -138,7 +158,9 @@ print(f"  KEV iliski:   {len(all_relationships) - kev_rels_start}")
 
 # Confirm counts
 for bucket in level_stats:
-    level_stats[bucket]["source_count"] = len([r for r in all_relationships if r["_conf_bucket"] == bucket])
+    level_stats[bucket]["source_count"] = len(
+        [r for r in all_relationships if r["_conf_bucket"] == bucket]
+    )
 
 print(f"\n  Toplam iliski: {len(all_relationships)}")
 print(f"  Verb-based (0.6):      {level_stats['verb_0.6']['source_count']}")
@@ -193,9 +215,11 @@ def estimate_fp(rel):
 
 
 fp_results = {}
-for bucket_name, bucket_label in [("verb_0.6", "Verb-Based (0.6)"),
-                                   ("sentence_0.5", "Same-Sentence (0.5)"),
-                                   ("doc_0.35", "Document-Level (0.35)")]:
+for bucket_name, bucket_label in [
+    ("verb_0.6", "Verb-Based (0.6)"),
+    ("sentence_0.5", "Same-Sentence (0.5)"),
+    ("doc_0.35", "Document-Level (0.35)"),
+]:
     sample = sample_relationships(all_relationships, bucket_name)
     if not sample:
         print(f"  {bucket_label}: 0 ornek (iliski yok)")
@@ -217,8 +241,10 @@ for bucket_name, bucket_label in [("verb_0.6", "Verb-Based (0.6)"),
         src_t = (r.get("source") or {}).get("text", r.get("subject", "?"))
         tgt_t = (r.get("target") or {}).get("text", r.get("object", "?"))
         fp_label = "[FP]" if estimate_fp(r) else "[OK]"
-        print(f"      {fp_label} {r['relation']} {src_t} -> {tgt_t} "
-              f"(src={r.get('_source','?')}) {r.get('sentence','')[:60]}")
+        print(
+            f"      {fp_label} {r['relation']} {src_t} -> {tgt_t} "
+            f"(src={r.get('_source','?')}) {r.get('sentence','')[:60]}"
+        )
 
     fp_results[bucket_name] = {
         "sample_size": len(sample),
@@ -253,7 +279,7 @@ print(f"  Iliski:            {perf['total_relationships']}")
 # The co-occurrence passes are O(E_sentence²) worst case.
 # For URLhaus: avg ~2.5 entities/row, avg ~1 sentence/row → trivial.
 # For KEV: avg ~2.1 entities/entry, avg ~2 sentences/entry → trivial.
-print(f"  O(n²) risk: DUSUK (her kaynak satiri bagimsiz, ortalama entity/row dusuk)")
+print("  O(n²) risk: DUSUK (her kaynak satiri bagimsiz, ortalama entity/row dusuk)")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 4. Threshold decision
@@ -272,16 +298,16 @@ print(f"  Sentence (0.5):  FP={sent_fp*100:.1f}%")
 print(f"  Document (0.35): FP={doc_fp*100:.1f}%")
 
 if doc_fp >= FP_THRESHOLD:
-    print(f"  >>> DOKUMAN-SEVIYESI (0.35) FP orani yuksek. Devre disi birakiliyor.")
-    print(f"  >>> Varsayilan min_confidence=0.4 (sentence-level ve ustu)")
+    print("  >>> DOKUMAN-SEVIYESI (0.35) FP orani yuksek. Devre disi birakiliyor.")
+    print("  >>> Varsayilan min_confidence=0.4 (sentence-level ve ustu)")
     recommended_min_conf = 0.4
 elif sent_fp >= FP_THRESHOLD:
-    print(f"  >>> CUMLE-SEVIYESI (0.5) FP orani yuksek. Sadece verb-based.")
-    print(f"  >>> Varsayilan min_confidence=0.55")
+    print("  >>> CUMLE-SEVIYESI (0.5) FP orani yuksek. Sadece verb-based.")
+    print("  >>> Varsayilan min_confidence=0.55")
     recommended_min_conf = 0.55
 else:
-    print(f"  >>> Tum seviyeler FP esiginin altinda. Mevcut davranis korunuyor.")
-    print(f"  >>> Varsayilan min_confidence=0.0 (filtre yok)")
+    print("  >>> Tum seviyeler FP esiginin altinda. Mevcut davranis korunuyor.")
+    print("  >>> Varsayilan min_confidence=0.0 (filtre yok)")
     recommended_min_conf = 0.0
 
 print(f"\n  Onerilen min_confidence = {recommended_min_conf}")
@@ -294,11 +320,12 @@ section("Adim 5: min_confidence Ekleme")
 from intelgraph.core.nlp.extractor import RelationshipExtractor as RexOriginal
 
 # Verify the existing class
-print(f"  RelationshipExtractor mevcut: OK")
-print(f"  min_confidence parametresi yok — ekleniyor...")
+print("  RelationshipExtractor mevcut: OK")
+print("  min_confidence parametresi yok — ekleniyor...")
 
 # Read the current extractor.py to modify
 import inspect
+
 rex_source = inspect.getsource(RexOriginal.__init__)
 rex_extract_source = inspect.getsource(RexOriginal.extract)
 print(f"  __init__ imzasi: {rex_source[:100]}...")
@@ -322,9 +349,9 @@ report = {
     "fp_threshold": FP_THRESHOLD,
     "recommended_min_confidence": recommended_min_conf,
     "decision": (
-        "filter_all" if recommended_min_conf > 0.5 else
-        "filter_doc_only" if recommended_min_conf == 0.4 else
-        "no_filter"
+        "filter_all"
+        if recommended_min_conf > 0.5
+        else "filter_doc_only" if recommended_min_conf == 0.4 else "no_filter"
     ),
     "status": "PASS",
 }
@@ -333,7 +360,7 @@ print(f"\n  Rapor: {REPORT_PATH}")
 
 # ── Summary ──
 print(f"\n{'='*72}")
-print(f"  FAZ 10.3 TAMAM")
+print("  FAZ 10.3 TAMAM")
 print(f"  Toplam iliski: {len(all_relationships)}")
 print(f"  Verb (0.6):      {level_stats['verb_0.6']['source_count']} ({verb_fp*100:.1f}% FP)")
 print(f"  Sentence (0.5):  {level_stats['sentence_0.5']['source_count']} ({sent_fp*100:.1f}% FP)")

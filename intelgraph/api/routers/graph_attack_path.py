@@ -4,8 +4,8 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
-from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.graph.attack_path import AttackPathAnalyzer, AttackPathCache
+from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.graph.node import Node
 
 router = APIRouter(prefix="/graph/attack-path", tags=["graph"])
@@ -15,6 +15,7 @@ _cache = AttackPathCache()
 
 def _build_graph() -> IntelligenceGraph:
     from intelgraph.api.main import _container
+
     g = IntelligenceGraph()
     for entity in _container.backend.list_entities():
         eid = entity.id
@@ -28,6 +29,7 @@ def _build_graph() -> IntelligenceGraph:
         tgt = rel.target_id
         if src in g.nodes and tgt in g.nodes:
             from intelgraph.core.graph.edge import Edge
+
             g.adjacency.setdefault(src, set()).add(tgt)
             g.adjacency.setdefault(tgt, set()).add(src)
             g.forward_adjacency.setdefault(src, set()).add(tgt)
@@ -100,7 +102,9 @@ def explain_attack_path(path_id: str, body: dict[str, Any] = {}):
     analyzer = AttackPathAnalyzer(_build_graph(), cache=_cache)
     result = analyzer.explain_path(path_id, body)
     if not result["found"]:
-        raise HTTPException(status_code=404, detail=f"Path {path_id} not found or not in provided paths")
+        raise HTTPException(
+            status_code=404, detail=f"Path {path_id} not found or not in provided paths"
+        )
     return result
 
 

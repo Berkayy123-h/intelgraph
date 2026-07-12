@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
@@ -16,6 +16,7 @@ def _get_manager() -> DataSourceManager:
     global _manager
     if _manager is None:
         from intelgraph.api.main import _container
+
         cfg = _container._config
         db_path = cfg.get("storage", {}).get("path", "intelgraph.db")
         _manager = DataSourceManager(db_path)
@@ -24,21 +25,31 @@ def _get_manager() -> DataSourceManager:
 
 
 @router.post("/register", summary="Register a new data source")
-def register_source(body: Dict[str, Any]):
+def register_source(body: dict[str, Any]):
     source_id = body.get("source_id")
     if not source_id:
         import uuid
+
         source_id = str(uuid.uuid4())
     source_name = body.get("name", body.get("source_name", "unnamed"))
     connector_type = body.get("connector_type", body.get("type", ""))
-    overrides: Dict[str, Any] = {}
+    overrides: dict[str, Any] = {}
     key_map = {"polling_interval": "polling_interval_seconds"}
     for key in (
-        "endpoint_url", "file_path", "conn_string", "query",
-        "polling_interval", "polling_interval_seconds",
-        "retry_max_attempts", "retry_base_delay",
-        "auth_type", "auth_credentials", "headers",
-        "feed_schema", "metadata", "enabled",
+        "endpoint_url",
+        "file_path",
+        "conn_string",
+        "query",
+        "polling_interval",
+        "polling_interval_seconds",
+        "retry_max_attempts",
+        "retry_base_delay",
+        "auth_type",
+        "auth_credentials",
+        "headers",
+        "feed_schema",
+        "metadata",
+        "enabled",
     ):
         val = body.get(key)
         if val is not None:
@@ -99,5 +110,5 @@ def get_poll_history(source_id: str, limit: int = 50):
 
 
 @router.post("/bulk-poll", summary="Poll multiple data sources")
-def bulk_poll(body: List[str]):
+def bulk_poll(body: list[str]):
     return _get_manager().bulk_poll(body)

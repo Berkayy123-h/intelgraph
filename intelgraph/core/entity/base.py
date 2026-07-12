@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum, auto
-from typing import Any
 
 import ulid
 
@@ -33,10 +32,10 @@ class BaseEntity:
     id: str = field(default_factory=_generate_id)
     version: int = 1
     entity_type: EntityType = field(init=False)
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    first_seen: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    last_seen: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    first_seen: datetime = field(default_factory=lambda: datetime.now(UTC))
+    last_seen: datetime = field(default_factory=lambda: datetime.now(UTC))
     aliases: tuple[str, ...] = field(default_factory=tuple)
     confidence_score: int = 0
     trust_score: int = 0

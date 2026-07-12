@@ -3,13 +3,13 @@ from __future__ import annotations
 import hashlib
 import os
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import jwt
 
 from intelgraph.core.enterprise import Role, user_role
-from intelgraph.core.multitenant import Tenant, get_tenant_manager
+from intelgraph.core.multitenant import get_tenant_manager
 
 _token_store: dict[str, dict[str, Any]] = {}
 
@@ -36,14 +36,16 @@ def _verify_password(password: str, stored: str) -> bool:
     return dk.hex() == expected
 
 
-def register_user(username: str, password: str, role: str = "user", tenant_id: str = "") -> dict[str, Any]:
+def register_user(
+    username: str, password: str, role: str = "user", tenant_id: str = ""
+) -> dict[str, Any]:
     uid = hashlib.sha256(username.encode()).hexdigest()[:16]
     _token_store[uid] = {
         "username": username,
         "password_hash": _hash_password(password),
         "role": role,
         "tenant_id": tenant_id,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
     }
     return _issue_token(uid, tenant_id)
 
@@ -66,13 +68,13 @@ def login_with_api_key(api_key: str) -> dict[str, Any] | None:
             "password_hash": "",
             "role": "admin",
             "tenant_id": tenant.tenant_id,
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
         }
     return _issue_token(uid, tenant.tenant_id)
 
 
 def _issue_token(user_id: str, tenant_id: str = "") -> dict[str, Any]:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload: dict[str, Any] = {
         "sub": user_id,
         "iat": now,
@@ -141,7 +143,7 @@ def register_oauth_client(
         "client_secret_hash": hashed,
         "tenant_id": tenant_id,
         "scopes": scopes or ["read"],
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "is_active": True,
     }
     return {"client_id": client_id, "client_secret": client_secret, "tenant_id": tenant_id}
@@ -161,7 +163,7 @@ def _issue_oauth_token(
     tenant_id: str,
     scopes: list[str],
 ) -> dict[str, Any]:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     access_payload: dict[str, Any] = {
         "sub": client_id,
         "iat": now,
@@ -230,7 +232,7 @@ def login_with_2fa_step1(username: str, password: str) -> dict[str, Any] | None:
             totp_manager = get_totp_manager()
             if totp_manager.is_enabled(uid):
                 # Generate a short-lived temp token for 2FA verification
-                now = datetime.now(timezone.utc)
+                now = datetime.now(UTC)
                 temp_payload: dict[str, Any] = {
                     "sub": uid,
                     "iat": now,

@@ -7,7 +7,6 @@ from typing import Any
 import click
 
 from intelgraph.core.cognitive import (
-    ContradictionDetector,
     HypothesisGenerator,
     ReasoningEngine,
     SelfLearningLoop,
@@ -23,7 +22,9 @@ def cognitive_group() -> None:
 @cognitive_group.command("query")
 @click.argument("start", type=str)
 @click.argument("end", type=str)
-@click.option("--type", "-t", "query_type", default="multi_hop", help="Query type: multi_hop or causal")
+@click.option(
+    "--type", "-t", "query_type", default="multi_hop", help="Query type: multi_hop or causal"
+)
 def query(start: str, end: str, query_type: str) -> None:
     """Multi-hop reasoning query between two entities."""
     engine = ReasoningEngine()

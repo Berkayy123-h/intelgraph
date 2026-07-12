@@ -8,7 +8,6 @@ import click
 
 from intelgraph.core.enterprise import get_metrics
 from intelgraph.core.operations.backup import BackupManager
-from intelgraph.core.operations.alerting import get_alert_engine
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +23,7 @@ def ops_health(obj: dict) -> None:
     cfg = obj.get("config", {})
     metrics = get_metrics().snapshot()
     import structlog
+
     log = structlog.get_logger(__name__)
     storage_backend = cfg.get("storage", {}).get("backend", "sqlite")
     db_path = cfg.get("storage", {}).get("path", "intelgraph.db")
@@ -69,6 +69,7 @@ def ops_backup(obj: dict, label: str) -> None:
 @click.pass_obj
 def ops_rotate_logs(obj: dict) -> None:
     import logging.handlers
+
     rotated = 0
     for handler in logging.getLogger().handlers:
         if isinstance(handler, logging.handlers.RotatingFileHandler):

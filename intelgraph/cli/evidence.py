@@ -35,18 +35,31 @@ def evidence_chain(ctx: click.Context, entity_id: str, full: bool) -> None:
         return
     d = chain.to_dict()
     if not full:
-        d["evidence"] = [{"evidence_id": e["evidence_id"], "claim": e["claim"][:80], "support_type": e["support_type"]} for e in d["evidence"]]
+        d["evidence"] = [
+            {
+                "evidence_id": e["evidence_id"],
+                "claim": e["claim"][:80],
+                "support_type": e["support_type"],
+            }
+            for e in d["evidence"]
+        ]
     click.echo(json.dumps(d, indent=2, default=str))
 
 
 @evidence_group.command(name="list", help="List evidence chains")
-@click.option("--status", type=click.Choice(["verified", "contested", "unknown", "debunked"]), default=None)
+@click.option(
+    "--status", type=click.Choice(["verified", "contested", "unknown", "debunked"]), default=None
+)
 @click.option("--min-confidence", type=float, default=None)
 @click.option("--contradictions", is_flag=True, default=False, help="Only contested chains")
 @click.pass_context
-def evidence_list(ctx: click.Context, status: str | None, min_confidence: float | None, contradictions: bool) -> None:
+def evidence_list(
+    ctx: click.Context, status: str | None, min_confidence: float | None, contradictions: bool
+) -> None:
     mgr = _get_manager(ctx)
-    chains = mgr.list_chains(status=status, min_confidence=min_confidence, only_contradictions=contradictions)
+    chains = mgr.list_chains(
+        status=status, min_confidence=min_confidence, only_contradictions=contradictions
+    )
     result = [
         {
             "chain_id": c.chain_id[:12],
@@ -67,11 +80,20 @@ def evidence_list(ctx: click.Context, status: str | None, min_confidence: float 
 @click.argument("source_id")
 @click.argument("document_id")
 @click.argument("claim")
-@click.option("--support", type=click.Choice(["supports", "contradicts", "neutral"]), default="supports")
+@click.option(
+    "--support", type=click.Choice(["supports", "contradicts", "neutral"]), default="supports"
+)
 @click.option("--confidence", type=float, default=50.0)
 @click.pass_context
-def evidence_add(ctx: click.Context, entity_id: str, source_id: str, document_id: str,
-                 claim: str, support: str, confidence: float) -> None:
+def evidence_add(
+    ctx: click.Context,
+    entity_id: str,
+    source_id: str,
+    document_id: str,
+    claim: str,
+    support: str,
+    confidence: float,
+) -> None:
     mgr = _get_manager(ctx)
     chain = mgr.add_evidence(
         entity_id=entity_id,
@@ -82,7 +104,14 @@ def evidence_add(ctx: click.Context, entity_id: str, source_id: str, document_id
         confidence=confidence,
     )
     d = chain.to_dict()
-    d["evidence"] = [{"evidence_id": e["evidence_id"], "claim": e["claim"][:60], "support_type": e["support_type"]} for e in d["evidence"]]
+    d["evidence"] = [
+        {
+            "evidence_id": e["evidence_id"],
+            "claim": e["claim"][:60],
+            "support_type": e["support_type"],
+        }
+        for e in d["evidence"]
+    ]
     click.echo(json.dumps(d, indent=2, default=str))
 
 
@@ -95,14 +124,20 @@ def evidence_recompute(ctx: click.Context, entity_id: str) -> None:
     if chain is None:
         click.echo(json.dumps({"error": f"No chain found for entity {entity_id}"}, indent=2))
         return
-    click.echo(json.dumps({
-        "chain_id": chain.chain_id[:12],
-        "entity_id": chain.entity_id,
-        "confidence": chain.confidence,
-        "contradiction_score": chain.contradiction_score,
-        "status": chain.status.name_lower,
-        "version": chain.version,
-    }, indent=2, default=str))
+    click.echo(
+        json.dumps(
+            {
+                "chain_id": chain.chain_id[:12],
+                "entity_id": chain.entity_id,
+                "confidence": chain.confidence,
+                "contradiction_score": chain.contradiction_score,
+                "status": chain.status.name_lower,
+                "version": chain.version,
+            },
+            indent=2,
+            default=str,
+        )
+    )
 
 
 @evidence_group.command(name="contradictions", help="List chains with contradictions")

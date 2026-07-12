@@ -32,7 +32,7 @@ def _prometheus_format() -> str:
 
     status_codes = metrics.get("status_codes", {})
     for code, count in sorted(status_codes.items()):
-        lines.append(f'# HELP intelgraph_status_code_total Requests per status code')
+        lines.append("# HELP intelgraph_status_code_total Requests per status code")
         lines.append("# TYPE intelgraph_status_code_total counter")
         lines.append(f'intelgraph_status_code_total{{code="{code}"}} {count}')
 
@@ -60,6 +60,7 @@ def _prometheus_format() -> str:
 )
 def get_prometheus_metrics():
     from fastapi.responses import PlainTextResponse
+
     return PlainTextResponse(
         content=_prometheus_format(),
         media_type="text/plain; version=0.0.4",

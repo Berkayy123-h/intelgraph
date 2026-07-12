@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import Any
 
 from intelgraph.core.evidence_chain.base import EvidenceChain, EvidenceItem, EvidenceStatus
 
@@ -67,7 +66,9 @@ class ChainValidator:
         if item.evidence_id in seen_ids:
             errors.append(f"evidence_item {item.evidence_id}: duplicate evidence_id")
         if not 0.0 <= item.confidence <= 100.0:
-            errors.append(f"evidence_item {item.evidence_id}: confidence {item.confidence} out of range")
+            errors.append(
+                f"evidence_item {item.evidence_id}: confidence {item.confidence} out of range"
+            )
 
         return errors
 

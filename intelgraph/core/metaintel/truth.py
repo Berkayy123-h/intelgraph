@@ -5,7 +5,7 @@ import json
 import time
 import uuid
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -39,7 +39,9 @@ class TruthConsistencyGovernor:
         self._evidence_registry: dict[str, list[dict[str, Any]]] = defaultdict(list)
         self._temporal_history: dict[str, list[dict[str, Any]]] = defaultdict(list)
 
-    def resolve_contradiction(self, claim_a: dict[str, Any], claim_b: dict[str, Any]) -> dict[str, Any]:
+    def resolve_contradiction(
+        self, claim_a: dict[str, Any], claim_b: dict[str, Any]
+    ) -> dict[str, Any]:
         conf_a = claim_a.get("confidence", 0.5)
         conf_b = claim_b.get("confidence", 0.5)
         evidence_a = claim_a.get("evidence", [])
@@ -49,7 +51,8 @@ class TruthConsistencyGovernor:
             resolved = claim_a if len(evidence_a) >= len(evidence_b) else claim_b
         contradiction = {
             "contradiction_id": f"ctd_{uuid.uuid4().hex[:12]}",
-            "claim_a": claim_a, "claim_b": claim_b,
+            "claim_a": claim_a,
+            "claim_b": claim_b,
             "resolution": resolved,
             "resolved_at": time.time(),
             "method": "confidence_weighted",
@@ -57,23 +60,51 @@ class TruthConsistencyGovernor:
         self._contradictions.append(contradiction)
         return resolved
 
-    def reconcile(self, knowledge_state: dict[str, Any], reasoning_state: dict[str, Any],
-                  execution_state: dict[str, Any]) -> dict[str, Any]:
+    def reconcile(
+        self,
+        knowledge_state: dict[str, Any],
+        reasoning_state: dict[str, Any],
+        execution_state: dict[str, Any],
+    ) -> dict[str, Any]:
         unified = {}
-        all_keys = set(knowledge_state.keys()) | set(reasoning_state.keys()) | set(execution_state.keys())
+        all_keys = (
+            set(knowledge_state.keys()) | set(reasoning_state.keys()) | set(execution_state.keys())
+        )
         for key in all_keys:
             values = []
             if key in knowledge_state:
-                values.append(("knowledge", knowledge_state[key], knowledge_state.get(f"{key}_confidence", 0.5)))
+                values.append(
+                    (
+                        "knowledge",
+                        knowledge_state[key],
+                        knowledge_state.get(f"{key}_confidence", 0.5),
+                    )
+                )
             if key in reasoning_state:
-                values.append(("reasoning", reasoning_state[key], reasoning_state.get(f"{key}_confidence", 0.5)))
+                values.append(
+                    (
+                        "reasoning",
+                        reasoning_state[key],
+                        reasoning_state.get(f"{key}_confidence", 0.5),
+                    )
+                )
             if key in execution_state:
-                values.append(("execution", execution_state[key], execution_state.get(f"{key}_confidence", 0.5)))
+                values.append(
+                    (
+                        "execution",
+                        execution_state[key],
+                        execution_state.get(f"{key}_confidence", 0.5),
+                    )
+                )
             if len(values) > 1:
                 best = max(values, key=lambda v: v[2])
                 unified[key] = {"value": best[1], "source": best[0], "confidence": best[2]}
             elif values:
-                unified[key] = {"value": values[0][1], "source": values[0][0], "confidence": values[0][2]}
+                unified[key] = {
+                    "value": values[0][1],
+                    "source": values[0][0],
+                    "confidence": values[0][2],
+                }
         return unified
 
     def snapshot(self, unified_state: dict[str, Any]) -> TruthSnapshot:
@@ -100,7 +131,9 @@ class TruthConsistencyGovernor:
         return list(self._temporal_history.get(key, []))
 
     def record_temporal(self, key: str, value: Any, confidence: float) -> None:
-        self._temporal_history[key].append({"value": value, "confidence": confidence, "time": time.time()})
+        self._temporal_history[key].append(
+            {"value": value, "confidence": confidence, "time": time.time()}
+        )
         if len(self._temporal_history[key]) > 100:
             self._temporal_history[key] = self._temporal_history[key][-100:]
 
@@ -112,7 +145,9 @@ class TruthConsistencyGovernor:
             return {}
         if len(claims) == 1:
             return claims[0]
-        best = max(claims, key=lambda c: c.get("confidence", 0.0) * (1 + len(c.get("evidence", [])) * 0.1))
+        best = max(
+            claims, key=lambda c: c.get("confidence", 0.0) * (1 + len(c.get("evidence", [])) * 0.1)
+        )
         return best
 
     def get_contradictions(self, limit: int = 100) -> list[dict[str, Any]]:

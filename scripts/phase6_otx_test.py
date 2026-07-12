@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Phase 6 — OTX'i Ikinci Kaynak Olarak Ekle ve Çapraz Kaynak Testi
 
@@ -10,20 +9,19 @@ Phase 6 — OTX'i Ikinci Kaynak Olarak Ekle ve Çapraz Kaynak Testi
 5. EntityMatcher birleştirme davranışını doğrula
 6. NER FP fix'inin OTX verisinde çalıştığını kontrol et
 """
+
 from __future__ import annotations
 
+import csv
 import json
 import os
-import re
-import csv
 import sys
 from collections import Counter
 from pathlib import Path
-from urllib.parse import urlparse
 
+from intelgraph.core.nlp.extractor import NEREngine
 from intelgraph.core.pipeline.chain import Pipeline
 from intelgraph.core.source.otx import OtxClient, fetch_urlhaus_iocs
-from intelgraph.core.nlp.extractor import NEREngine
 
 OUT_DIR = Path("/tmp/opencode/phase6")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -55,21 +53,23 @@ total_otx_iocs = sum(len(v) for v in all_otx_iocs.values())
 print(f"  Toplam IOC sayısı: {total_otx_iocs}")
 
 # IOC tipi dağılımı
-print(f"\n  IOC Tipi Dağılımı:")
+print("\n  IOC Tipi Dağılımı:")
 for ioc_type, items in sorted(all_otx_iocs.items()):
     if items:
         print(f"    {ioc_type:12s}: {len(items)}")
 
 # Pulse detaylarını göster
-print(f"\n  Pulse Detayları:")
+print("\n  Pulse Detayları:")
 for p in pulses[:5]:
     print(f"    [{p.pulse_id[:12]}..] {p.name}")
-    print(f"           author={p.author}, tags={p.tags[:5]}, "
-          f"indicators={len(p.indicators)}, tlp={p.tlp}")
+    print(
+        f"           author={p.author}, tags={p.tags[:5]}, "
+        f"indicators={len(p.indicators)}, tlp={p.tlp}"
+    )
 
 # Bir pulse'ın source dict formatını göster
 src_example = pulses[0].to_source_dict()
-print(f"\n  Örnek source dict (ilk pulse):")
+print("\n  Örnek source dict (ilk pulse):")
 print(f"    id={src_example['id']}")
 print(f"    text[:200]={src_example['text'][:200]}...")
 
@@ -113,9 +113,11 @@ otx_ips = set(i["indicator"].strip().lower() for i in all_otx_iocs.get("IPv4", [
 ip_overlap = urlhaus_ips & otx_ips
 domain_overlap = urlhaus_domains & otx_domains
 
-print(f"\n  Küme kesişimi (unique değerler):")
+print("\n  Küme kesişimi (unique değerler):")
 print(f"    IP     URLhaus={len(urlhaus_ips)}  OTX={len(otx_ips)}  ortak={len(ip_overlap)}")
-print(f"    Domain URLhaus={len(urlhaus_domains)}  OTX={len(otx_domains)}  ortak={len(domain_overlap)}")
+print(
+    f"    Domain URLhaus={len(urlhaus_domains)}  OTX={len(otx_domains)}  ortak={len(domain_overlap)}"
+)
 
 if ip_overlap:
     for ip in list(ip_overlap)[:3]:
@@ -130,9 +132,7 @@ section("4. Pipeline.run() — Çift Kaynak Testi")
 
 # Build sources: URLhaus CSV + OTX pulses
 urlhaus_text = "\n".join(
-    r[2] for r in csv.reader(
-        l for l in open(URLHAUS_CSV) if not l.startswith('#')
-    )
+    r[2] for r in csv.reader(l for l in open(URLHAUS_CSV) if not l.startswith("#"))
 )
 
 sources = [
@@ -180,7 +180,7 @@ print(f"  Extracted entities:    {len(result.extracted_entities)}")
 
 # Entity label distribution
 label_counts = Counter(e.label for e in result.extracted_entities)
-print(f"\n  Entity label dağılımı:")
+print("\n  Entity label dağılımı:")
 for label, cnt in label_counts.most_common():
     print(f"    {label:12s}: {cnt}")
 
@@ -237,18 +237,20 @@ if result.graph:
                 print(f"    kaynaklar: {sources_set}")
                 for ev in node.entity.evidence[:2]:
                     for prov in ev.provenance[:2]:
-                        print(f"      provenance: source={prov.source_name}, "
-                              f"confidence={prov.confidence}, "
-                              f"method={prov.collection_method}")
+                        print(
+                            f"      provenance: source={prov.source_name}, "
+                            f"confidence={prov.confidence}, "
+                            f"method={prov.collection_method}"
+                        )
 
     print(f"\n  Çok kaynaklı node: {multi_source_nodes}")
-    print(f"  (2+ farklı provenans kaynağına sahip node sayısı)")
+    print("  (2+ farklı provenans kaynağına sahip node sayısı)")
     if multi_source_nodes == 0:
-        print(f"  (beklenir: ortak IOC bulunamazsa 0 olabilir)")
+        print("  (beklenir: ortak IOC bulunamazsa 0 olabilir)")
 
     # Show chain stats
     if result.chain_stats:
-        print(f"\n  Chain istatistikleri:")
+        print("\n  Chain istatistikleri:")
         for k, v in result.chain_stats.items():
             print(f"    {k}: {v}")
 
@@ -269,12 +271,12 @@ for p in pulses[:10]:
             if e.text not in otx_ner_examples[e.label]:
                 otx_ner_examples[e.label].append(e.text)
 
-print(f"  OTX pulse'larında NER entity dağılımı:")
+print("  OTX pulse'larında NER entity dağılımı:")
 total_ner = sum(otx_ner_stats.values())
 for label, cnt in otx_ner_stats.most_common():
     print(f"    {label:12s}: {cnt} ({cnt/total_ner*100:.1f}%)")
 
-print(f"\n  Örnekler:")
+print("\n  Örnekler:")
 for label, examples in otx_ner_examples.items():
     if examples:
         print(f"    {label}:")
@@ -282,11 +284,18 @@ for label, examples in otx_ner_examples.items():
             print(f"      • '{ex}'")
 
 # Specifically test: are filenames in OTX data correctly classified?
-print(f"\n  FILENAME kontrolü (beklenen: .zip, .exe, .sh gibi uzantılar FILENAME):")
+print("\n  FILENAME kontrolü (beklenen: .zip, .exe, .sh gibi uzantılar FILENAME):")
 test_filename_patterns = [
-    "sample.exe", "malware.zip", "script.sh", "payload.dll",
-    "document.pdf", "data.csv", "config.xml", "image.png",
-    "installer.msi", "virus.bat",
+    "sample.exe",
+    "malware.zip",
+    "script.sh",
+    "payload.dll",
+    "document.pdf",
+    "data.csv",
+    "config.xml",
+    "image.png",
+    "installer.msi",
+    "virus.bat",
 ]
 for fp in test_filename_patterns:
     entities = ner.extract(fp)
@@ -296,10 +305,14 @@ for fp in test_filename_patterns:
     print(f"    {status} '{fp}' → {label}")
 
 # Test real domains still work
-print(f"\n  DOMAIN kontrolü (beklenen: geçerli TLD'ler DOMAIN):")
+print("\n  DOMAIN kontrolü (beklenen: geçerli TLD'ler DOMAIN):")
 test_domain_patterns = [
-    "evil.example.com", "malware.xyz", "c2.badguys.org",
-    "pastebin.com", "github.com", "telegram.org",
+    "evil.example.com",
+    "malware.xyz",
+    "c2.badguys.org",
+    "pastebin.com",
+    "github.com",
+    "telegram.org",
 ]
 for td in test_domain_patterns:
     entities = ner.extract(td)
@@ -344,24 +357,28 @@ NER FP Fix (OTX):
 
 # Save full result
 with open(OUT_DIR / "phase6_result.json", "w") as f:
-    json.dump({
-        "otx_pulses": len(pulses),
-        "otx_iocs": total_otx_iocs,
-        "urlhaus_iocs": total_urlhaus,
-        "common_domains": len(domain_overlap),
-        "common_ips": len(ip_overlap),
-        "pipeline_entities": len(result.extracted_entities),
-        "pipeline_domains": len(domains),
-        "pipeline_filenames": len(filenames),
-        "pipeline_unknowns": len(unknowns),
-        "pipeline_nodes": len(result.graph.nodes) if result.graph else 0,
-        "pipeline_alerts": len(result.alerts),
-        "pipeline_incidents": len(result.incidents),
-        "pipeline_errors": len(result.errors),
-        "ner_fp_otx_domains": otx_ner_stats.get("DOMAIN", 0),
-        "ner_fp_otx_filenames": otx_ner_stats.get("FILENAME", 0),
-        "ner_fp_otx_unknowns": otx_ner_stats.get("UNKNOWN", 0),
-    }, f, indent=2)
+    json.dump(
+        {
+            "otx_pulses": len(pulses),
+            "otx_iocs": total_otx_iocs,
+            "urlhaus_iocs": total_urlhaus,
+            "common_domains": len(domain_overlap),
+            "common_ips": len(ip_overlap),
+            "pipeline_entities": len(result.extracted_entities),
+            "pipeline_domains": len(domains),
+            "pipeline_filenames": len(filenames),
+            "pipeline_unknowns": len(unknowns),
+            "pipeline_nodes": len(result.graph.nodes) if result.graph else 0,
+            "pipeline_alerts": len(result.alerts),
+            "pipeline_incidents": len(result.incidents),
+            "pipeline_errors": len(result.errors),
+            "ner_fp_otx_domains": otx_ner_stats.get("DOMAIN", 0),
+            "ner_fp_otx_filenames": otx_ner_stats.get("FILENAME", 0),
+            "ner_fp_otx_unknowns": otx_ner_stats.get("UNKNOWN", 0),
+        },
+        f,
+        indent=2,
+    )
 print(f"  Sonuç kaydedildi: {OUT_DIR / 'phase6_result.json'}")
 
 pipeline.cleanup()

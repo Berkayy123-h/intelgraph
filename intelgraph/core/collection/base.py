@@ -1,7 +1,7 @@
 import hashlib
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import ulid
@@ -20,7 +20,7 @@ class CollectionDocument:
     content_type: str = "text"
     metadata: dict[str, Any] = field(default_factory=dict)
     source_url: str = ""
-    collected_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    collected_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     content_hash: str = ""
 
     def __post_init__(self) -> None:
@@ -52,12 +52,10 @@ class Collector(ABC):
         return self._name
 
     @abstractmethod
-    def collect(self, target: str, **kwargs: Any) -> CollectionResult:
-        ...
+    def collect(self, target: str, **kwargs: Any) -> CollectionResult: ...
 
     @abstractmethod
-    def validate_target(self, target: str) -> bool:
-        ...
+    def validate_target(self, target: str) -> bool: ...
 
     def make_provenance(
         self, collection_id: str, target: str, source_lineage: SourceLineage | None = None
@@ -65,7 +63,7 @@ class Collector(ABC):
         return Provenance(
             collection_id=collection_id,
             collector_name=self._name,
-            collected_at=datetime.now(timezone.utc),
+            collected_at=datetime.now(UTC),
             source_lineage=source_lineage,
         )
 
@@ -81,7 +79,7 @@ class Collector(ABC):
             id=str(ulid.new()),
             source=source_url,
             content=content[:1000],
-            collected_at=datetime.now(timezone.utc),
+            collected_at=datetime.now(UTC),
             source_tier=source_tier,
             trust_score=trust_score,
             reliability_score=reliability_score,

@@ -17,16 +17,48 @@ def _entity_to_dict(entity: BaseEntity) -> dict[str, Any]:
         "confidence_score": entity.confidence_score,
         "trust_score": entity.trust_score,
     }
-    for field in ("name", "legal_name", "domain", "domain_name", "address",
-                  "username", "platform", "profile_url", "ip", "rdns", "asn",
-                  "organization", "title", "industry", "headquarters",
-                  "registrant", "registrar", "serial", "issuer", "subject",
-                  "fingerprint", "category", "version", "cpe",
-                  "email_addresses", "usernames", "social_profiles",
-                  "company_affiliations", "domains", "phone_numbers",
-                  "subsidiaries", "nameservers", "ip_addresses", "technologies",
-                  "associated_accounts", "open_ports",
-                  "creation_date", "expiration_date", "validity_start", "validity_end"):
+    for field in (
+        "name",
+        "legal_name",
+        "domain",
+        "domain_name",
+        "address",
+        "username",
+        "platform",
+        "profile_url",
+        "ip",
+        "rdns",
+        "asn",
+        "organization",
+        "title",
+        "industry",
+        "headquarters",
+        "registrant",
+        "registrar",
+        "serial",
+        "issuer",
+        "subject",
+        "fingerprint",
+        "category",
+        "version",
+        "cpe",
+        "email_addresses",
+        "usernames",
+        "social_profiles",
+        "company_affiliations",
+        "domains",
+        "phone_numbers",
+        "subsidiaries",
+        "nameservers",
+        "ip_addresses",
+        "technologies",
+        "associated_accounts",
+        "open_ports",
+        "creation_date",
+        "expiration_date",
+        "validity_start",
+        "validity_end",
+    ):
         val = getattr(entity, field, None)
         if val is not None and val != "" and val != () and val != tuple():
             if isinstance(val, (list, tuple)):
@@ -40,9 +72,16 @@ def _entity_to_dict(entity: BaseEntity) -> dict[str, Any]:
 
 def _dict_to_entity(data: dict[str, Any], entity_type: str) -> BaseEntity:
     from intelgraph.core.entity import (
-        Certificate, Company, Domain, Email, IPAddress, Person,
-        Technology, Username,
+        Certificate,
+        Company,
+        Domain,
+        Email,
+        IPAddress,
+        Person,
+        Technology,
+        Username,
     )
+
     mapping = {
         "person": Person,
         "company": Company,
@@ -57,10 +96,18 @@ def _dict_to_entity(data: dict[str, Any], entity_type: str) -> BaseEntity:
     if cls is None:
         raise ValueError(f"Unknown entity type: {entity_type}")
     field_map = {
-        "email_addresses": tuple, "usernames": tuple, "social_profiles": tuple,
-        "company_affiliations": tuple, "domains": tuple, "phone_numbers": tuple,
-        "subsidiaries": tuple, "nameservers": tuple, "ip_addresses": tuple,
-        "technologies": tuple, "associated_accounts": tuple, "open_ports": tuple,
+        "email_addresses": tuple,
+        "usernames": tuple,
+        "social_profiles": tuple,
+        "company_affiliations": tuple,
+        "domains": tuple,
+        "phone_numbers": tuple,
+        "subsidiaries": tuple,
+        "nameservers": tuple,
+        "ip_addresses": tuple,
+        "technologies": tuple,
+        "associated_accounts": tuple,
+        "open_ports": tuple,
         "aliases": tuple,
     }
     kwargs: dict[str, Any] = {}
@@ -97,6 +144,7 @@ def _relationship_to_dict(rel: Relationship) -> dict[str, Any]:
 
 def _dict_to_relationship(data: dict[str, Any], rel_type: str) -> Relationship:
     from intelgraph.core.relationship import RelationshipType
+
     rtype = RelationshipType[rel_type.upper()]
     return Relationship(
         id=data["id"],

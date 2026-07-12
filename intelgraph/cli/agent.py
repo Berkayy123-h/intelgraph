@@ -2,17 +2,17 @@ from __future__ import annotations
 
 import json
 import sys
-import time
 import uuid
 from typing import Any
 
 import click
 
 from intelgraph.core.agent.audit import ExecutionAudit
-from intelgraph.core.agent.compiler import ReasoningCompiler
-from intelgraph.core.agent.distributed import MultiNodeOrchestrator, SharedWorkQueue
-from intelgraph.core.agent.feedback import ExecutionFeedbackLoop
-from intelgraph.core.agent.hierarchy import AgentOrchestrator, AgentRole, ExecutionPlan, TaskNode, TaskStatus
+from intelgraph.core.agent.distributed import SharedWorkQueue
+from intelgraph.core.agent.hierarchy import (
+    AgentOrchestrator,
+    TaskStatus,
+)
 from intelgraph.core.agent.memory import ExecutionMemory
 from intelgraph.core.agent.safety import SafetyGovernor
 from intelgraph.core.agent.simulation import ChaosInjector, SimulationEngine
@@ -57,8 +57,12 @@ def execute(goal: str, sandbox: str) -> None:
         call = executor.execute(ToolType.INTERNAL, action_type, {"task": task.description}, sandbox)
         outcome = "success" if call.success else "failure"
         task.status = TaskStatus.COMPLETED if call.success else TaskStatus.FAILED
-        audit.record(call.call_id, agent_id, task_id, action_type, task.description, outcome, risk, 0.0)
-        results.append({"task_id": task_id, "agent_id": agent_id, "status": outcome, "tool_call": call.call_id})
+        audit.record(
+            call.call_id, agent_id, task_id, action_type, task.description, outcome, risk, 0.0
+        )
+        results.append(
+            {"task_id": task_id, "agent_id": agent_id, "status": outcome, "tool_call": call.call_id}
+        )
     _print_json({"plan_id": plan.plan_id, "goal": goal, "results": results})
 
 
@@ -123,7 +127,10 @@ def validate(plan_id: str | None) -> None:
         plans = orchestrator.list_plans()
         results = []
         for p in plans:
-            safe = all(safety.check_action("validate", f"Task {tid}", 0.3).approved for tid in p.agent_assignments)
+            safe = all(
+                safety.check_action("validate", f"Task {tid}", 0.3).approved
+                for tid in p.agent_assignments
+            )
             results.append({"plan_id": p.plan_id, "safe": safe})
         _print_json({"plans": results})
 
@@ -156,7 +163,12 @@ def replay(trace_id: str) -> None:
 
 
 @agent_group.command("kill-switch")
-@click.option("--scope", type=click.Choice(["global", "agent", "task"]), default="global", help="Kill switch scope")
+@click.option(
+    "--scope",
+    type=click.Choice(["global", "agent", "task"]),
+    default="global",
+    help="Kill switch scope",
+)
 @click.option("--target", default="", help="Target ID (for agent/task scope)")
 @click.option("--disengage", is_flag=True, help="Disengage instead of engage")
 def kill_switch(scope: str, target: str, disengage: bool) -> None:
@@ -180,12 +192,14 @@ def kill_switch(scope: str, target: str, disengage: bool) -> None:
 def config(show: bool) -> None:
     """Get or set agent configuration."""
     if show:
-        _print_json({
-            "default_sandbox": "medium",
-            "max_agents": 10,
-            "heartbeat_interval": 30,
-            "forbidden_actions": ["shutdown", "destroy", "nuke"],
-        })
+        _print_json(
+            {
+                "default_sandbox": "medium",
+                "max_agents": 10,
+                "heartbeat_interval": 30,
+                "forbidden_actions": ["shutdown", "destroy", "nuke"],
+            }
+        )
 
 
 @agent_group.command("audit")
@@ -207,10 +221,17 @@ def memory(entity_id: str | None, key: str) -> None:
     mem = ExecutionMemory()
     if entity_id:
         records = mem.recall(entity_id, key or None)
-        _print_json([{"memory_id": r.memory_id, "key": r.key, "value": r.value, "outcome": r.outcome} for r in records])
+        _print_json(
+            [
+                {"memory_id": r.memory_id, "key": r.key, "value": r.value, "outcome": r.outcome}
+                for r in records
+            ]
+        )
     else:
         all_mem = mem.get_memory(limit=100)
-        _print_json({r.entity_id: {"key": r.key, "value": r.value, "outcome": r.outcome} for r in all_mem})
+        _print_json(
+            {r.entity_id: {"key": r.key, "value": r.value, "outcome": r.outcome} for r in all_mem}
+        )
 
 
 def _print_json(data: Any) -> None:

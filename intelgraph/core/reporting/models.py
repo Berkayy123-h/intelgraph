@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import json
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone
+from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -25,7 +24,7 @@ class Report:
     title: str = ""
     time_range_start: str = ""
     time_range_end: str = ""
-    generated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    generated_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     file_path: str = ""
     html_content: str = ""
     metadata: dict[str, Any] = field(default_factory=dict)

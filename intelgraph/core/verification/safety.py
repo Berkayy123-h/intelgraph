@@ -48,6 +48,7 @@ class SafetyChecker:
         if len(source_domains) < 2:
             return flags
         from collections import Counter
+
         domain_counts: Counter[str] = Counter()
         for d in source_domains:
             parts = d.split("/")
@@ -74,7 +75,9 @@ class SafetyChecker:
         return flags
 
     @staticmethod
-    def check_contradiction_for_confirmed(contradiction: float, verification_state: str) -> list[str]:
+    def check_contradiction_for_confirmed(
+        contradiction: float, verification_state: str
+    ) -> list[str]:
         flags: list[str] = []
         if verification_state == "confirmed" and contradiction >= 20:
             flags.append(f"contradiction({contradiction:.1f}) should be resolved before CONFIRMED")
@@ -93,7 +96,9 @@ class SafetyChecker:
         report.flags.extend(SafetyChecker.check_source_dominance(source_trust_scores))
         report.flags.extend(SafetyChecker.check_domain_bias(source_domains))
         report.flags.extend(SafetyChecker.check_rapid_change(previous_confidence, new_confidence))
-        report.flags.extend(SafetyChecker.check_contradiction_for_confirmed(contradiction, verification_state))
+        report.flags.extend(
+            SafetyChecker.check_contradiction_for_confirmed(contradiction, verification_state)
+        )
 
         if report.flags:
             report.warnings = report.flags

@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import time
 import uuid
-from collections import defaultdict
-from dataclasses import dataclass, field
 from typing import Any
 
 
@@ -13,8 +11,12 @@ class UnifiedAlertingCore:
         self._alerts: list[dict[str, Any]] = []
         self._cooldowns: dict[str, float] = {}
 
-    def evaluate(self, metrics: dict[str, Any], thresholds: dict[str, dict[str, Any]],
-                 context: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    def evaluate(
+        self,
+        metrics: dict[str, Any],
+        thresholds: dict[str, dict[str, Any]],
+        context: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
         triggered = []
         now = time.time()
         ctx = context or {}

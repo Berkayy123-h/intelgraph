@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import importlib
 import inspect
-import pkgutil
 import time
 import uuid
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 UCOS_SCHEMA_VERSION = "1.0"
@@ -99,12 +98,18 @@ class ConsolidationEngine:
                 mod = importlib.import_module(mod_name)
                 for name, cls in inspect.getmembers(mod, inspect.isclass):
                     fn = function_labels.get(name, "other")
-                    self._engines.append(EngineRecord(
-                        engine_id=f"e_{uuid.uuid4().hex[:8]}",
-                        name=name, module_path=mod_name,
-                        class_name=name, phase=phase, function=fn,
-                        status="active", detected_at=time.time(),
-                    ))
+                    self._engines.append(
+                        EngineRecord(
+                            engine_id=f"e_{uuid.uuid4().hex[:8]}",
+                            name=name,
+                            module_path=mod_name,
+                            class_name=name,
+                            phase=phase,
+                            function=fn,
+                            status="active",
+                            detected_at=time.time(),
+                        )
+                    )
             except Exception:
                 pass
 
@@ -142,17 +147,21 @@ class ConsolidationEngine:
         plan = []
         for fn, items in by_fn.items():
             for item in items:
-                plan.append({
-                    "action": item["consolidation"],
-                    "target_function": fn,
-                    "remove_module": item["duplicate"]["module_path"],
-                    "keep_module": item["primary"]["module_path"],
-                })
-                self._consolidation_log.append({
-                    "action": item["consolidation"],
-                    "timestamp": time.time(),
-                    "status": "planned",
-                })
+                plan.append(
+                    {
+                        "action": item["consolidation"],
+                        "target_function": fn,
+                        "remove_module": item["duplicate"]["module_path"],
+                        "keep_module": item["primary"]["module_path"],
+                    }
+                )
+                self._consolidation_log.append(
+                    {
+                        "action": item["consolidation"],
+                        "timestamp": time.time(),
+                        "status": "planned",
+                    }
+                )
         return {
             "duplicates_found": len(dups),
             "functions_affected": len(by_fn),

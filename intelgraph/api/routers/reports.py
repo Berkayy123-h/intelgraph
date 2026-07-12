@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import os
+from datetime import UTC, datetime, timedelta
 from typing import Any
-from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 
-from intelgraph.core.reporting.reporters import generate_report
-from intelgraph.core.reporting.scheduler import ReportScheduler, REPORT_DIR
 from intelgraph.core.reporting.models import ReportType
+from intelgraph.core.reporting.reporters import generate_report
+from intelgraph.core.reporting.scheduler import REPORT_DIR, ReportScheduler
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -21,6 +21,7 @@ def _get_data(request: Request) -> dict[str, Any]:
     """Get the latest pipeline result from dashboard_state."""
     try:
         from intelgraph.api.routers.dashboard import dashboard_state
+
         tenant_id = getattr(request.state, "tenant_id", None)
         r = dashboard_state.result_for(tenant_id) if tenant_id else dashboard_state.result
         return r or {}
@@ -44,7 +45,7 @@ def generate(body: dict[str, Any], request: Request) -> dict[str, Any]:
         return {"error": "No pipeline data available. Run a pipeline first."}
 
     # Compute time range
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if time_range == "7d":
         since = now - timedelta(days=7)
     elif time_range == "30d":
@@ -91,8 +92,6 @@ def _build_entity_detail(data: dict, entity_key: str) -> dict[str, Any]:
     if not target:
         return {}
 
-    from intelgraph.core.graph.graph import IntelligenceGraph
-    from intelgraph.core.scoring.threat_score import ThreatScorer
 
     # Build a minimal graph from the nodes/edges in the result
     graph = data.get("_graph")
@@ -107,23 +106,27 @@ def _build_entity_detail(data: dict, entity_key: str) -> dict[str, Any]:
         if node:
             entity = node.entity
             for ev in getattr(entity, "evidence", ()):
-                evidence_list.append({
-                    "source": getattr(ev, "source", ""),
-                    "content": getattr(ev, "content", ""),
-                    "collected_at": str(getattr(ev, "collected_at", "")),
-                    "trust_score": getattr(ev, "trust_score", 0),
-                    "reliability_score": getattr(ev, "reliability_score", 0),
-                })
+                evidence_list.append(
+                    {
+                        "source": getattr(ev, "source", ""),
+                        "content": getattr(ev, "content", ""),
+                        "collected_at": str(getattr(ev, "collected_at", "")),
+                        "trust_score": getattr(ev, "trust_score", 0),
+                        "reliability_score": getattr(ev, "reliability_score", 0),
+                    }
+                )
             # Relationships
             for edge in graph.edges.values():
                 if edge.source_id == target["node_id"] or edge.target_id == target["node_id"]:
-                    relationships.append({
-                        "source_id": edge.source_id,
-                        "target_id": edge.target_id,
-                        "type": edge.type,
-                        "first_seen": str(getattr(edge, "first_seen", "")),
-                        "last_seen": str(getattr(edge, "last_seen", "")),
-                    })
+                    relationships.append(
+                        {
+                            "source_id": edge.source_id,
+                            "target_id": edge.target_id,
+                            "type": edge.type,
+                            "first_seen": str(getattr(edge, "first_seen", "")),
+                            "last_seen": str(getattr(edge, "last_seen", "")),
+                        }
+                    )
 
             # Evidence chain
             chain_mgr = getattr(graph, "chain_manager", None)

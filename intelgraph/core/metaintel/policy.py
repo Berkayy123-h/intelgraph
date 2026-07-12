@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 import uuid
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -41,14 +41,19 @@ class PolicyEvolutionEngine:
         self._simulation_results: list[dict[str, Any]] = []
         self._a_b_tests: list[dict[str, Any]] = []
 
-    def generate_policy(self, name: str, description: str, rules: list[dict[str, Any]],
-                        risk_level: str = "medium") -> PolicyRecord:
+    def generate_policy(
+        self, name: str, description: str, rules: list[dict[str, Any]], risk_level: str = "medium"
+    ) -> PolicyRecord:
         existing = [p for p in self._policies if p.name == name]
         version = (max(p.version for p in existing) + 1) if existing else 1
         policy = PolicyRecord(
             policy_id=f"pol_{uuid.uuid4().hex[:12]}",
-            name=name, description=description, rules=rules,
-            version=version, risk_level=risk_level, status="active",
+            name=name,
+            description=description,
+            rules=rules,
+            version=version,
+            risk_level=risk_level,
+            status="active",
             created_at=time.time(),
         )
         self._policies.append(policy)
@@ -67,8 +72,16 @@ class PolicyEvolutionEngine:
         new_rules = list(base.rules)
         for err_type, count in error_types.items():
             if count > 5:
-                new_rules.append({"condition": f"error_type == '{err_type}'", "action": "block", "priority": count})
-        return self.generate_policy(f"{base.name}_refined", f"Auto-refined from {base.name}", new_rules, base.risk_level)
+                new_rules.append(
+                    {
+                        "condition": f"error_type == '{err_type}'",
+                        "action": "block",
+                        "priority": count,
+                    }
+                )
+        return self.generate_policy(
+            f"{base.name}_refined", f"Auto-refined from {base.name}", new_rules, base.risk_level
+        )
 
     def enforce(self, action: dict[str, Any]) -> dict[str, Any]:
         action_type = action.get("type", "")
@@ -78,7 +91,12 @@ class PolicyEvolutionEngine:
                 continue
             for rule in policy.rules:
                 if rule.get("action") == "block" and action_risk > 0.7:
-                    return {"allowed": False, "policy": policy.name, "rule": rule, "action": action_type}
+                    return {
+                        "allowed": False,
+                        "policy": policy.name,
+                        "rule": rule,
+                        "action": action_type,
+                    }
         return {"allowed": True, "policy": "default", "action": action_type}
 
     def simulate_policy(self, policy_id: str, test_actions: list[dict[str, Any]]) -> dict[str, Any]:
@@ -94,12 +112,18 @@ class PolicyEvolutionEngine:
                     break
             else:
                 allowed += 1
-        result = {"policy_id": policy_id, "allowed": allowed, "blocked": blocked, "total": len(test_actions)}
+        result = {
+            "policy_id": policy_id,
+            "allowed": allowed,
+            "blocked": blocked,
+            "total": len(test_actions),
+        }
         self._simulation_results.append(result)
         return result
 
-    def a_b_test(self, policy_a_id: str, policy_b_id: str,
-                 test_actions: list[dict[str, Any]]) -> dict[str, Any]:
+    def a_b_test(
+        self, policy_a_id: str, policy_b_id: str, test_actions: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         result_a = self.simulate_policy(policy_a_id, test_actions)
         result_b = self.simulate_policy(policy_b_id, test_actions)
         ab_result = {
@@ -113,7 +137,9 @@ class PolicyEvolutionEngine:
         return ab_result
 
     def record_failure(self, error_type: str, details: dict[str, Any]) -> None:
-        self._failure_patterns.append({"error_type": error_type, "details": details, "time": time.time()})
+        self._failure_patterns.append(
+            {"error_type": error_type, "details": details, "time": time.time()}
+        )
 
     def get_policies(self, status: str | None = None) -> list[PolicyRecord]:
         if status:

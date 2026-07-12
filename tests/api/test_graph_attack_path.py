@@ -1,30 +1,44 @@
-import pytest
 
 
 class TestAttackPathAPI:
     def _populate_graph(self, client):
         from intelgraph.api.main import _container
+
         backend = _container.backend
         from intelgraph.core.entity.person import Person
         from intelgraph.core.relationship import Relationship
         from intelgraph.core.relationship.types import RelationshipType
+
         entities = []
         for i in range(8):
-            p = Person(id=f"p{i}", name=f"Person {i}", confidence_score=min(50 + i * 5, 95), trust_score=min(40 + i * 5, 90))
+            p = Person(
+                id=f"p{i}",
+                name=f"Person {i}",
+                confidence_score=min(50 + i * 5, 95),
+                trust_score=min(40 + i * 5, 90),
+            )
             backend.put_entity(p)
             entities.append(p)
         rels_data = [
-            ("p0", "p1", 80), ("p0", "p2", 60),
-            ("p1", "p3", 90), ("p1", "p4", 50),
-            ("p2", "p5", 70), ("p2", "p6", 40),
-            ("p3", "p7", 85), ("p4", "p0", 75),
-            ("p5", "p6", 65), ("p6", "p7", 55),
+            ("p0", "p1", 80),
+            ("p0", "p2", 60),
+            ("p1", "p3", 90),
+            ("p1", "p4", 50),
+            ("p2", "p5", 70),
+            ("p2", "p6", 40),
+            ("p3", "p7", 85),
+            ("p4", "p0", 75),
+            ("p5", "p6", 65),
+            ("p6", "p7", 55),
         ]
         for idx, (src, tgt, conf) in enumerate(rels_data):
             r = Relationship(
-                id=f"r{idx}", source_id=src, target_id=tgt,
+                id=f"r{idx}",
+                source_id=src,
+                target_id=tgt,
                 type=RelationshipType.RELATED_TO,
-                confidence_score=conf, trust_weight=conf,
+                confidence_score=conf,
+                trust_weight=conf,
             )
             backend.put_relationship(r)
 
@@ -43,7 +57,9 @@ class TestAttackPathAPI:
         assert resp.status_code == 400
 
     def test_find_shortest_path_empty(self, auth_client):
-        resp = auth_client.post("/graph/attack-path/find", json={"source": "p0", "target": "nonexistent"})
+        resp = auth_client.post(
+            "/graph/attack-path/find", json={"source": "p0", "target": "nonexistent"}
+        )
         assert resp.status_code == 200
         assert resp.json()["found"] is False
 
@@ -66,7 +82,9 @@ class TestAttackPathAPI:
 
     def test_find_all_paths_to_target(self, auth_client):
         self._populate_graph(auth_client)
-        resp = auth_client.post("/graph/attack-path/all", json={"source": "p0", "target": "p7", "max_depth": 4})
+        resp = auth_client.post(
+            "/graph/attack-path/all", json={"source": "p0", "target": "p7", "max_depth": 4}
+        )
         assert resp.status_code == 200
         data = resp.json()
         if data.get("found"):

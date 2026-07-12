@@ -36,7 +36,9 @@ class TestMetricsEndpoint:
         lines = resp.text.strip().split("\n")
         for line in lines:
             if line.startswith("#"):
-                assert line.startswith("# ") or line.startswith("# TYPE") or line.startswith("# HELP")
+                assert (
+                    line.startswith("# ") or line.startswith("# TYPE") or line.startswith("# HELP")
+                )
             elif line:
                 parts = line.split(" ")
                 assert len(parts) >= 2

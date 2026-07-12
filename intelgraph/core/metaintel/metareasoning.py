@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 import uuid
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -51,16 +51,33 @@ class MetaReasoningEngine:
             latency = metrics.get("latency_ms", 0)
             error_rate = metrics.get("error_rate", 0)
             if latency > 2000:
-                inefficiencies.append({"layer": layer_id, "type": "latency", "value": latency, "severity": "high"})
+                inefficiencies.append(
+                    {"layer": layer_id, "type": "latency", "value": latency, "severity": "high"}
+                )
             if error_rate > 0.15:
-                inefficiencies.append({"layer": layer_id, "type": "error_rate", "value": error_rate, "severity": "high"})
+                inefficiencies.append(
+                    {
+                        "layer": layer_id,
+                        "type": "error_rate",
+                        "value": error_rate,
+                        "severity": "high",
+                    }
+                )
             consistency = metrics.get("consistency", 1.0)
             if consistency < 0.7:
-                inefficiencies.append({"layer": layer_id, "type": "inconsistency", "value": consistency, "severity": "medium"})
+                inefficiencies.append(
+                    {
+                        "layer": layer_id,
+                        "type": "inconsistency",
+                        "value": consistency,
+                        "severity": "medium",
+                    }
+                )
         return inefficiencies
 
-    def generate_system_hypothesis(self, observation: str, target_layer: str,
-                                   evidence: list[dict[str, Any]] | None = None) -> MetaHypothesis:
+    def generate_system_hypothesis(
+        self, observation: str, target_layer: str, evidence: list[dict[str, Any]] | None = None
+    ) -> MetaHypothesis:
         hypothesis = MetaHypothesis(
             hypothesis_id=f"mh_{uuid.uuid4().hex[:12]}",
             description=observation,

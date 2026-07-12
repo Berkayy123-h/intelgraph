@@ -13,6 +13,7 @@ router = APIRouter(prefix="/graph", tags=["graph"])
 
 def _build_graph() -> IntelligenceGraph:
     from intelgraph.api.main import _container
+
     g = IntelligenceGraph()
     for entity in _container.backend.list_entities():
         eid = entity.id
@@ -33,7 +34,7 @@ def _build_graph() -> IntelligenceGraph:
             g.node_edges.setdefault(tgt, set()).add(rel.id)
             g.edge_node_map[rel.id] = (src, tgt)
             from intelgraph.core.graph.edge import Edge
-            from intelgraph.core.relationship import Relationship
+
             g.edges[rel.id] = Edge(relationship=rel)
     return g
 
@@ -57,7 +58,10 @@ def compute_pagerank(
     return result
 
 
-@router.post("/algorithms/weighted-pagerank", summary="Compute weighted PageRank using edge confidence/trust weights")
+@router.post(
+    "/algorithms/weighted-pagerank",
+    summary="Compute weighted PageRank using edge confidence/trust weights",
+)
 def compute_weighted_pagerank(
     damping: float = 0.85,
     max_iterations: int = 100,
@@ -68,13 +72,18 @@ def compute_weighted_pagerank(
     return result
 
 
-@router.post("/algorithms/influence-propagation", summary="Run threshold-based influence propagation from seed nodes")
+@router.post(
+    "/algorithms/influence-propagation",
+    summary="Run threshold-based influence propagation from seed nodes",
+)
 def compute_influence_propagation(
     body: dict[str, Any],
 ):
     seed_nodes = body.get("seed_nodes", {})
     if not seed_nodes:
-        raise HTTPException(status_code=400, detail="seed_nodes is required (dict of node_id -> initial influence)")
+        raise HTTPException(
+            status_code=400, detail="seed_nodes is required (dict of node_id -> initial influence)"
+        )
     threshold = body.get("threshold", 0.5)
     if not (0.0 < threshold <= 1.0):
         raise HTTPException(status_code=400, detail="threshold must be in (0, 1]")
@@ -89,7 +98,9 @@ def compute_influence_propagation(
     return result
 
 
-@router.post("/algorithms/influence-scores", summary="Compute composite influence scores for all nodes")
+@router.post(
+    "/algorithms/influence-scores", summary="Compute composite influence scores for all nodes"
+)
 def compute_influence_scores(
     damping: float = 0.85,
     max_iterations: int = 100,

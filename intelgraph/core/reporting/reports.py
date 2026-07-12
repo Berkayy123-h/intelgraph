@@ -1,4 +1,6 @@
-from typing import Any, Callable
+from collections.abc import Callable
+from datetime import UTC
+from typing import Any
 
 from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.reporting.formatter import format_output
@@ -68,10 +70,10 @@ class ReportBuilder:
         return format_output("Source", src, fmt)
 
     def full_report(self, fmt: str = "json") -> str:
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         data: dict[str, Any] = {
-            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
             "entity_count": 0,
             "edge_count": 0,
             "entities": [],
@@ -94,18 +96,22 @@ class ReportBuilder:
 
                 chain = self._chain_lookup(eid) if self._chain_lookup else None
                 if chain:
-                    data["evidence"].append({
-                        "entity_id": eid,
-                        "confidence": chain.get("confidence", 0),
-                        "contradiction_score": chain.get("contradiction_score", 0),
-                        "status": chain.get("status", "unknown"),
-                        "evidence_count": len(chain.get("evidence", [])),
-                    })
-                    data["verifications"].append({
-                        "entity_id": eid,
-                        "state": (vrec or {}).get("verification_state", "unknown"),
-                        "confidence": (vrec or {}).get("confidence", 0),
-                    })
+                    data["evidence"].append(
+                        {
+                            "entity_id": eid,
+                            "confidence": chain.get("confidence", 0),
+                            "contradiction_score": chain.get("contradiction_score", 0),
+                            "status": chain.get("status", "unknown"),
+                            "evidence_count": len(chain.get("evidence", [])),
+                        }
+                    )
+                    data["verifications"].append(
+                        {
+                            "entity_id": eid,
+                            "state": (vrec or {}).get("verification_state", "unknown"),
+                            "confidence": (vrec or {}).get("confidence", 0),
+                        }
+                    )
 
         if self._source_lookup:
             pass

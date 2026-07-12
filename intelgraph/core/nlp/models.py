@@ -3,9 +3,10 @@ from __future__ import annotations
 import time
 import uuid
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Callable
+from typing import Any
 
 NLP_MODEL_SCHEMA_VERSION = "1.0"
 
@@ -56,7 +57,11 @@ class NLPModelRegistry:
     def register(self, name: str, version: str, task: ModelTask, **kw) -> NLPModelRecord:
         model_id = f"nlp_{uuid.uuid4().hex[:12]}"
         record = NLPModelRecord(
-            model_id=model_id, name=name, version=version, task=task, **kw,
+            model_id=model_id,
+            name=name,
+            version=version,
+            task=task,
+            **kw,
         )
         self._models[model_id] = record
         return record
@@ -108,6 +113,7 @@ class NLPModelRegistry:
 # NLP Analytics
 # ---------------------------------------------------------------------------
 
+
 class NLPAnalytics:
     def __init__(self) -> None:
         self._entity_counts: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
@@ -133,15 +139,24 @@ class NLPAnalytics:
         self._cooccurrence[entity_a][entity_b] += 1
         self._cooccurrence[entity_b][entity_a] += 1
 
-    def entity_frequency(self, label: str | None = None, top_n: int = 10) -> dict[str, dict[str, int]]:
+    def entity_frequency(
+        self, label: str | None = None, top_n: int = 10
+    ) -> dict[str, dict[str, int]]:
         if label:
-            return {label: dict(sorted(self._entity_counts[label].items(), key=lambda x: -x[1])[:top_n])}
-        return {lbl: dict(sorted(cnt.items(), key=lambda x: -x[1])[:top_n]) for lbl, cnt in self._entity_counts.items()}
+            return {
+                label: dict(sorted(self._entity_counts[label].items(), key=lambda x: -x[1])[:top_n])
+            }
+        return {
+            lbl: dict(sorted(cnt.items(), key=lambda x: -x[1])[:top_n])
+            for lbl, cnt in self._entity_counts.items()
+        }
 
     def relationship_distribution(self) -> dict[str, int]:
         return dict(sorted(self._relationship_counts.items(), key=lambda x: -x[1]))
 
-    def event_timeline(self, event_type: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
+    def event_timeline(
+        self, event_type: str | None = None, limit: int = 50
+    ) -> list[dict[str, Any]]:
         events = self._event_timeline[:]
         if event_type:
             events = [e for e in events if e.get("event_type") == event_type]
@@ -156,13 +171,15 @@ class NLPAnalytics:
             if len(events) >= min_frequency:
                 common_actors = self._most_common([e.get("actors", []) for e in events], 3)
                 common_targets = self._most_common([e.get("targets", []) for e in events], 3)
-                patterns.append({
-                    "event_type": event_type,
-                    "frequency": len(events),
-                    "common_actors": common_actors,
-                    "common_targets": common_targets,
-                    "recurring": len(events) >= min_frequency * 2,
-                })
+                patterns.append(
+                    {
+                        "event_type": event_type,
+                        "frequency": len(events),
+                        "common_actors": common_actors,
+                        "common_targets": common_targets,
+                        "recurring": len(events) >= min_frequency * 2,
+                    }
+                )
         return patterns
 
     def _group_events(self) -> dict[str, list[dict[str, Any]]]:

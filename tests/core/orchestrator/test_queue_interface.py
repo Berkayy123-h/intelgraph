@@ -1,5 +1,5 @@
-from intelgraph.core.orchestrator.queue_interface import TaskQueue
 from intelgraph.core.orchestrator.queue import InMemoryTaskQueue
+from intelgraph.core.orchestrator.queue_interface import TaskQueue
 from intelgraph.core.orchestrator.task import Task
 
 

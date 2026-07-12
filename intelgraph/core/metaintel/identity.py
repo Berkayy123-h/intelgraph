@@ -38,12 +38,17 @@ class IdentityConsistencyLayer:
         self._conflicts: list[dict[str, Any]] = []
         self._authority_map: dict[str, list[str]] = {}
 
-    def register_agent(self, agent_id: str, role: str, capabilities: list[str],
-                       scope: str = "global") -> AgentIdentityRecord:
+    def register_agent(
+        self, agent_id: str, role: str, capabilities: list[str], scope: str = "global"
+    ) -> AgentIdentityRecord:
         identity = AgentIdentityRecord(
             identity_id=f"id_{uuid.uuid4().hex[:12]}",
-            agent_id=agent_id, role=role, capabilities=capabilities,
-            scope=scope, status="active", created_at=time.time(),
+            agent_id=agent_id,
+            role=role,
+            capabilities=capabilities,
+            scope=scope,
+            status="active",
+            created_at=time.time(),
         )
         self._identities[agent_id] = identity
         self._role_registry[role].append(agent_id)
@@ -65,14 +70,19 @@ class IdentityConsistencyLayer:
         conflicts = []
         for role, agents in self._role_registry.items():
             if len(agents) > 3:
-                conflicts.append({
-                    "type": "role_overpopulation", "role": role,
-                    "agent_count": len(agents), "agents": agents,
-                })
+                conflicts.append(
+                    {
+                        "type": "role_overpopulation",
+                        "role": role,
+                        "agent_count": len(agents),
+                        "agents": agents,
+                    }
+                )
         return conflicts
 
     def detect_intent_conflicts(self, agent_actions: list[dict[str, Any]]) -> list[dict[str, Any]]:
         from collections import Counter
+
         conflicts = []
         target_actions = Counter()
         for action in agent_actions:
@@ -80,10 +90,14 @@ class IdentityConsistencyLayer:
             target_actions[target] += 1
         for target, count in target_actions.items():
             if count > 1:
-                conflicts.append({
-                    "type": "target_contention", "target": target,
-                    "actor_count": count, "severity": "medium",
-                })
+                conflicts.append(
+                    {
+                        "type": "target_contention",
+                        "target": target,
+                        "actor_count": count,
+                        "severity": "medium",
+                    }
+                )
         return conflicts
 
     def verify_authority(self, agent_id: str, required_role: str) -> bool:

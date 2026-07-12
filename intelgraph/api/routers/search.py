@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query
@@ -13,7 +12,10 @@ router = APIRouter(prefix="/search", tags=["search"])
 
 
 def _search_in_memory(
-    qe: GraphQueryEngine, query: str, type_filter: str, limit: int,
+    qe: GraphQueryEngine,
+    query: str,
+    type_filter: str,
+    limit: int,
 ) -> list[dict[str, Any]]:
     """Fallback in-memory search when FTS5 is unavailable."""
     ql = query.lower()
@@ -60,19 +62,23 @@ def _search_in_memory(
             score = 50.0 + conf
         else:
             score = conf  # weak match elsewhere
-        results.append({
-            "node_id": node.id,
-            "entity_type": etype,
-            "entity_identifier": identifier,
-            "confidence": conf,
-            "relevance": score,
-        })
+        results.append(
+            {
+                "node_id": node.id,
+                "entity_type": etype,
+                "entity_identifier": identifier,
+                "confidence": conf,
+                "relevance": score,
+            }
+        )
     results.sort(key=lambda r: -r["relevance"])
     return results[:limit]
 
 
 def _search_dashboard_state(
-    query: str, type_filter: str, limit: int,
+    query: str,
+    type_filter: str,
+    limit: int,
 ) -> list[dict[str, Any]]:
     """Search dashboard state graph nodes (real pipeline data)."""
     r = dashboard_state.result
@@ -107,13 +113,15 @@ def _search_dashboard_state(
             score = 50.0 + conf
         else:
             score = conf
-        results.append({
-            "node_id": n.get("node_id", identifier),
-            "entity_type": etype,
-            "entity_identifier": identifier,
-            "confidence": conf,
-            "relevance": score,
-        })
+        results.append(
+            {
+                "node_id": n.get("node_id", identifier),
+                "entity_type": etype,
+                "entity_identifier": identifier,
+                "confidence": conf,
+                "relevance": score,
+            }
+        )
     results.sort(key=lambda r: -r["relevance"])
     return results[:limit]
 
@@ -143,6 +151,7 @@ def search(
 
     # Try FTS5 via storage backend
     from intelgraph.api.main import _container
+
     backend = _container.backend
     try:
         # Check if FTS5 table exists
@@ -192,11 +201,12 @@ def search(
 def _fts_sanitize(query: str) -> str:
     """Convert user query to FTS5-safe MATCH expression."""
     import re
+
     query = query.strip()
     if not query:
         return ""
-    escaped = re.sub(r'[^\w\s.]', ' ', query)
-    escaped = re.sub(r'\s+', ' ', escaped).strip()
+    escaped = re.sub(r"[^\w\s.]", " ", query)
+    escaped = re.sub(r"\s+", " ", escaped).strip()
     if not escaped:
         return ""
     terms = escaped.split()

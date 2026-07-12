@@ -48,11 +48,13 @@ async def metrics_stream(request: Request):
                 system = perf.record_system_metrics()
                 health = perf.get_overall_health()
                 pipeline = perf.get_pipeline_stats()
-                data = json.dumps({
-                    "system": system,
-                    "health": {"overall_status": health["overall_status"]},
-                    "pipeline": pipeline,
-                })
+                data = json.dumps(
+                    {
+                        "system": system,
+                        "health": {"overall_status": health["overall_status"]},
+                        "pipeline": pipeline,
+                    }
+                )
                 yield f"event: metrics\ndata: {data}\n\n"
                 await asyncio.sleep(5)
         except asyncio.CancelledError:

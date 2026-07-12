@@ -1,5 +1,5 @@
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -57,7 +57,7 @@ class FileCollector(Collector):
             content=raw,
             content_type=content_type,
             source_url=str(path),
-            collected_at=datetime.now(timezone.utc),
+            collected_at=datetime.now(UTC),
             metadata={"path": str(path), "size": len(raw), "ext": ext},
         )
         result.documents = [doc]

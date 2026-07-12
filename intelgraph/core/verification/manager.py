@@ -53,7 +53,9 @@ class VerificationManager:
         if chain is None:
             return None
 
-        evidence_item_confidences: list[float] = [e.confidence for e in chain.evidence] if chain.evidence else [0.0]
+        evidence_item_confidences: list[float] = (
+            [e.confidence for e in chain.evidence] if chain.evidence else [0.0]
+        )
         # Use flat default trust score (50) for all sources — source-level trust
         # belongs in SourceRegistryService, not in EvidenceItem.confidence
         source_trust_scores = [50 for _ in chain.evidence] if chain.evidence else [50]
@@ -152,7 +154,9 @@ class VerificationManager:
         confirmed = sum(1 for r in records if r.verification_state == VerificationState.CONFIRMED)
         probable = sum(1 for r in records if r.verification_state == VerificationState.PROBABLE)
         possible = sum(1 for r in records if r.verification_state == VerificationState.POSSIBLE)
-        speculative = sum(1 for r in records if r.verification_state == VerificationState.SPECULATIVE)
+        speculative = sum(
+            1 for r in records if r.verification_state == VerificationState.SPECULATIVE
+        )
         contested = sum(1 for r in records if r.operational_state.name_lower == "contested")
         debunked = sum(1 for r in records if r.operational_state.name_lower == "debunked")
         high_impact_unverified = len(self.get_high_impact_unverified())
@@ -166,7 +170,9 @@ class VerificationManager:
             "contested": contested,
             "debunked": debunked,
             "high_impact_unverified": high_impact_unverified,
-            "avg_confidence": round(sum(r.confidence for r in records) / len(records), 2) if records else 0.0,
+            "avg_confidence": (
+                round(sum(r.confidence for r in records) / len(records), 2) if records else 0.0
+            ),
         }
 
     def get_history(self, entity_id: str) -> list[dict[str, Any]]:
@@ -183,6 +189,7 @@ class VerificationManager:
         if record is None:
             return None
         from intelgraph.core.verification.base import OperationalState, VerificationState
+
         if verification_state:
             record.verification_state = VerificationState[verification_state.upper()]
         if operational_state:

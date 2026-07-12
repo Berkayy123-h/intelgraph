@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import time
 import uuid
-from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -39,13 +38,24 @@ class TraceSystem:
         self._traces: list[TraceEntry] = []
         self._max_traces = 10000
 
-    def record(self, query: str, path: list[dict[str, Any]], alt_paths: list[list[dict[str, Any]]], evidence: list[str], score: float) -> TraceEntry:
+    def record(
+        self,
+        query: str,
+        path: list[dict[str, Any]],
+        alt_paths: list[list[dict[str, Any]]],
+        evidence: list[str],
+        score: float,
+    ) -> TraceEntry:
         entry = TraceEntry(
             trace_id=f"tr_{uuid.uuid4().hex[:12]}",
             query=query,
             reasoning_path=path,
             confidence_per_step=[s.get("confidence", 0.5) for s in path],
-            uncertainty_markers=[f"uncertainty_{s.get('step_type', 'unknown')}" for s in path if s.get("uncertainty", 0) > 0.3],
+            uncertainty_markers=[
+                f"uncertainty_{s.get('step_type', 'unknown')}"
+                for s in path
+                if s.get("uncertainty", 0) > 0.3
+            ],
             alternative_paths=alt_paths,
             evidence_chain=evidence,
             score=score,
@@ -53,7 +63,7 @@ class TraceSystem:
         )
         self._traces.append(entry)
         if len(self._traces) > self._max_traces:
-            self._traces = self._traces[-self._max_traces:]
+            self._traces = self._traces[-self._max_traces :]
         return entry
 
     def get(self, trace_id: str) -> TraceEntry | None:

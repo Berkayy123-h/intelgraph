@@ -34,11 +34,15 @@ class VerificationEngine:
         is_high_impact: bool = False,
     ) -> VerificationResult:
         steps: list[str] = []
-        steps.append(f"confidence={confidence:.1f}, consensus={consensus:.1f}, contradiction={contradiction:.1f}, sources={source_count}")
+        steps.append(
+            f"confidence={confidence:.1f}, consensus={consensus:.1f}, contradiction={contradiction:.1f}, sources={source_count}"
+        )
 
         adjusted_confidence = min(100.0, confidence + human_review_boost)
         if human_review_boost != 0:
-            steps.append(f"human review boost applied: {confidence:.1f} -> {adjusted_confidence:.1f} (+{human_review_boost})")
+            steps.append(
+                f"human review boost applied: {confidence:.1f} -> {adjusted_confidence:.1f} (+{human_review_boost})"
+            )
 
         # Cap inputs
         confidence = max(0.0, min(100.0, adjusted_confidence))
@@ -46,7 +50,9 @@ class VerificationEngine:
         contradiction = max(0.0, min(100.0, contradiction))
 
         all_trust_high = all(t >= 80 for t in source_trust_scores) if source_trust_scores else False
-        has_high_trust_single = source_count == 1 and len(source_trust_scores) > 0 and source_trust_scores[0] >= 90
+        has_high_trust_single = (
+            source_count == 1 and len(source_trust_scores) > 0 and source_trust_scores[0] >= 90
+        )
         matched: list[str] = []
 
         # Operational state first (overrides verification in display)
@@ -72,7 +78,9 @@ class VerificationEngine:
             and all_trust_high
         ):
             verified = VerificationState.CONFIRMED
-            matched.append("CONFIRMED: confidence≥90, consensus≥90, contradiction<20, sources≥3, all trust≥80")
+            matched.append(
+                "CONFIRMED: confidence≥90, consensus≥90, contradiction<20, sources≥3, all trust≥80"
+            )
             steps.append("→ CONFIRMED (all criteria met)")
 
         elif (
@@ -82,15 +90,12 @@ class VerificationEngine:
             and (source_count >= 2 or has_high_trust_single)
         ):
             verified = VerificationState.PROBABLE
-            matched.append("PROBABLE: confidence≥70, consensus≥70, contradiction<40, sources≥2 (or single high-trust)")
+            matched.append(
+                "PROBABLE: confidence≥70, consensus≥70, contradiction<40, sources≥2 (or single high-trust)"
+            )
             steps.append("→ PROBABLE")
 
-        elif (
-            confidence >= 50
-            and consensus >= 50
-            and contradiction < 60
-            and source_count >= 1
-        ):
+        elif confidence >= 50 and consensus >= 50 and contradiction < 60 and source_count >= 1:
             verified = VerificationState.POSSIBLE
             matched.append("POSSIBLE: confidence≥50, consensus≥50, contradiction<60, sources≥1")
             steps.append("→ POSSIBLE")

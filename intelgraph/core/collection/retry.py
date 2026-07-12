@@ -1,7 +1,8 @@
 import random
 import time
-from dataclasses import dataclass, field
-from typing import Any, Callable
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -21,9 +22,7 @@ class ExponentialBackoff:
     def __init__(self, policy: RetryPolicy | None = None) -> None:
         self._policy = policy or RetryPolicy()
 
-    def execute(
-        self, fn: Callable[[], Any], context: str = ""
-    ) -> Any:
+    def execute(self, fn: Callable[[], Any], context: str = "") -> Any:
         last_exc: Exception | None = None
         for attempt in range(self._policy.max_retries + 1):
             try:
@@ -44,7 +43,7 @@ class ExponentialBackoff:
         ) from last_exc
 
     def _compute_delay(self, attempt: int) -> float:
-        delay = self._policy.base_delay * (2 ** attempt)
+        delay = self._policy.base_delay * (2**attempt)
         delay = min(delay, self._policy.max_delay)
         if self._policy.jitter:
             delay *= 1.0 + random.random() * 0.5

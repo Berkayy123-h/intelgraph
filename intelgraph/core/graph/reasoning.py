@@ -4,12 +4,13 @@ import hashlib
 import time
 import uuid
 from collections import defaultdict, deque
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Callable
+from datetime import datetime
+from typing import Any
 
-from intelgraph.core.graph.graph import IntelligenceGraph
 from intelgraph.core.enterprise.observability import get_metrics
+from intelgraph.core.graph.graph import IntelligenceGraph
 
 CAUSAL_SCHEMA_VERSION = "1.0"
 
@@ -173,6 +174,7 @@ class CausalReasoner:
             return self._influence_scores[node_id]
         try:
             from intelgraph.core.graph.influence import InfluencePropagation
+
             infl = InfluencePropagation(self._graph, weight_fn=self._weight_fn)
             result = infl.influence_scores()
             self._influence_scores = result.get("scores", {})
@@ -207,9 +209,17 @@ class CausalReasoner:
         if self._causal_graph.edge_count() > 0:
             return self._causal_graph
         cg = CausalGraph()
-        node_ids = sorted(self._graph.nodes.keys()) if self._deterministic else list(self._graph.nodes.keys())
+        node_ids = (
+            sorted(self._graph.nodes.keys())
+            if self._deterministic
+            else list(self._graph.nodes.keys())
+        )
         for nid in node_ids:
-            neighbors = sorted(self._graph.forward_adjacency.get(nid, set())) if self._deterministic else list(self._graph.forward_adjacency.get(nid, set()))
+            neighbors = (
+                sorted(self._graph.forward_adjacency.get(nid, set()))
+                if self._deterministic
+                else list(self._graph.forward_adjacency.get(nid, set()))
+            )
             for neighbor in neighbors:
                 src_time = self._entity_timestamp(nid)
                 tgt_time = self._entity_timestamp(neighbor)
@@ -229,7 +239,8 @@ class CausalReasoner:
                     influence_contrib = src_influence
                     confidence = edge_confidence * 0.5 + min(influence_contrib, 1.0) * 0.3 + 0.2
                     ce = CausalEdge(
-                        cause_id=nid, effect_id=neighbor,
+                        cause_id=nid,
+                        effect_id=neighbor,
                         confidence=min(confidence, 1.0),
                         temporal_order_confirmed=temporal_ok,
                         influence_contribution=influence_contrib,
@@ -242,7 +253,7 @@ class CausalReasoner:
 
     def _causal_decay(self, hop: int) -> float:
         decay = self._config.get("causal_decay_factor", 0.7)
-        return decay ** hop
+        return decay**hop
 
     def _uncertainty_propagation(self, confidences: list[float]) -> float:
         if not confidences:
@@ -252,19 +263,23 @@ class CausalReasoner:
             product *= c
         return 1.0 - product
 
-    def _build_path(self, node_ids: list[str], confidences: list[float], edges: list[CausalEdge]) -> CausalPath:
+    def _build_path(
+        self, node_ids: list[str], confidences: list[float], edges: list[CausalEdge]
+    ) -> CausalPath:
         path_id = f"cp_{uuid.uuid4().hex[:12]}"
         uncertainty = self._uncertainty_propagation(confidences)
         lineage: list[dict[str, Any]] = []
         for i, ce in enumerate(edges):
-            lineage.append({
-                "hop": i + 1,
-                "cause": ce.cause_id,
-                "effect": ce.effect_id,
-                "confidence": ce.confidence,
-                "influence_contribution": ce.influence_contribution,
-                "temporal_order_confirmed": ce.temporal_order_confirmed,
-            })
+            lineage.append(
+                {
+                    "hop": i + 1,
+                    "cause": ce.cause_id,
+                    "effect": ce.effect_id,
+                    "confidence": ce.confidence,
+                    "influence_contribution": ce.influence_contribution,
+                    "temporal_order_confirmed": ce.temporal_order_confirmed,
+                }
+            )
         self._lineage_store[path_id] = lineage
         conf = sum(confidences) / max(len(confidences), 1) if confidences else 0.0
         return CausalPath(
@@ -285,7 +300,12 @@ class CausalReasoner:
         t0 = time.perf_counter_ns()
         trace_id = self._generate_trace_id()
         if anomaly_node not in self._graph.nodes:
-            return {"found": False, "trace_id": trace_id, "error": "node not found", "execution_time_ms": 0.0}
+            return {
+                "found": False,
+                "trace_id": trace_id,
+                "error": "node not found",
+                "execution_time_ms": 0.0,
+            }
         cg = self._build_causal_graph()
         causes: list[CausalPath] = []
         visited: set[str] = set()
@@ -301,34 +321,42 @@ class CausalReasoner:
             if len(edges) >= max_depth:
                 continue
             causal_edges = cg.get_causes(cur)
-            sorted_edges = sorted(causal_edges, key=lambda e: -e.confidence) if self._deterministic else causal_edges
+            sorted_edges = (
+                sorted(causal_edges, key=lambda e: -e.confidence)
+                if self._deterministic
+                else causal_edges
+            )
             for ce in sorted_edges:
                 if ce.cause_id in vis:
                     continue
                 decay = self._causal_decay(len(edges))
                 adjusted_conf = ce.confidence * decay
                 new_vis = vis | {ce.cause_id}
-                stack.append((
-                    ce.cause_id,
-                    [ce.cause_id] + nodes,
-                    [adjusted_conf] + confs,
-                    [ce] + edges,
-                    new_vis,
-                ))
+                stack.append(
+                    (
+                        ce.cause_id,
+                        [ce.cause_id] + nodes,
+                        [adjusted_conf] + confs,
+                        [ce] + edges,
+                        new_vis,
+                    )
+                )
         causes.sort(key=lambda p: -p.confidence)
         top_causes = causes[:max_causes]
         root_cause_ranking: list[dict[str, Any]] = []
         for cp in top_causes:
             root_cause = cp.node_ids[0]
-            root_cause_ranking.append({
-                "root_cause_node": root_cause,
-                "path": cp.node_ids,
-                "confidence": round(cp.confidence, 4),
-                "uncertainty": round(cp.uncertainty, 4),
-                "path_id": cp.path_id,
-                "length": len(cp.edges),
-                "lineage": cp.lineage,
-            })
+            root_cause_ranking.append(
+                {
+                    "root_cause_node": root_cause,
+                    "path": cp.node_ids,
+                    "confidence": round(cp.confidence, 4),
+                    "uncertainty": round(cp.uncertainty, 4),
+                    "path_id": cp.path_id,
+                    "length": len(cp.edges),
+                    "lineage": cp.lineage,
+                }
+            )
         duration = time.perf_counter_ns() - t0
         self._record_duration("root_cause", duration)
         self._metrics.set_gauge("causal_root_cause_duration_ms", duration / 1_000_000)
@@ -355,11 +383,28 @@ class CausalReasoner:
         t0 = time.perf_counter_ns()
         trace_id = self._generate_trace_id()
         if source not in self._graph.nodes:
-            return {"found": False, "trace_id": trace_id, "error": "source not found", "execution_time_ms": 0.0}
+            return {
+                "found": False,
+                "trace_id": trace_id,
+                "error": "source not found",
+                "execution_time_ms": 0.0,
+            }
         if target not in self._graph.nodes:
-            return {"found": False, "trace_id": trace_id, "error": "target not found", "execution_time_ms": 0.0}
+            return {
+                "found": False,
+                "trace_id": trace_id,
+                "error": "target not found",
+                "execution_time_ms": 0.0,
+            }
         if source == target:
-            return {"found": True, "trace_id": trace_id, "source": source, "target": target, "paths": [], "execution_time_ms": 0.0}
+            return {
+                "found": True,
+                "trace_id": trace_id,
+                "source": source,
+                "target": target,
+                "paths": [],
+                "execution_time_ms": 0.0,
+            }
         cg = self._build_causal_graph()
         found_paths: list[CausalPath] = []
         stack: list[tuple[str, list[str], list[float], list[CausalEdge], set[str]]] = [
@@ -374,20 +419,26 @@ class CausalReasoner:
             if len(edges) >= max_depth:
                 continue
             causal_edges = cg.get_effects(cur)
-            sorted_edges = sorted(causal_edges, key=lambda e: -e.confidence) if self._deterministic else causal_edges
+            sorted_edges = (
+                sorted(causal_edges, key=lambda e: -e.confidence)
+                if self._deterministic
+                else causal_edges
+            )
             for ce in sorted_edges:
                 if ce.effect_id in vis:
                     continue
                 decay = self._causal_decay(len(edges))
                 adjusted_conf = ce.confidence * decay
                 new_vis = vis | {ce.effect_id}
-                stack.append((
-                    ce.effect_id,
-                    nodes + [ce.effect_id],
-                    confs + [adjusted_conf],
-                    edges + [ce],
-                    new_vis,
-                ))
+                stack.append(
+                    (
+                        ce.effect_id,
+                        nodes + [ce.effect_id],
+                        confs + [adjusted_conf],
+                        edges + [ce],
+                        new_vis,
+                    )
+                )
         found_paths.sort(key=lambda p: -p.confidence)
         duration = time.perf_counter_ns() - t0
         self._record_duration("causal_path", duration)
@@ -411,7 +462,12 @@ class CausalReasoner:
         t0 = time.perf_counter_ns()
         trace_id = self._generate_trace_id()
         if node_id not in self._graph.nodes:
-            return {"found": False, "trace_id": trace_id, "error": "node not found", "execution_time_ms": 0.0}
+            return {
+                "found": False,
+                "trace_id": trace_id,
+                "error": "node not found",
+                "execution_time_ms": 0.0,
+            }
         cg = self._build_causal_graph()
         causes = cg.get_causes(node_id)
         effects = cg.get_effects(node_id)
@@ -428,12 +484,14 @@ class CausalReasoner:
             for ce in cg.get_causes(cur):
                 if ce.cause_id not in visited:
                     visited.add(ce.cause_id)
-                    ancestors.append({
-                        "node_id": ce.cause_id,
-                        "depth": depth + 1,
-                        "confidence": ce.confidence,
-                        "influence_contribution": ce.influence_contribution,
-                    })
+                    ancestors.append(
+                        {
+                            "node_id": ce.cause_id,
+                            "depth": depth + 1,
+                            "confidence": ce.confidence,
+                            "influence_contribution": ce.influence_contribution,
+                        }
+                    )
                     queue.append((ce.cause_id, depth + 1))
         descendants: list[dict[str, Any]] = []
         visited2: set[str] = {node_id}
@@ -445,12 +503,14 @@ class CausalReasoner:
             for ce in cg.get_effects(cur):
                 if ce.effect_id not in visited2:
                     visited2.add(ce.effect_id)
-                    descendants.append({
-                        "node_id": ce.effect_id,
-                        "depth": depth + 1,
-                        "confidence": ce.confidence,
-                        "influence_contribution": ce.influence_contribution,
-                    })
+                    descendants.append(
+                        {
+                            "node_id": ce.effect_id,
+                            "depth": depth + 1,
+                            "confidence": ce.confidence,
+                            "influence_contribution": ce.influence_contribution,
+                        }
+                    )
                     queue2.append((ce.effect_id, depth + 1))
         duration = time.perf_counter_ns() - t0
         self._record_duration("explain", duration)
@@ -475,7 +535,12 @@ class CausalReasoner:
         t0 = time.perf_counter_ns()
         trace_id = self._generate_trace_id()
         if node_id not in self._graph.nodes:
-            return {"found": False, "trace_id": trace_id, "error": "node not found", "execution_time_ms": 0.0}
+            return {
+                "found": False,
+                "trace_id": trace_id,
+                "error": "node not found",
+                "execution_time_ms": 0.0,
+            }
         cg = self._build_causal_graph()
         cause_chains: list[dict[str, Any]] = []
         effect_chains: list[dict[str, Any]] = []
@@ -487,23 +552,27 @@ class CausalReasoner:
             cur, nodes, confs, vis = stack_causes.pop()
             causal_edges = cg.get_causes(cur)
             if not causal_edges and len(nodes) > 1:
-                cause_chains.append({
-                    "path": list(nodes),
-                    "confidence": round(sum(confs) / max(len(confs), 1), 4),
-                    "length": len(nodes) - 1,
-                })
+                cause_chains.append(
+                    {
+                        "path": list(nodes),
+                        "confidence": round(sum(confs) / max(len(confs), 1), 4),
+                        "length": len(nodes) - 1,
+                    }
+                )
             if len(nodes) - 1 >= max_depth:
                 continue
             for ce in causal_edges:
                 if ce.cause_id in vis:
                     continue
                 new_vis = vis | {ce.cause_id}
-                stack_causes.append((
-                    ce.cause_id,
-                    [ce.cause_id] + nodes,
-                    [ce.confidence] + confs,
-                    new_vis,
-                ))
+                stack_causes.append(
+                    (
+                        ce.cause_id,
+                        [ce.cause_id] + nodes,
+                        [ce.confidence] + confs,
+                        new_vis,
+                    )
+                )
         visited_effects: set[str] = set()
         stack_effects: list[tuple[str, list[str], list[float], set[str]]] = [
             (node_id, [node_id], [], {node_id})
@@ -512,26 +581,32 @@ class CausalReasoner:
             cur, nodes, confs, vis = stack_effects.pop()
             causal_edges = cg.get_effects(cur)
             if not causal_edges and len(nodes) > 1:
-                effect_chains.append({
-                    "path": list(nodes),
-                    "confidence": round(sum(confs) / max(len(confs), 1), 4),
-                    "length": len(nodes) - 1,
-                })
+                effect_chains.append(
+                    {
+                        "path": list(nodes),
+                        "confidence": round(sum(confs) / max(len(confs), 1), 4),
+                        "length": len(nodes) - 1,
+                    }
+                )
             if len(nodes) - 1 >= max_depth:
                 continue
             for ce in causal_edges:
                 if ce.effect_id in vis:
                     continue
                 new_vis = vis | {ce.effect_id}
-                stack_effects.append((
-                    ce.effect_id,
-                    nodes + [ce.effect_id],
-                    confs + [ce.confidence],
-                    new_vis,
-                ))
+                stack_effects.append(
+                    (
+                        ce.effect_id,
+                        nodes + [ce.effect_id],
+                        confs + [ce.confidence],
+                        new_vis,
+                    )
+                )
         duration = time.perf_counter_ns() - t0
         self._record_duration("chains", duration)
-        self._metrics.set_gauge("causal_chains_depth", float(max(len(cause_chains), len(effect_chains))))
+        self._metrics.set_gauge(
+            "causal_chains_depth", float(max(len(cause_chains), len(effect_chains)))
+        )
         return {
             "found": True,
             "trace_id": trace_id,
@@ -583,13 +658,15 @@ class CausalReasoner:
             rc_node = rc["root_cause_node"]
             rc_community = self._community_id(rc_node)
             anomaly_community = self._community_id(node_id)
-            cross_community_propagation.append({
-                "root_cause_node": rc_node,
-                "root_cause_community": rc_community,
-                "anomaly_community": anomaly_community,
-                "cross_community": rc_community != anomaly_community,
-                "confidence": rc["confidence"],
-            })
+            cross_community_propagation.append(
+                {
+                    "root_cause_node": rc_node,
+                    "root_cause_community": rc_community,
+                    "anomaly_community": anomaly_community,
+                    "cross_community": rc_community != anomaly_community,
+                    "confidence": rc["confidence"],
+                }
+            )
         duration = time.perf_counter_ns() - t0
         root_cause_result["trace_id"] = trace_id
         root_cause_result["cross_community_propagation"] = cross_community_propagation

@@ -2,10 +2,10 @@
 """
 Faz 14 — Proje Durumu Final Raporu + Saglik Kontrolu
 """
+
 from __future__ import annotations
 
 import json
-import os
 import re
 import subprocess
 import sys
@@ -17,8 +17,10 @@ PHASE14 = Path("/tmp/opencode/phase14")
 PHASE14.mkdir(parents=True, exist_ok=True)
 REPO = Path("/home/berkay/intelgraph")
 
+
 def section(t):
     print(f"\n{'='*72}\n  {t}\n{'='*72}")
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 1. pytest regression
@@ -27,15 +29,20 @@ section("Faz 14.1 — pytest Regression")
 t0 = time.perf_counter()
 proc = subprocess.run(
     [sys.executable, "-m", "pytest", "tests/", "-q", "--no-header", "--tb=short"],
-    cwd=str(REPO), capture_output=True, text=True, timeout=300,
+    cwd=str(REPO),
+    capture_output=True,
+    text=True,
+    timeout=300,
 )
 t1 = time.perf_counter()
 pytest_output = proc.stdout + proc.stderr
 pytest_passed = pytest_failed = 0
-m = re.search(r'(\d+) passed', pytest_output)
-if m: pytest_passed = int(m.group(1))
-m = re.search(r'(\d+) failed', pytest_output)
-if m: pytest_failed = int(m.group(1))
+m = re.search(r"(\d+) passed", pytest_output)
+if m:
+    pytest_passed = int(m.group(1))
+m = re.search(r"(\d+) failed", pytest_output)
+if m:
+    pytest_failed = int(m.group(1))
 print(f"  passed: {pytest_passed}")
 print(f"  failed: {pytest_failed}")
 print(f"  duration: {t1-t0:.1f}s")
@@ -45,17 +52,17 @@ print(f"  duration: {t1-t0:.1f}s")
 # ═══════════════════════════════════════════════════════════════════════════
 section("Faz 14.2 — 3 Kaynak Pipeline Saglik Kontrolu")
 
-from intelgraph.core.pipeline.chain import Pipeline
 from intelgraph.core.entity.cve import CveEntity
-from intelgraph.core.entity.ip_address import IPAddress
-from intelgraph.core.entity.domain import Domain
+from intelgraph.core.pipeline.chain import Pipeline
 
 # URLHaus sample (50 rows - pipeline scale limit ~100 nodes)
 urlhaus_lines = []
 with open("/tmp/opencode/phase9/urlhaus_full.csv") as f:
     for i, line in enumerate(f):
-        if line.startswith("#"): continue
-        if i >= 50: break
+        if line.startswith("#"):
+            continue
+        if i >= 50:
+            break
         urlhaus_lines.append(line.strip())
 urlhaus_text = ". ".join(urlhaus_lines)
 
@@ -87,7 +94,9 @@ result = pipeline.run(
         {"id": "otx", "name": "AlienVault OTX Pulses", "text": otx_text, "value": 85},
         {"id": "cisa_kev", "name": "CISA KEV Catalog", "text": kev_text, "value": 90},
     ],
-    thresholds={}, query_ip="", query_target="",
+    thresholds={},
+    query_ip="",
+    query_target="",
 )
 t1 = time.perf_counter()
 print(f"\n  Pipeline: {t1-t0:.2f}s")
@@ -120,13 +129,13 @@ known_cves = [n.entity for n in cve_nodes if n.entity.known_ransomware_use]
 unknown_cves = [n.entity for n in cve_nodes if not n.entity.known_ransomware_use]
 known_avg = sum(e.confidence_score for e in known_cves) / max(len(known_cves), 1)
 unknown_avg = sum(e.confidence_score for e in unknown_cves) / max(len(unknown_cves), 1)
-print(f"\n  CveEntity ransomware boost:")
+print("\n  CveEntity ransomware boost:")
 print(f"    Known:   {len(known_cves)} node, avg conf={known_avg:.1f}")
 print(f"    Unknown: {len(unknown_cves)} node, avg conf={unknown_avg:.1f}")
 
 # Save
 report = {
-    "pipeline_duration_sec": round(t1-t0, 2),
+    "pipeline_duration_sec": round(t1 - t0, 2),
     "total_entities": len(result.extracted_entities),
     "ner_label_distribution": dict(ner_labels),
     "graph_node_count": len(result.graph.nodes),
@@ -143,13 +152,26 @@ report = {
     "cve_unknown_avg_confidence": round(unknown_avg, 1),
 }
 with open(PHASE14 / "phase14_health_check.json", "w") as f:
-    json.dump({
-        "pytest": {"passed": pytest_passed, "failed": pytest_failed, "duration_sec": round(t1-t0, 1)},
-        "pipeline": report,
-    }, f, indent=2, ensure_ascii=False)
+    json.dump(
+        {
+            "pytest": {
+                "passed": pytest_passed,
+                "failed": pytest_failed,
+                "duration_sec": round(t1 - t0, 1),
+            },
+            "pipeline": report,
+        },
+        f,
+        indent=2,
+        ensure_ascii=False,
+    )
 print(f"\n  Rapor: {PHASE14}/phase14_health_check.json")
 
 section("FAZ 14 TAMAM")
 print(f"  pytest: {pytest_passed}/{pytest_passed+pytest_failed}")
-print(f"  Pipeline: {report['pipeline_duration_sec']}s, {report['graph_node_count']} node, {report['graph_edge_count']} edge")
-print(f"  CveEntity boost: Known avg={report['cve_known_avg_confidence']}, Unknown avg={report['cve_unknown_avg_confidence']}")
+print(
+    f"  Pipeline: {report['pipeline_duration_sec']}s, {report['graph_node_count']} node, {report['graph_edge_count']} edge"
+)
+print(
+    f"  CveEntity boost: Known avg={report['cve_known_avg_confidence']}, Unknown avg={report['cve_unknown_avg_confidence']}"
+)
