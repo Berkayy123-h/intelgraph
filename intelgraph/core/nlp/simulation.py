@@ -142,11 +142,7 @@ class ChaosSimulator:
             else (
                 "B"
                 if success_rate > 0.95
-                else "C"
-                if success_rate > 0.9
-                else "D"
-                if success_rate > 0.8
-                else "F"
+                else "C" if success_rate > 0.9 else "D" if success_rate > 0.8 else "F"
             )
         )
         return ResilienceScore(

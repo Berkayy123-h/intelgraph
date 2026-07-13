@@ -101,10 +101,10 @@ class TestInfluencePropagation:
 
     def test_weighted_page_rank_deterministic(self):
         g = _make_graph()
+
         def weight_fn(e):
-            return (
-                    float(e.relationship.confidence_score) / 100.0 if e.relationship else 1.0
-                )
+            return float(e.relationship.confidence_score) / 100.0 if e.relationship else 1.0
+
         infl = InfluencePropagation(g, weight_fn=weight_fn)
         r1 = infl.weighted_page_rank()
         r2 = infl.weighted_page_rank()
@@ -112,10 +112,10 @@ class TestInfluencePropagation:
 
     def test_weighted_page_rank_converges(self):
         g = _make_graph()
+
         def weight_fn(e):
-            return (
-                    float(e.relationship.confidence_score) / 100.0 if e.relationship else 1.0
-                )
+            return float(e.relationship.confidence_score) / 100.0 if e.relationship else 1.0
+
         infl = InfluencePropagation(g, weight_fn=weight_fn)
         result = infl.weighted_page_rank()
         assert result["converged"] is True
@@ -125,10 +125,10 @@ class TestInfluencePropagation:
         g = _make_graph()
         infl = InfluencePropagation(g)
         pr = infl.page_rank()
+
         def weight_fn(e):
-            return (
-                    float(e.relationship.confidence_score) / 100.0 if e.relationship else 1.0
-                )
+            return float(e.relationship.confidence_score) / 100.0 if e.relationship else 1.0
+
         infl_w = InfluencePropagation(g, weight_fn=weight_fn)
         wpr = infl_w.weighted_page_rank()
         assert pr["scores"] != wpr["scores"]
@@ -266,8 +266,10 @@ class TestInfluencePropagation:
 
     def test_weight_fn_custom(self):
         g = _make_graph()
+
         def custom_fn(e):
             return 0.5
+
         infl = InfluencePropagation(g, weight_fn=custom_fn)
         pr = infl.page_rank()
         wpr = infl.weighted_page_rank()

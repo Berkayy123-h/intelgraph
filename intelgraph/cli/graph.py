@@ -333,8 +333,10 @@ def graph_weighted_pagerank(
     ctx: click.Context, damping: float, max_iterations: int, tolerance: float, top: int | None
 ) -> None:
     g = _build_graph(ctx)
+
     def weight_fn(e):
         return float(e.relationship.confidence_score) / 100.0 if e.relationship else 1.0
+
     infl = InfluencePropagation(g, weight_fn=weight_fn)
     result = infl.weighted_page_rank(damping, max_iterations, tolerance)
     click.echo(
