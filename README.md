@@ -11,7 +11,7 @@
 
 ## Built With
 
-✔ **1,450+** automated tests  
+✔ **1,535+** automated tests  
 ✔ **5** CTI sources (URLhaus, OTX, CISA KEV, Shodan, VirusTotal)  
 ✔ **STIX 2.1** export compatible  
 ✔ **Knowledge Graph** engine with temporal tracking  
@@ -243,7 +243,7 @@ uv run pytest tests/test_pipeline.py -v
 
 **Coverage Target**: 100%  
 **Current**: 95%+  
-**Total Tests**: 1,450+
+**Total Tests**: 1,535+
 
 ---
 
@@ -323,7 +323,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for:
 |-----------|-----------|
 | Backend | FastAPI, SQLAlchemy |
 | Database | PostgreSQL, SQLite |
-| Frontend | React, D3.js, Chart.js |
+| Frontend | D3.js, Chart.js |
 | Testing | pytest, 1450+ tests |
 | Standards | STIX 2.1 |
 | Deployment | Docker, Kubernetes |
