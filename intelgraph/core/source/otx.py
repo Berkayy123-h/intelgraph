@@ -167,7 +167,7 @@ def fetch_urlhaus_iocs(csv_path: str) -> dict[str, list[dict[str, Any]]]:
         "URL": [],
     }
     with open(csv_path) as f:
-        lines = [l for l in f if not l.startswith("#")]
+        lines = [line for line in f if not line.startswith("#")]
     for r in csv.reader(lines):
         url = r[2] if len(r) > 2 else ""
         ip = r[3] if len(r) > 3 else ""

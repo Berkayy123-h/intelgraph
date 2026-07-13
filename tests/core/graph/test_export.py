@@ -444,7 +444,7 @@ class TestExportProgressCallback:
         g = _two_node_graph()
         for fmt in ("graphml", "dot", "json"):
             track: list[int] = []
-            settings = ExportSettings(progress_callback=lambda d, t: track.append(d))
+            settings = ExportSettings(progress_callback=lambda d, t, _t=track: _t.append(d))
             exp = GraphExporter(g, settings)
             exp.export(fmt)
             assert len(track) == len(g.nodes) + len(g.edges), f"Failed for {fmt}"
