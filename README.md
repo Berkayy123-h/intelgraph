@@ -4,7 +4,7 @@
 
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests: 1450+](https://img.shields.io/badge/Tests-1450%2B-brightgreen.svg)](#testing)
+[![Tests: 1,535+](https://img.shields.io/badge/Tests-1450%2B-brightgreen.svg)](#testing)
 [![Status: Active Development](https://img.shields.io/badge/Status-Active%20Development-yellow.svg)](#)
 
 ---
@@ -185,7 +185,7 @@ intelgraph/
 ├── models/           # STIX data models
 └── config/           # Configuration
 
-tests/                # 1450+ tests
+tests/                # 1,535+ tests
 docs/                 # Documentation
 ```
 
@@ -294,7 +294,7 @@ uv run pytest tests/test_pipeline.py -v
 
 ## 📞 Contact & Support
 
-- **Website**: intelgraph.io
+- **Website**: [intelgraph.io](https://intelgraph.io)
 - **GitHub**: [Berkayy123-h/intelgraph](https://github.com/Berkayy123-h/intelgraph)
 - **Issues**: [GitHub Issues](https://github.com/Berkayy123-h/intelgraph/issues)
 - **Questions**: [GitHub Discussions](https://github.com/Berkayy123-h/intelgraph/discussions)
@@ -326,7 +326,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for:
 | Backend | FastAPI, SQLAlchemy |
 | Database | PostgreSQL, SQLite |
 | Frontend | D3.js, Chart.js |
-| Testing | pytest, 1450+ tests |
+| Testing | pytest, 1,535+ tests |
 | Standards | STIX 2.1 |
 | Deployment | Docker, Kubernetes |
 
