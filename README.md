@@ -294,7 +294,7 @@ uv run pytest tests/test_pipeline.py -v
 
 ## 📞 Contact & Support
 
-- **Website**: [intelgraph.vercel.app](https://intelgraph.vercel.app)
+- **Website**: [intelgraph.io)
 - **GitHub**: [Berkayy123-h/intelgraph](https://github.com/Berkayy123-h/intelgraph)
 - **Issues**: [GitHub Issues](https://github.com/Berkayy123-h/intelgraph/issues)
 - **Questions**: [GitHub Discussions](https://github.com/Berkayy123-h/intelgraph/discussions)
