@@ -11,10 +11,10 @@
 
 ## Built With
 
-✔ **1,535+** automated tests  
-✔ **5** CTI sources (URLhaus, OTX, CISA KEV, Shodan, VirusTotal)  
-✔ **STIX 2.1** export compatible  
-✔ **Knowledge Graph** engine with temporal tracking  
+✔ **1,535+** automated tests
+✔ **3** live CTI source clients (OTX, Shodan, VirusTotal) + URLhaus CSV import
+✔ **STIX 2.1** export compatible
+✔ **Knowledge Graph** engine with temporal tracking (in-memory)
 ✔ **Real-time** enrichment & correlation  
 
 ---
@@ -59,14 +59,18 @@ IntelGraph complements existing CTI platforms by focusing on:
 
 ## ✨ Core Features
 
-### 📊 Multi-Source Pipeline (5 Sources)
-```python
-# Automatically aggregates from:
-- URLhaus       # Malicious URLs
-- OTX           # Community intelligence  
-- CISA KEV      # Known exploited vulnerabilities
-- Shodan        # Device data
-- VirusTotal    # File analysis
+### 📊 Multi-Source Pipeline
+```
+Active CTI source clients (REST APIs):
+- OTX             # AlienVault community intelligence
+- Shodan          # Internet-connected device data
+- VirusTotal      # File / URL / domain reputation
+
+CSV import:
+- URLhaus         # Malicious URL feed (read from CSV)
+
+Planned (not yet implemented):
+- CISA KEV        # Known exploited vulnerabilities
 ```
 
 ### 🧠 Entity Processing
@@ -152,7 +156,7 @@ uv run pytest tests/ -v --cov=intelgraph
 ## 📊 Architecture
 
 ```
-Threat Feeds (5 sources)
+Threat Feeds (3 API clients + URLhaus CSV)
        │
        ▼
    Collectors
@@ -175,18 +179,28 @@ Alerts  Investigation
 **Project Structure:**
 ```
 intelgraph/
-├── api/              # FastAPI endpoints
-├── core/             # Intelligence engine
-├── pipeline/         # Multi-source aggregation
-├── graph/            # Knowledge graph
-├── enrichment/       # Shodan, VirusTotal
-├── search/           # Full-text search (FTS5)
-├── auth/             # JWT + RBAC
-├── models/           # STIX data models
-└── config/           # Configuration
+├── api/                  # FastAPI app, routers, auth, middleware
+│   └── routers/          # REST endpoints (dashboard, metrics, export, etc.)
+├── cli/                  # Click commands (18 subcommands)
+├── core/                 # Core engine
+│   ├── collection/        # Collector framework (HTTP, RSS, file, API)
+│   ├── entity/           # Entity models (IP, domain, CVE, person, etc.)
+│   ├── evidence_chain/   # Evidence construction & confidence scoring
+│   ├── export/           # STIX 2.1 export
+│   ├── graph/            # In-memory knowledge graph + algorithms
+│   ├── multitenant/       # Tenant isolation & API key management
+│   ├── notification/     # Webhook, email, Slack dispatch
+│   ├── pipeline/         # Multi-phase pipeline engine
+│   ├── playbook/         # Rule-based response engine
+│   ├── reporting/        # Jinja2 HTML report generation
+│   ├── scoring/          # Threat scoring (5-component, 0-100)
+│   ├── source/           # CTI source clients (OTX, Shodan, VirusTotal)
+│   └── storage/          # SQLite + PostgreSQL backends
+├── web/                  # Dashboard HTML (single-page app)
+└── output/               # Output formatters (JSON, HTML, Markdown)
 
-tests/                # 1,535+ tests
-docs/                 # Documentation
+tests/                   # 1,535+ tests
+docs/                    # Landing page + deployment config
 ```
 
 ---
