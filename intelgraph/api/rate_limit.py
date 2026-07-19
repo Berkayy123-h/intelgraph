@@ -74,6 +74,8 @@ _CATEGORY_PREFIXES: dict[str, tuple[str, ...]] = {
         "/search",
         "/tasks/",
         "/graph/",
+        "/enrichment/",
+        "/export/",
     ),
     "write": (
         "/entities",

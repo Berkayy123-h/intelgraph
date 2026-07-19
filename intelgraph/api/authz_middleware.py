@@ -78,8 +78,9 @@ def create_authz_middleware(config: dict[str, Any]) -> Any:
         method = request.method
         auth = request.headers.get("Authorization", "")
         token_str = auth[7:] if auth.startswith("Bearer ") else ""
+        api_key_header = request.headers.get("X-API-Key", "")
 
-        # Resolve tenant from token
+        # Resolve tenant from token or API key
         token_tenant_id = ""
         uid = None
         if token_str:
@@ -89,6 +90,20 @@ def create_authz_middleware(config: dict[str, Any]) -> Any:
                 uid = payload.get("sub")
             else:
                 uid = validate_token(token_str)
+        elif api_key_header:
+            # Direct API key authentication (no JWT exchange required).
+            # Resolves the tenant and treats the request as if the tenant
+            # user had authenticated. The role defaults to "admin" for
+            # tenant-scoped API keys, matching the login_with_api_key flow.
+            try:
+                from intelgraph.core.multitenant.manager import get_tenant_manager
+
+                tenant = get_tenant_manager().verify_api_key(api_key_header)
+            except Exception:
+                tenant = None
+            if tenant and tenant.is_active:
+                token_tenant_id = tenant.tenant_id
+                uid = f"tenant_{tenant.tenant_id}"
 
         # Store tenant context on request state
         request.state.tenant_id = token_tenant_id

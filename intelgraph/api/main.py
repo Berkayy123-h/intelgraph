@@ -53,6 +53,9 @@ from intelgraph.api.routers import (
     investigations as investigations_router,
 )
 from intelgraph.api.routers import (
+    enrichment as enrichment_router,
+)
+from intelgraph.api.routers import (
     dashboard as dashboard_router,
 )
 from intelgraph.api.routers import (
@@ -130,12 +133,53 @@ def create_app(config: dict[str, Any] | None = None) -> FastAPI:
     _container = ServiceContainer(cfg)
 
     origins = cfg.get("cors", {}).get("origins", [])
+    _API_TAGS = [
+        {"name": "auth", "description": "User registration, login, OAuth2, and 2FA."},
+        {"name": "enrichment", "description": "IOC enrichment and threat lookup for SIEM/SOAR integrations."},
+        {"name": "entities", "description": "Entity CRUD operations."},
+        {"name": "relationships", "description": "Relationship CRUD operations."},
+        {"name": "search", "description": "Full-text search across the knowledge graph."},
+        {"name": "graph", "description": "Graph algorithms, analytics, anomaly detection, attack paths."},
+        {"name": "export", "description": "Export the knowledge graph as GraphML, GEXF, JSON, CSV, or STIX 2.1."},
+        {"name": "investigations", "description": "Investigation workspaces with pivot analysis, timeline, and analyst notes."},
+        {"name": "notifications", "description": "Webhook, email, and Slack notification channels and history."},
+        {"name": "reports", "description": "Scheduled and on-demand HTML threat intelligence reports."},
+        {"name": "metrics", "description": "Performance, health, and pipeline observability endpoints."},
+        {"name": "dashboard", "description": "Dashboard summary and live SSE metrics stream."},
+    ]
     app = FastAPI(
         title="IntelGraph API",
         version=__version__,
-        description="Intelligence Collection, Correlation, Verification, and Analysis Platform",
+        description=(
+            "Open-source threat intelligence platform. IntelGraph correlates "
+            "indicators across multiple sources (URLhaus, OTX, Shodan, VirusTotal) "
+            "into a knowledge graph and explains every alert with an evidence chain.\n\n"
+            "## Authentication\n"
+            "Two authentication mechanisms are supported and can be used interchangeably:\n"
+            "- **JWT bearer**: `Authorization: Bearer <jwt>` — obtain a token from `/auth/login` or `/auth/register`.\n"
+            "- **API key**: `X-API-Key: <tenant-api-key>` — issue a key via the tenants API; "
+            "no token exchange required, ideal for SIEM/SOAR automation.\n\n"
+            "## Rate limiting\n"
+            "All endpoints are rate limited per client (sliding window). Response headers "
+            "`X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` carry the quota. "
+            "A `429 Too Many Requests` response includes a `Retry-After` header.\n\n"
+            "## Compatibility\n"
+            "STIX 2.1 and TAXII 2.1 exports are produced with the `stix2` library and validated "
+            "against the official STIX 2.1 schema, so the output can be ingested by MISP, OpenCTI, "
+            "and any TAXII 2.1 consumer."
+        ),
         docs_url=None,
         redoc_url=None,
+        openapi_tags=_API_TAGS,
+        contact={
+            "name": "IntelGraph",
+            "url": "https://github.com/Berkayy123-h/intelgraph",
+            "email": "contact@intelgraph.io",
+        },
+        license_info={
+            "name": "MIT",
+            "url": "https://github.com/Berkayy123-h/intelgraph/blob/main/LICENSE",
+        },
     )
 
     if origins:
@@ -200,6 +244,7 @@ def create_app(config: dict[str, Any] | None = None) -> FastAPI:
     app.include_router(notifications_router.router)
     app.include_router(reports_router.router)
     app.include_router(investigations_router.router)
+    app.include_router(enrichment_router.router)
 
     @app.get("/")
     async def root() -> RedirectResponse:
