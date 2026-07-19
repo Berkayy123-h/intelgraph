@@ -50,6 +50,9 @@ from intelgraph.api.routers import (
     verification,
 )
 from intelgraph.api.routers import (
+    investigations as investigations_router,
+)
+from intelgraph.api.routers import (
     dashboard as dashboard_router,
 )
 from intelgraph.api.routers import (
@@ -196,6 +199,7 @@ def create_app(config: dict[str, Any] | None = None) -> FastAPI:
     app.include_router(tenants_router.router)
     app.include_router(notifications_router.router)
     app.include_router(reports_router.router)
+    app.include_router(investigations_router.router)
 
     @app.get("/")
     async def root() -> RedirectResponse:
