@@ -4,14 +4,14 @@
 
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests: 1,535+](https://img.shields.io/badge/Tests-1450%2B-brightgreen.svg)](#testing)
+[![Tests: 1,580+](https://img.shields.io/badge/Tests-1580%2B-brightgreen.svg)](#testing)
 [![Status: Active Development](https://img.shields.io/badge/Status-Active%20Development-yellow.svg)](#)
 
 ---
 
 ## Built With
 
-✔ **1,535+** automated tests
+✔ **1,580+** automated tests
 ✔ **3** live CTI source clients (OTX, Shodan, VirusTotal) + URLhaus CSV import
 ✔ **STIX 2.1** export compatible
 ✔ **Knowledge Graph** engine with temporal tracking (in-memory)
@@ -35,7 +35,7 @@ Unlike traditional threat intelligence platforms that only aggregate indicators,
 
 | Feature | Description |
 |---------|-------------|
-| 🔗 **Multi-source Correlation** | Correlates data from 5 threat sources |
+| 🔗 **Multi-source Correlation** | Correlates data from multiple threat sources |
 | 📋 **Evidence Chains** | Tracks provenance and reasoning |
 | 📊 **Knowledge Graph** | Visualizes threat relationships |
 | 🚨 **Contradiction Detection** | Identifies conflicting intelligence |
@@ -116,7 +116,7 @@ POST /api/v1/enrichment/ip
 
 ### Prerequisites
 - Python 3.11+
-- PostgreSQL or SQLite
+- SQLite (default) or PostgreSQL
 
 ### Installation
 
@@ -141,8 +141,13 @@ VIRUSTOTAL_API_KEY=your-key
 ### Run
 
 ```bash
-uv run python -m intelgraph.api.server
+# Local development
+uv run uvicorn intelgraph.api.main:app --reload
 # Open http://localhost:8000
+
+# Docker
+docker build -t intelgraph .
+docker run -p 8000:8000 --env-file .env intelgraph
 ```
 
 ### Test
@@ -199,7 +204,7 @@ intelgraph/
 ├── web/                  # Dashboard HTML (single-page app)
 └── output/               # Output formatters (JSON, HTML, Markdown)
 
-tests/                   # 1,535+ tests
+tests/                   # 1,580+ tests
 docs/                    # Landing page + deployment config
 ```
 
@@ -257,14 +262,14 @@ uv run pytest tests/test_pipeline.py -v
 
 **Coverage Target**: 100%  
 **Current**: 95%+  
-**Total Tests**: 1,535+
+**Total Tests**: 1,580+
 
 ---
 
 ## 📚 Documentation
 
 - **[Architecture](./Architecture.md)** - System design & components
-- **[Deployment](./DEPLOYMENT.md)** - Docker, K8s, production setup
+- **[Deployment](./DEPLOYMENT.md)** - Docker, K8s, production setup (coming soon)
 - **[API Reference](./README.md#-api-examples)** - Endpoint documentation
 - **[Contributing](./CONTRIBUTING.md)** - Development guide
 - **[Security Policy](./SECURITY.md)** - Responsible disclosure
@@ -337,10 +342,10 @@ We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for:
 
 | Component | Technology |
 |-----------|-----------|
-| Backend | FastAPI, SQLAlchemy |
-| Database | PostgreSQL, SQLite |
+| Backend | FastAPI, Uvicorn |
+| Database | SQLite, PostgreSQL |
 | Frontend | D3.js, Chart.js |
-| Testing | pytest, 1,535+ tests |
+| Testing | pytest, 1,580+ tests |
 | Standards | STIX 2.1 |
 | Deployment | Docker, Kubernetes |
 

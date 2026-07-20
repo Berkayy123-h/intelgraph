@@ -1,37 +1,37 @@
-# LIMITATIONS.md — intelgraph bilinen sınırları (Faz 14 doğrulanmış)
+# LIMITATIONS.md — Known Limitations
 
 ## NER (extractor.py)
-- **Bağlamsal anlam çıkaramaz**: NER sadece regex-based'dir, dilbilimsel/anlamsal analiz yoktur. Örnek: "Sunucu 10.0.0.1" ile "Struts 10.0.4.2" arasındaki fark sadece context keyword'lere dayanır.
-- **IPv6 desteği yok**: `IP_RE` sadece IPv4 eşleştirir (`\b(?:\d{1,3}\.){3}\d{1,3}\b`). Gerçek dünyada URLhaus'ta 0 IPv6 örneği bulduk, bu yüzden acil değil.
-- **NER DOMAIN FP oranı %53.1**: Faz 9 ölçeğinde 19,794 raw DOMAIN match → 10,144 FILENAME (51%), 8,946 DOMAIN (45%), 704 UNKNOWN (4%). `_classify_domain_match()` bunu TLD + filename ext + URL context ile azaltır ama tamamen sıfırlayamaz.
-- **PERSON/ORGANIZATION düşük doğruluk**: Regex pattern başlıklar ("Mr.", "Dr.") ve şirket ekleri ("Inc.", "Corp.") arar — çoğu threat intel metninde bulunmaz.
+- **No contextual understanding**: NER is regex-based only, with linguistic/semantic analysis. Example: "Server 10.0.0.1" vs "Struts 10.0.4.2" are disambiguated only via context keywords.
+- **No IPv6 support**: `IP_RE` only matches IPv4. In real-world testing, 0 IPv6 entries found in URLhaus data.
+- **NER DOMAIN false positive rate 53.1%**: At Phase 9 scale, 19,794 raw DOMAIN matches → 10,144 FILENAME (51%), 8,946 DOMAIN (45%), 704 UNKNOWN (4%). Classifier reduces but cannot eliminate false positives.
+- **PERSON/ORGANIZATION low accuracy**: Regex patterns look for titles ("Mr.", "Dr.") and company suffixes ("Inc.", "Corp."), rarely found in threat intelligence text.
 
 ## EvidenceChain (evidence_chain/confidence.py)
-- **Keyword-based çelişki tespiti**: `ContradictionDetector` çelişkiyi proof content'teki "contradicts"/"refutes"/"debunks" kelimelerine bakarak anlar. Doğal dilde "aslında yanlış" gibi ifadeler yakalanmaz.
-- **Source trust varsayılanı 50**: `source_trust_map` verilmediğinde her source için 50 kullanır — oysa farklı kaynakların güvenilirliği farklı olmalı.
+- **Keyword-based contradiction detection**: `ContradictionDetector` detects contradictions via proof content keywords ("contradicts"/"refutes"/"debunks"). Natural language contradictions are not captured.
+- **Source trust defaults to 50**: When `source_trust_map` is not provided, all sources default to 50 — actual source reliability varies.
 
 ## EntityMatcher (graph.py)
-- **O(n²) ölçek eşiği**: ~100K node eşiğinde O(n²) karşılaştırma takılabilir. Faz 9 ölçeğinde (10K) kabul edilebilir; daha fazlası için hash-based ön filtre gerekir.
-- **Eşleştirme sınırları**: Sadece aynı tip (IPAddress↔IPAddress, Domain↔Domain, CveEntity↔CveEntity) eşleştirir; cross-tip eşleştirme yoktur.
+- **O(n²) scale threshold**: ~100K node threshold before O(n²) comparison becomes a bottleneck. Hash-based pre-filter needed beyond that.
+- **Same-type matching only**: Only matches same-type entities (IPAddress↔IPAddress, Domain↔Domain, CveEntity↔CveEntity). No cross-type matching.
 
 ## RelationshipExtractor (extractor.py)
-- **`min_confidence=0.0` varsayılan (filtre yok)**: Faz 10.3 ölçeğinde 0% FP gözlendi, bu yüzden acil değil; ancak farklı veri setlerinde filtreye ihtiyaç olabilir.
-- **Co-occurrence yaklaşımı**: Aynı cümlede veya dokümanda geçen entity'ler için ilişki kurar, gerçek语文 anlamsal ilişkileri anlamaz.
-- **Verbs hardcoded**: 28 threat intel fiili hardcoded ("exploits", "uses", "targets", vb.). Yeni fiiller eklemek için kod değişikliği gerekir.
+- **`min_confidence=0.0` default (no filter)**: At Phase 10.3 scale, 0% false positive rate observed, so not urgent.
+- **Co-occurrence approach**: Relationships are based on co-occurrence in the same sentence or document, not semantic understanding.
+- Heat verbs hardcoded**: 28 threat intel verbs hardcoded ("exploits", "uses", "targets", etc.).
 
-## Graph veritabanı (graph.py)
-- **In-memory**: IntelligenceGraph RAM'de tutulur, kalıcı depolama yoktur. Pipeline her çalıştırmada sıfırdan inşa eder.
+## Graph database (graph.py)
+- **In-memory only**: IntelligenceGraph is held in RAM, no persistent storage. Pipeline rebuilds graph from scratch each run.
 
-## Görselleştirme (web/dashboard.html)
-- **Chart.js CDN bağımlı**: Dashboard tek HTML dosyası, Chart.js'u CDN'den yükler. Ofline/airgap ortamda çalışmaz.
-- **statik**: Dashboard gerçek-zamanlı değil — /dashboard/summary her çağrıldığında yeniden hesaplar, WebSocket/SSE yoktur.
+## Visualization (web/dashboard.html)
+- **Chart.js CDN dependency**: Dashboard loads Chart.js from CDN. Fails in air-gapped/offline environments.
+- **Static dashboard**: Not real-time — `/dashboard/summary` recalculates on each request. Uses SSE for metrics dashboard, not for graph visualization.
 
 ## Pipeline (chain.py)
-- **UTE.write() confidence dönmüyor**: `UnifiedTruthEngine.write()` `{"key", "action", "source"}` döner — confidence dahil değildir. `result.truth_entries` üzerinden confidence okumak için `ute.read()` gerekir.
-- **VERSION etiketi pipeline'da filtrelenir**: Faz 13 ile _classify_ip_match VERSION'u ayırır, pipeline bu etiketli entity'leri fact'lara eklemez — versiyon numaraları graph'a girmez.
-- **chain_manager SQLite**: `resolve_evidence_contradictions` chain_manager path'i her `add_entity` çağrısında SQLite'a yazar — 200+ varlıkta belirgin yavaşlama. In-memory path (`chain_manager=None`) çok daha hızlı.
+- **UTILITY.write() doesn't return confidence**: Returns `{"key", "action", "source"}` — confidence must be read via `ute.read()`.
+- **VERSION tag filtered from pipeline**: Phase 13 disambiguates VERSION from IP, pipe filters VERSION entity — version numbers don't enter the graph.
+- **chain_manager SQLite path slow**: `resolve_evidence_contradictions` writes to SQLite per `add_entity` call — slow with 200+ entities. In-memory path (chain_manager=None) much faster.
 
-## Kaynak (Sources)
-- **URLhaus JSON API 401**: Sadece CSV'den veri alınabilir.
-- **OTX API key gerekli**: Faz 6'da sentetik OTX verisi kullanıldı, gerçek OTX pulse'ları API key olmadan alınamaz.
-- **OTX × URLhaus 0 ortak IOC**: Çapraz kaynak eşleşmesi için daha fazla kaynak veya aynı vakaya farklı açılardan bakan kaynaklar gerekir.
+## Sources
+- **URLhaus JSON API returns 401**: Only CSV can be accessed.
+- **OTX API key required**: Phase 6 used synthetic OTX data. Real pulses require API key.
+- **OTX × URLhaus 0 common IOCs**: More sources needed for cross-source correlation.
