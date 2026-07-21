@@ -1453,19 +1453,19 @@ async function load() {
     const summary = await fetchJSON('/dashboard/summary');
     if (summary.error) {
       document.querySelectorAll('.value').forEach(e => e.textContent = '--');
-      document.getElementById('m-nodes').innerHTML = '<span style="color:#8b949e;font-size:11px;font-weight:400">Pipeline çalıştırın</span>';
+      document.getElementById('m-nodes').innerHTML = '<span style="color:#8b949e;font-size:11px;font-weight:400">Run the pipeline first</span>';
       return;
     }
 
-    setText('m-nodes', summary.node_count);
-    setText('m-entities', summary.entity_count);
-    setText('m-domains', summary.domain_count);
-    setText('m-filenames', summary.filename_count);
-    setText('m-alerts', summary.alert_count);
-    setText('m-incidents', summary.incident_count);
-    setText('m-contradictions', summary.contradiction_count);
-    setText('m-chains', summary.chain_count);
-    setText('m-max-threat', summary.max_threat_score);
+    setText('m-nodes', summary.node_count ?? 0);
+    setText('m-entities', summary.entity_count ?? 0);
+    setText('m-domains', summary.domain_count ?? 0);
+    setText('m-filenames', summary.filename_count ?? 0);
+    setText('m-alerts', summary.alert_count ?? 0);
+    setText('m-incidents', summary.incident_count ?? 0);
+    setText('m-contradictions', summary.contradiction_count ?? 0);
+    setText('m-chains', summary.chain_count ?? 0);
+    setText('m-max-threat', summary.max_threat_score ?? 0);
 
     // Anomalies
     const ac = document.getElementById('anomalies-content');
@@ -1727,43 +1727,93 @@ async function completePlaybookStep(incidentId, stepId) {
 
 load();
 
-// ── SSE: real-time metric updates (every 5s) ──
+// ── SSE: real-time metric updates (every 5s) with REST fallback ──
 let sseReconnectTimer = null;
+let sseConnected = false;
+let restPollTimer = null;
 
 function connectSSE() {
   const statusEl = document.getElementById('sse-status');
   statusEl.textContent = 'Connecting…';
   statusEl.className = 'sse-status connecting';
 
-  const es = new EventSource('/dashboard/stream');
+  try {
+    const es = new EventSource('/dashboard/stream');
+    let openTimeout = setTimeout(() => {
+      // If SSE doesn't open within 3 seconds, fall back to REST polling
+      es.close();
+      if (!sseConnected) {
+        console.log('SSE timeout, falling back to REST polling');
+        statusEl.textContent = 'REST Polling';
+        statusEl.className = 'sse-status connected';
+        startRestPolling();
+      }
+    }, 3000);
 
-  es.addEventListener('open', () => {
-    statusEl.textContent = 'Live';
+    es.addEventListener('open', () => {
+      clearTimeout(openTimeout);
+      sseConnected = true;
+      statusEl.textContent = 'Live';
+      statusEl.className = 'sse-status connected';
+      console.log('SSE connected');
+    });
+
+    es.addEventListener('metrics', (e) => {
+      const m = JSON.parse(e.data);
+      setText('m-nodes', m.node_count);
+      setText('m-contradictions', m.contradiction_count);
+      setText('m-alerts', m.alert_count);
+      setText('m-incidents', m.incident_count);
+      setText('m-entities', m.entity_count);
+    });
+
+    es.addEventListener('error', () => {
+      clearTimeout(openTimeout);
+      statusEl.textContent = 'Disconnected';
+      statusEl.className = 'sse-status disconnected';
+      es.close();
+      // Fall back to REST polling
+      if (!sseConnected) {
+        console.log('SSE error, falling back to REST polling');
+        startRestPolling();
+      }
+      // Reconnect attempt after 10 seconds
+      if (sseReconnectTimer) clearTimeout(sseReconnectTimer);
+      sseReconnectTimer = setTimeout(connectSSE, 10000);
+    });
+  } catch (e) {
+    console.log('SSE init failed, using REST polling:', e);
+    statusEl.textContent = 'REST Polling';
     statusEl.className = 'sse-status connected';
-  });
+    startRestPolling();
+  }
+}
 
-  es.addEventListener('metrics', (e) => {
-    const m = JSON.parse(e.data);
-    setText('m-nodes', m.node_count);
-    setText('m-contradictions', m.contradiction_count);
-    setText('m-alerts', m.alert_count);
-    setText('m-incidents', m.incident_count);
-    setText('m-entities', m.entity_count);
-  });
+function startRestPolling() {
+  // Initial fetch
+  loadDashboardMetrics();
+  // Poll every 5 seconds
+  restPollTimer = setInterval(loadDashboardMetrics, 5000);
+}
 
-  es.addEventListener('error', () => {
-    statusEl.textContent = 'Disconnected';
-    statusEl.className = 'sse-status disconnected';
-    es.close();
-    // Reconnect after 10 seconds
-    if (sseReconnectTimer) clearTimeout(sseReconnectTimer);
-    sseReconnectTimer = setTimeout(connectSSE, 10000);
-  });
+async function loadDashboardMetrics() {
+  try {
+    const summary = await fetchJSON('/dashboard/summary');
+    if (summary && !summary.error) {
+      setText('m-nodes', summary.node_count);
+      setText('m-contradictions', summary.contradiction_count);
+      setText('m-alerts', summary.alert_count);
+      setText('m-incidents', summary.incident_count);
+      setText('m-entities', summary.entity_count);
+    }
+  } catch (e) {
+    console.log('REST metrics fetch failed:', e);
+  }
 }
 
 connectSSE();
 
-// Full reload for charts/tables every 30s (metrics are real-time via SSE)
+// Full reload for charts/tables every 30s (metrics are real-time via SSE/REST)
 setInterval(load, 30000);
 
 // ── Search with debounce ──
