@@ -51,8 +51,8 @@ class ExplanationBuilder:
             {
                 "order": len(steps) + 1,
                 "phase": "source_ingestion",
-                "label": "Kaynak Alımı",
-                "detail": f"Entity '{entity_identifier}' (tip: {entity_type}, conf: {node_conf_pct}, {evidence_count} kanit)",
+                "label": "Source Ingestion",
+                "detail": f"Entity '{entity_identifier}' (type: {entity_type}, conf: {node_conf_pct}, {evidence_count} evidence)",
                 "evidence": f"Graph node: {entity_identifier}",
                 "confidence": (node_conf_pct / 100.0) or 1.0,
                 "entity_type": entity_type,
@@ -68,11 +68,11 @@ class ExplanationBuilder:
                     {
                         "order": len(steps) + 1,
                         "phase": "entity_merge",
-                        "label": "Entity Birleştirme",
-                        "detail": f"'{entry.get('source_entity_id', '?')}' ile birlestirildi "
-                        f"(strateji: {entry.get('merge_strategy', '?')}, skor: {entry.get('confidence', 0)})",
-                        "evidence": f"Alanlar: {entry.get('fields_merged', [])}, "
-                        f"Kaynak: {entry.get('source_attribution', '?')}",
+                        "label": "Entity Merge",
+                        "detail": f"Merged with '{entry.get('source_entity_id', '?')}' "
+                        f"(strategy: {entry.get('merge_strategy', '?')}, score: {entry.get('confidence', 0)})",
+                        "evidence": f"Fields: {entry.get('fields_merged', [])}, "
+                        f"Source: {entry.get('source_attribution', '?')}",
                         "confidence": entry.get("confidence", 0),
                         "merge_source": entry.get("source_entity_id", ""),
                         "merge_strategy": entry.get("merge_strategy", ""),
@@ -88,8 +88,8 @@ class ExplanationBuilder:
                     {
                         "order": len(steps) + 1,
                         "phase": "source_text",
-                        "label": "Kaynak Metin",
-                        "detail": f"Kaynak metin #{i + 1}'de gecmektedir",
+                        "label": "Source Text",
+                        "detail": f"Appears in source text #{i + 1}",
                         "evidence": st[:200],
                         "confidence": 1.0,
                     }
@@ -109,9 +109,9 @@ class ExplanationBuilder:
                     {
                         "order": len(steps) + 1,
                         "phase": "truth_estimation",
-                        "label": "Doğruluk Değerlendirmesi",
-                        "detail": f"Entity '{te_identifier}' icin gercek degeri: conf={raw_conf}",
-                        "evidence": f"Kaynak: {truth.get('source', '?')}, Deger: {truth.get('value', {})}",
+                        "label": "Truth Assessment",
+                        "detail": f"True value for entity '{te_identifier}': conf={raw_conf}",
+                        "evidence": f"Source: {truth.get('source', '?')}, Value: {truth.get('value', {})}",
                         "confidence": normal_conf,
                     }
                 )
@@ -125,7 +125,7 @@ class ExplanationBuilder:
                     {
                         "order": len(steps) + 1,
                         "phase": "contradiction",
-                        "label": "Çelişki Tespiti",
+                        "label": "Contradiction Detection",
                         "detail": c.get("explanation", ""),
                         "evidence": f"{fa.get('source', '?')}: {fa.get('value', '?')} vs {fb.get('source', '?')}: {fb.get('value', '?')}",
                         "confidence": c.get("confidence", 0),
@@ -153,9 +153,9 @@ class ExplanationBuilder:
                     {
                         "order": len(steps) + 1,
                         "phase": "relationship",
-                        "label": f"İlişki: {r.get('relation', '?')}",
-                        "detail": f"'{entity_id}' -> '{other_text}' (tip: {other_type}, iliski: {r.get('relation', '?')})",
-                        "evidence": f"Co-occurrence seviyesi: {conf_bucket}, guven: {r.get('confidence', 0)}",
+                        "label": f"Relationship: {r.get('relation', '?')}",
+                        "detail": f"'{entity_id}' -> '{other_text}' (type: {other_type}, relation: {r.get('relation', '?')})",
+                        "evidence": f"Co-occurrence level: {conf_bucket}, confidence: {r.get('confidence', 0)}",
                         "confidence": r.get("confidence", 0),
                         "relation_type": r.get("relation", ""),
                         "cooccurrence_level": conf_bucket,
@@ -171,8 +171,8 @@ class ExplanationBuilder:
                 {
                     "order": len(steps) + 1,
                     "phase": "evidence_chain",
-                    "label": "Kanıt Zinciri",
-                    "detail": f"Toplam zincir: {chain_stats.get('total_chain_count', '?')}, Ortalama guven: {chain_stats.get('avg_confidence', '?')}",
+                    "label": "Evidence Chain",
+                    "detail": f"Total chains: {chain_stats.get('total_chain_count', '?')}, Avg confidence: {chain_stats.get('avg_confidence', '?')}",
                     "evidence": str(chain_stats),
                     "confidence": chain_stats.get("avg_confidence", 0),
                 }
@@ -186,8 +186,8 @@ class ExplanationBuilder:
                     {
                         "order": len(steps) + 1,
                         "phase": "alert",
-                        "label": "Uyarı Oluşturma",
-                        "detail": f"Kategori: {alert.get('category', '?')}, Seviye: {alert.get('severity', '?')}",
+                        "label": "Alert Generation",
+                        "detail": f"Category: {alert.get('category', '?')}, Severity: {alert.get('severity', '?')}",
                         "evidence": alert.get("message", ""),
                         "confidence": ctx.get("confidence", 0),
                         "metric_key": alert.get("metric_key", ""),
@@ -203,9 +203,9 @@ class ExplanationBuilder:
                 {
                     "order": len(steps) + 1,
                     "phase": "safety_governor",
-                    "label": "Güvenlik Kararı",
-                    "detail": f"Onay seviyesi: {sr.get('approval_level', '?')}, Risk: {sr.get('risk_score', 0)}",
-                    "evidence": f"Karar: {sr.get('action_description', '?')}, Ihlaller: {sr.get('violations', [])}",
+                    "label": "Safety Decision",
+                    "detail": f"Approval level: {sr.get('approval_level', '?')}, Risk: {sr.get('risk_score', 0)}",
+                    "evidence": f"Decision: {sr.get('action_description', '?')}, Violations: {sr.get('violations', [])}",
                     "confidence": 1 - sr.get("risk_score", 0),
                     "approval_level": sr.get("approval_level", ""),
                     "risk_score": sr.get("risk_score", 0),
@@ -219,8 +219,8 @@ class ExplanationBuilder:
                 {
                     "order": len(steps) + 1,
                     "phase": "human_review",
-                    "label": "İnsan İncelemesi",
-                    "detail": f"Sonuc: {rr.get('outcome', '?')}, Inceleyen: {rr.get('reviewer', '?')}",
+                    "label": "Human Review",
+                    "detail": f"Outcome: {rr.get('outcome', '?')}, Reviewer: {rr.get('reviewer', '?')}",
                     "evidence": rr.get("notes", ""),
                     "confidence": 1.0,
                 }
@@ -234,9 +234,9 @@ class ExplanationBuilder:
             {
                 "order": len(steps) + 1,
                 "phase": "incident",
-                "label": "Olay Kaydı",
-                "detail": f"Incident baskin entity: '{entity_identifier_step10}'",
-                "evidence": "Pipeline tarafından IncidentControlCenter araciligiyla olusturuldu",
+                "label": "Incident Record",
+                "detail": f"Incident primary entity: '{entity_identifier_step10}'",
+                "evidence": "Created by IncidentControlCenter via pipeline",
                 "confidence": 1.0,
             }
         )
@@ -244,7 +244,7 @@ class ExplanationBuilder:
         return steps
 
     def _build_narrative(self, steps: list[dict[str, Any]]) -> str:
-        lines = ["=== KANIT ZINCIRI ===", ""]
+        lines = ["=== EVIDENCE CHAIN ===", ""]
         for s in steps:
             phase_emoji = {
                 "source_ingestion": "📥",
@@ -259,14 +259,14 @@ class ExplanationBuilder:
                 "human_review": "👤",
                 "incident": "📋",
             }.get(s["phase"], "•")
-            lines.append(f"  {phase_emoji} Adim {s['order']}: {s['label']}")
+            lines.append(f"  {phase_emoji} Step {s['order']}: {s['label']}")
             lines.append(f"     {s['detail']}")
             if s.get("evidence"):
-                lines.append(f"     Kanit: {s['evidence'][:200]}")
+                lines.append(f"     Evidence: {s['evidence'][:200]}")
             if s.get("confidence"):
                 raw = s["confidence"]
                 pct = raw if raw > 1 else raw * 100
-                lines.append(f"     Guven: {pct:.2f}")
+                lines.append(f"     Confidence: {pct:.2f}%")
             lines.append("")
         return "\n".join(lines)
 
@@ -285,7 +285,7 @@ class ExplanationBuilder:
 
         if not incident:
             return {
-                "error": f"Incident '{incident_id}' bulunamadi",
+                "error": f"Incident '{incident_id}' not found",
                 "available_incidents": [
                     i.get("id") or i.get("alert_id") for i in self._r.get("incidents", [])
                 ]
