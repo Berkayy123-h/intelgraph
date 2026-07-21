@@ -57,6 +57,16 @@ IntelGraph complements existing CTI platforms by focusing on:
 
 ---
 
+## 📸 Screenshots
+
+### Pipeline Dashboard
+
+![IntelGraph Pipeline Dashboard](screenshots/dashboard.jpg)
+
+*IntelGraph Pipeline Dashboard — 131 nodes, 219 entities, live threat correlation*
+
+---
+
 ## ✨ Core Features
 
 ### 📊 Multi-Source Pipeline
