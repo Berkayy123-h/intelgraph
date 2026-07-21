@@ -527,7 +527,7 @@ td .label{ display:inline-block; padding:2px 9px; border-radius:999px; font-size
     <nav class="sidebar-nav tabs">
       <div class="nav-section-label">CORE</div>
       <button class="tab-btn active" onclick="switchTab('dashboard')"><span class="nav-icon">◧</span>Dashboard</button>
-      <button class="tab-btn" onclick="switchTab('graph')"><span class="nav-icon">⌘</span>Graf</button>
+      <button class="tab-btn" onclick="switchTab('graph')"><span class="nav-icon">⌘</span>Graph</button>
       <div class="nav-section-label" style="margin-top:10px">ANALYST TOOLS</div>
       <button class="tab-btn nav-ai" onclick="switchTab('ai-analyst')"><span class="nav-icon">🤖</span>AI Analyst</button>
       <button class="tab-btn nav-ai" onclick="switchTab('investigation')"><span class="nav-icon">🔍</span>Investigation</button>
@@ -536,9 +536,9 @@ td .label{ display:inline-block; padding:2px 9px; border-radius:999px; font-size
       <button class="tab-btn nav-ai" onclick="switchTab('mitre')"><span class="nav-icon">🛡</span>MITRE ATT&CK</button>
       <div class="nav-section-label" style="margin-top:10px">PLATFORM</div>
       <button class="tab-btn" onclick="switchTab('notifications')"><span class="nav-icon">◔</span>Notifications</button>
-      <button class="tab-btn" onclick="switchTab('reports')"><span class="nav-icon">▤</span>Raporlar</button>
-      <button class="tab-btn" onclick="switchTab('security')"><span class="nav-icon">◈</span>Güvenlik</button>
-      <button class="tab-btn" onclick="switchTab('performance')"><span class="nav-icon">◒</span>Performans</button>
+<button class="tab-btn" onclick="switchTab('reports')"><span class="nav-icon">▤</span>Reports</button>
+<button class="tab-btn" onclick="switchTab('security')"><span class="nav-icon">◈</span>Security</button>
+<button class="tab-btn" onclick="switchTab('performance')"><span class="nav-icon">◒</span>Performance</button>
     </nav>
 
     <div class="sidebar-footer">
@@ -561,12 +561,12 @@ td .label{ display:inline-block; padding:2px 9px; border-radius:999px; font-size
 
       <div class="command-bar-row command-bar-row-secondary">
         <div class="auth-cluster">
-          <span id="auth-status" class="status-text">Bağlı değil</span>
-          <input id="login-user" type="text" placeholder="Kullanıcı adı" value="admin" class="field-sm">
-          <input id="login-pass" type="password" placeholder="Şifre" value="admin" class="field-sm">
-          <button onclick="loginWithUserPass()" class="btn btn-primary btn-sm">Giriş</button>
-          <button onclick="registerAndLogin()" class="btn btn-success btn-sm">Kayıt Ol</button>
-          <button onclick="logout()" id="logout-btn" class="btn btn-ghost btn-sm" style="display:none">Çıkış</button>
+<span id="auth-status" class="status-text">Not connected</span>
+<input id="login-user" type="text" placeholder="Username" value="admin" class="field-sm">
+<input id="login-pass" type="password" placeholder="Password" value="admin" class="field-sm">
+<button onclick="loginWithUserPass()" class="btn btn-primary btn-sm">Login</button>
+<button onclick="registerAndLogin()" class="btn btn-success btn-sm">Register</button>
+<button onclick="logout()" id="logout-btn" class="btn btn-ghost btn-sm" style="display:none">Logout</button>
         </div>
 
         <div class="export-cluster">
@@ -578,7 +578,7 @@ td .label{ display:inline-block; padding:2px 9px; border-radius:999px; font-size
             <option value="json">JSON</option>
             <option value="csv">CSV</option>
           </select>
-          <button onclick="downloadGraphExport()" class="btn btn-success btn-sm">Dışa Aktar</button>
+          <button onclick="downloadGraphExport()" class="btn btn-success btn-sm">Export</button>
         </div>
       </div>
     </header>
@@ -639,10 +639,10 @@ td .label{ display:inline-block; padding:2px 9px; border-radius:999px; font-size
         <div class="card">
           <h2>Intelligence Graph — Force-Directed Layout</h2>
           <div class="control-row" style="margin-bottom:10px">
-            <button class="tab-btn" onclick="loadGraph(200, '7d')" id="tf-7">Son 7 gün</button>
-            <button class="tab-btn" onclick="loadGraph(200, '30d')" id="tf-30">Son 30 gün</button>
-            <button class="tab-btn active" onclick="loadGraph(200, null)" id="tf-all">Tümü</button>
-            <button class="tab-btn" onclick="toggleConnectedOnly()" id="tf-connected" style="margin-left:12px">Sadece bağlı</button>
+<button class="tab-btn" onclick="loadGraph(200, '7d')" id="tf-7">Last 7 days</button>
+<button class="tab-btn" onclick="loadGraph(200, '30d')" id="tf-30">Last 30 days</button>
+<button class="tab-btn active" onclick="loadGraph(200, null)" id="tf-all">All</button>
+<button class="tab-btn" onclick="toggleConnectedOnly()" id="tf-connected" style="margin-left:12px">Connected only</button>
           </div>
           <svg id="graph-svg"></svg>
           <div class="graph-legend" id="graph-legend"></div>
@@ -698,44 +698,43 @@ td .label{ display:inline-block; padding:2px 9px; border-radius:999px; font-size
       </div>
 
       <div id="tab-security" class="tab-content">
-        <h3>Güvenlik Ayarları</h3>
-        <div id="security-status">
-          <div class="tl-loading">Loading security status...</div>
-        </div>
-        <div id="security-setup" style="display:none;margin-top:15px">
-          <div class="card security-card">
-            <h4>İki Faktörlü Kimlik Doğrulama (2FA)</h4>
-            <p>Google Authenticator veya Authy gibi bir TOTP uygulaması kullanarak 2FA etkinleştirin.</p>
-            <div id="2fa-setup-details"></div>
-            <button class="btn btn-primary btn-sm" onclick="enable2FA()" id="btn-enable-2fa" style="margin-top:12px">2FA Etkinleştir</button>
-            <button class="btn btn-danger btn-sm" onclick="disable2FA()" id="btn-disable-2fa" style="margin-top:12px;display:none">2FA Devre Dışı</button>
-          </div>
-        </div>
+<h3>Security Settings</h3>
+<div id="security-status">
+<div class="tl-loading">Loading security status...</div>
+</div>
+<div id="security-setup" style="display:none;margin-top:15px">
+<div class="card security-card">
+<h4>Two-Factor Authentication (2FA)</h4>
+<p>Enable 2FA using a TOTP app like Google Authenticator or Authy.</p>
+<div id="2fa-setup-details"></div>
+<button class="btn btn-primary btn-sm" onclick="enable2FA()" id="btn-enable-2fa" style="margin-top:12px">Enable 2FA</button>
+<button class="btn btn-danger btn-sm" onclick="disable2FA()" id="btn-disable-2fa" style="margin-top:12px;display:none">Disable 2FA</button>
+</div>
+</div>
       </div>
 
       <div id="tab-performance" class="tab-content">
-        <h3>Performans ve Sistem Metrikleri</h3>
-
-        <div class="grid metrics-grid">
-          <div class="card" id="perf-pipeline-stat">
-            <h4>Pipeline Son Çalıştırma</h4>
-            <div class="stat-value" id="pipeline-last-dur">-</div>
-            <div class="stat-sub" id="pipeline-last-detail">-</div>
-          </div>
-          <div class="card" id="perf-pipeline-avg">
-            <h4>Ortalama Pipeline Süresi</h4>
-            <div class="stat-value" id="pipeline-avg-dur">-</div>
-            <div class="stat-sub">son N çalıştırma</div>
-          </div>
-          <div class="card" id="perf-cpu">
-            <h4>CPU</h4>
-            <div class="stat-value" id="cpu-percent">-</div>
-          </div>
-          <div class="card" id="perf-mem">
-            <h4>Bellek</h4>
-            <div class="stat-value" id="memory-percent">-</div>
-          </div>
-        </div>
+<h3>Performance and System Metrics</h3>
+<div class="grid metrics-grid">
+<div class="card" id="perf-pipeline-stat">
+<h4>Last Pipeline Run</h4>
+<div class="stat-value" id="pipeline-last-dur">-</div>
+<div class="stat-sub" id="pipeline-last-detail">-</div>
+</div>
+<div class="card" id="perf-pipeline-avg">
+<h4>Avg Pipeline Duration</h4>
+<div class="stat-value" id="pipeline-avg-dur">-</div>
+<div class="stat-sub">last N runs</div>
+</div>
+<div class="card" id="perf-cpu">
+<h4>CPU</h4>
+<div class="stat-value" id="cpu-percent">-</div>
+</div>
+<div class="card" id="perf-mem">
+<h4>Memory</h4>
+<div class="stat-value" id="memory-percent">-</div>
+</div>
+</div>
 
         <div class="control-row" style="align-items:stretch;margin-top:12px">
           <div class="card" style="flex:2;min-width:300px;max-height:220px;overflow:hidden">
@@ -750,18 +749,17 @@ td .label{ display:inline-block; padding:2px 9px; border-radius:999px; font-size
 
         <div class="control-row" style="align-items:stretch;margin-top:12px">
           <div class="card" style="flex:1;min-width:250px;max-height:220px;overflow:hidden">
-            <h4>Komponent Sağlığı</h4>
-            <div id="component-health-grid" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
-          </div>
-          <div class="card" style="flex:2;min-width:300px;max-height:220px;overflow:hidden">
-            <h4>Sistem Metrik Trendi (son 5 dk)</h4>
-            <canvas id="system-chart" height="150"></canvas>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:12px">
-          <h4>Pipeline Geçmişi</h4>
-          <div id="pipeline-history-table"><div class="tl-loading">Yükleniyor...</div></div>
+<h4>Component Health</h4>
+<div id="component-health-grid" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+</div>
+<div class="card" style="flex:2;min-width:300px;max-height:220px;overflow:hidden">
+<h4>System Metrics Trend (last 5 min)</h4>
+<canvas id="system-chart" height="150"></canvas>
+</div>
+</div>
+<div class="card" style="margin-top:12px">
+<h4>Pipeline History</h4>
+<div id="pipeline-history-table"><div class="tl-loading">Loading...</div></div>
         </div>
       </div>
 
@@ -844,13 +842,13 @@ td .label{ display:inline-block; padding:2px 9px; border-radius:999px; font-size
           </div>
 
           <!-- Investigation detail -->
-          <div id="inv-detail-panel">
-            <div class="card" style="padding:40px;text-align:center;color:var(--ink-700)">
-              <div style="font-size:48px;margin-bottom:16px;opacity:.3">🔍</div>
-              <div style="font-size:14px">Bir soruşturma seçin veya yeni bir tane başlatın</div>
-              <button onclick="newInvestigation()" class="btn btn-ghost" style="margin-top:16px">+ Yeni Soruşturma</button>
-            </div>
-          </div>
+<div id="inv-detail-panel">
+<div class="card" style="padding:40px;text-align:center;color:var(--ink-700)">
+<div style="font-size:48px;margin-bottom:16px;opacity:.3">🔍</div>
+<div style="font-size:14px">Select an investigation or start a new one</div>
+<button onclick="newInvestigation()" class="btn btn-ghost" style="margin-top:16px">+ New Investigation</button>
+</div>
+</div>
         </div>
       </div><!-- /tab-investigation -->
 
@@ -1084,6 +1082,9 @@ td .label{ display:inline-block; padding:2px 9px; border-radius:999px; font-size
 let pipelineChart = null;
 let apiChart = null;
 let systemChart = null;
+let tl2Chart = null;
+let tlTrendChart = null;
+let nerChart = null;
 let perfSseSource = null;
 let graphLoaded = false;
 
@@ -1110,14 +1111,14 @@ function switchTab(name) {
 }
 
 async function loadChannels() {
-  try {
-    const d = await fetchJSON('/notifications/channels');
-    const el = document.getElementById('channels-content');
-    if (!d.channels || !d.channels.length) { el.innerHTML = '<div class="tl-empty">No channels configured. Add one above.</div>'; return; }
-    el.innerHTML = '<table><tr><th>ID</th><th>Type</th><th>Min Severity</th><th>Enabled</th><th>Actions</th></tr>' +
-      d.channels.map(ch => `<tr><td style="font-size:11px">${ch.channel_id}</td><td><span class="label label-${ch.channel_type === 'email' ? 'domain' : 'url'}">${ch.channel_type}</span></td><td>${ch.min_severity}</td><td>${ch.enabled ? '✓' : '✗'}</td><td><button onclick="deleteChannel('${ch.channel_id}')" style="background:#da3633;border:none;border-radius:4px;padding:2px 8px;color:#fff;font-size:11px;cursor:pointer">Delete</button></td></tr>`).join('') +
-      '</table>';
-  } catch (e) { document.getElementById('channels-content').innerHTML = `<div class="error">${e.message === 'HTTP 401' ? 'Önce giriş yapın' : e.message}</div>`; }
+try {
+const d = await fetchJSON('/notifications/channels');
+const el = document.getElementById('channels-content');
+if (!d.channels || !d.channels.length) { el.innerHTML = '<div class="tl-empty">No channels configured. Add one above.</div>'; return; }
+el.innerHTML = '<table><tr><th>ID</th><th>Type</th><th>Min Severity</th><th>Enabled</th><th>Actions</th></tr>' +
+d.channels.map(ch => `<tr><td style="font-size:11px">${ch.channel_id}</td><td><span class="label label-${ch.channel_type === 'email' ? 'domain' : 'url'}">${ch.channel_type}</span></td><td>${ch.min_severity}</td><td>${ch.enabled ? '✓' : '✗'}</td><td><button onclick="deleteChannel('${ch.channel_id}')" style="background:#da3633;border:none;border-radius:4px;padding:2px 8px;color:#fff;font-size:11px;cursor:pointer">Delete</button></td></tr>`).join('') +
+'</table>';
+} catch (e) { document.getElementById('channels-content').innerHTML = `<div class="error">${e.message === 'HTTP 401' ? 'Please login first' : e.message}</div>`; }
 }
 
 async function loadHistory() {
@@ -1132,52 +1133,52 @@ async function loadHistory() {
 }
 
 async function addWebhookChannel() {
-  const url = document.getElementById('notif-webhook-url').value.trim();
-  if (!url) { alert('Webhook URL girin'); return; }
-  const secret = document.getElementById('notif-secret').value.trim();
-  const minSeverity = document.getElementById('notif-severity').value;
-  const config = { webhook_url: url };
-  if (secret) config.secret = secret;
-  try {
-    await fetchJSON('/notifications/channels', {
-      method: 'POST',
-      body: JSON.stringify({ channel_type: 'webhook', config, min_severity: minSeverity }),
-    });
-    document.getElementById('notif-webhook-url').value = '';
-    document.getElementById('notif-secret').value = '';
-    loadChannels();
-  } catch (e) { alert(e.message === 'HTTP 401' ? 'Önce giriş yapın' : e.message); }
+const url = document.getElementById('notif-webhook-url').value.trim();
+if (!url) { alert('Enter Webhook URL'); return; }
+const secret = document.getElementById('notif-secret').value.trim();
+const minSeverity = document.getElementById('notif-severity').value;
+const config = { webhook_url: url };
+if (secret) config.secret = secret;
+try {
+await fetchJSON('/notifications/channels', {
+method: 'POST',
+body: JSON.stringify({ channel_type: 'webhook', config, min_severity: minSeverity }),
+});
+document.getElementById('notif-webhook-url').value = '';
+document.getElementById('notif-secret').value = '';
+loadChannels();
+} catch (e) { alert(e.message === 'HTTP 401' ? 'Please login first' : e.message); }
 }
 
 async function addEmailChannel() {
-  const hostport = document.getElementById('notif-email').value.trim();
-  const fromAddr = document.getElementById('notif-from').value.trim();
-  const toAddrs = document.getElementById('notif-to').value.trim();
-  const missing = [];
-  if (!hostport) missing.push('SMTP host:port (örn. smtp.gmail.com:587)');
-  if (!fromAddr) missing.push('From (gönderen email)');
-  if (!toAddrs) missing.push('To (alıcı email)');
-  if (missing.length) { alert('Lütfen doldurun: ' + missing.join(', ')); return; }
-  const [host, portStr] = hostport.includes(':') ? hostport.split(':') : [hostport, '587'];
-  const minSeverity = document.getElementById('notif-severity').value;
-  const config = { smtp_host: host, smtp_port: parseInt(portStr), from_addr: fromAddr, to_addrs: toAddrs.split(',').map(s => s.trim()) };
-  try {
-    await fetchJSON('/notifications/channels', {
-      method: 'POST',
-      body: JSON.stringify({ channel_type: 'email', config, min_severity: minSeverity }),
-    });
-    document.getElementById('notif-email').value = '';
-    document.getElementById('notif-from').value = '';
-    document.getElementById('notif-to').value = '';
-    loadChannels();
-  } catch (e) { alert(e.message === 'HTTP 401' ? 'Önce giriş yapın' : e.message); }
+const hostport = document.getElementById('notif-email').value.trim();
+const fromAddr = document.getElementById('notif-from').value.trim();
+const toAddrs = document.getElementById('notif-to').value.trim();
+const missing = [];
+if (!hostport) missing.push('SMTP host:port (e.g. smtp.gmail.com:587)');
+if (!fromAddr) missing.push('From (sender email)');
+if (!toAddrs) missing.push('To (recipient email)');
+if (missing.length) { alert('Please fill in: ' + missing.join(', ')); return; }
+const [host, portStr] = hostport.includes(':') ? hostport.split(':') : [hostport, '587'];
+const minSeverity = document.getElementById('notif-severity').value;
+const config = { smtp_host: host, smtp_port: parseInt(portStr), from_addr: fromAddr, to_addrs: toAddrs.split(',').map(s => s.trim()) };
+try {
+await fetchJSON('/notifications/channels', {
+method: 'POST',
+body: JSON.stringify({ channel_type: 'email', config, min_severity: minSeverity }),
+});
+document.getElementById('notif-email').value = '';
+document.getElementById('notif-from').value = '';
+document.getElementById('notif-to').value = '';
+loadChannels();
+} catch (e) { alert(e.message === 'HTTP 401' ? 'Please login first' : e.message); }
 }
 
 async function deleteChannel(channelId) {
-  try {
-    await fetchJSON(`/notifications/channels/${channelId}`, { method: 'DELETE' });
-    loadChannels();
-  } catch (e) { alert(e.message === 'HTTP 401' ? 'Önce giriş yapın' : e.message); }
+try {
+await fetchJSON(`/notifications/channels/${channelId}`, { method: 'DELETE' });
+loadChannels();
+} catch (e) { alert(e.message === 'HTTP 401' ? 'Please login first' : e.message); }
 }
 
 // ── Reports ──
@@ -1186,32 +1187,32 @@ document.getElementById('rpt-type').addEventListener('change', function() {
 });
 
 async function generateReport() {
-  const rtype = document.getElementById('rpt-type').value;
-  const range = document.getElementById('rpt-range').value;
-  const entity = document.getElementById('rpt-entity').value.trim();
-  const body = { type: rtype, time_range: range };
-  if (entity) body.entity_identifier = entity;
-  document.getElementById('rpt-status').innerHTML = '<div class="loading">Generating report...</div>';
-  try {
-    const res = await fetchJSON('/reports/generate', {
-      method: 'POST', body: JSON.stringify(body),
-      headers: Object.assign({'Content-Type': 'application/json'}, getAuthHeaders()),
-    });
-    if (res.error) { document.getElementById('rpt-status').innerHTML = `<div class="error">${res.error}</div>`; return; }
-    document.getElementById('rpt-status').innerHTML = `<div style="background:#3fb95033;color:#3fb950;padding:8px 12px;border-radius:6px;font-size:13px">Report generated: ${res.title} (${res.report_id})</div>`;
-    loadReports();
-  } catch (e) { document.getElementById('rpt-status').innerHTML = `<div class="error">${e.message === 'HTTP 401' ? 'Lütfen önce giriş yapın. (API key kullanın)' : e.message}</div>`; }
+const rtype = document.getElementById('rpt-type').value;
+const range = document.getElementById('rpt-range').value;
+const entity = document.getElementById('rpt-entity').value.trim();
+const body = { type: rtype, time_range: range };
+if (entity) body.entity_identifier = entity;
+document.getElementById('rpt-status').innerHTML = '<div class="loading">Generating report...</div>';
+try {
+const res = await fetchJSON('/reports/generate', {
+method: 'POST', body: JSON.stringify(body),
+headers: Object.assign({'Content-Type': 'application/json'}, getAuthHeaders()),
+});
+if (res.error) { document.getElementById('rpt-status').innerHTML = `<div class="error">${res.error}</div>`; return; }
+document.getElementById('rpt-status').innerHTML = `<div style="background:#3fb95033;color:#3fb950;padding:8px 12px;border-radius:6px;font-size:13px">Report generated: ${res.title} (${res.report_id})</div>`;
+loadReports();
+} catch (e) { document.getElementById('rpt-status').innerHTML = `<div class="error">${e.message === 'HTTP 401' ? 'Please login first. (Use API key)' : e.message}</div>`; }
 }
 
 async function loadReports() {
-  try {
-    const d = await fetchJSON('/reports', {headers: getAuthHeaders()});
-    const el = document.getElementById('reports-content');
-    if (!d.reports || !d.reports.length) { el.innerHTML = '<div class="tl-empty">No reports generated yet.</div>'; return; }
-    el.innerHTML = '<table><tr><th>Title</th><th>Type</th><th>Generated</th><th>Period</th><th>Download</th></tr>' +
-      d.reports.map(r => `<tr><td style="font-size:12px">${r.title}</td><td><span class="label label-${r.report_type === 'executive_summary' ? 'domain' : 'url'}">${r.report_type}</span></td><td style="font-size:11px;color:#8b949e">${(r.generated_at || '').slice(0,19)}</td><td style="font-size:11px;color:#8b949e">${(r.time_range_start || '').slice(0,10)} — ${(r.time_range_end || '').slice(0,10)}</td><td><a href="/reports/${r.report_id}" target="_blank" style="color:#58a6ff;font-size:12px">Open</a></td></tr>`).join('') +
-      '</table>';
-  } catch (e) { document.getElementById('reports-content').innerHTML = `<div class="error">${e.message === 'HTTP 401' ? 'Lütfen önce giriş yapın. (API key kullanın)' : e.message}</div>`; }
+try {
+const d = await fetchJSON('/reports', {headers: getAuthHeaders()});
+const el = document.getElementById('reports-content');
+if (!d.reports || !d.reports.length) { el.innerHTML = '<div class="tl-empty">No reports generated yet.</div>'; return; }
+el.innerHTML = '<table><tr><th>Title</th><th>Type</th><th>Generated</th><th>Period</th><th>Download</th></tr>' +
+d.reports.map(r => `<tr><td style="font-size:12px">${r.title}</td><td><span class="label label-${r.report_type === 'executive_summary' ? 'domain' : 'url'}">${r.report_type}</span></td><td style="font-size:11px;color:#8b949e">${(r.generated_at || '').slice(0,19)}</td><td style="font-size:11px;color:#8b949e">${(r.time_range_start || '').slice(0,10)} — ${(r.time_range_end || '').slice(0,10)}</td><td><a href="/reports/${r.report_id}" target="_blank" style="color:#58a6ff;font-size:12px">Open</a></td></tr>`).join('') +
+'</table>';
+} catch (e) { document.getElementById('reports-content').innerHTML = `<div class="error">${e.message === 'HTTP 401' ? 'Please login first. (Use API key)' : e.message}</div>`; }
 }
 
 // ── D3 Force-directed graph ──
@@ -1865,84 +1866,84 @@ function escapeHtml(text) {
 
 // ── Security / 2FA ──
 function loadSecurityStatus() {
-  const el = document.getElementById('security-status');
-  fetch('/auth/2fa/status', {headers: getAuthHeaders()})
-    .then(r => r.json())
-    .then(data => {
-      if (data.enabled) {
-        el.innerHTML = '<div class="card" style="border-left:4px solid #5cb85c;max-width:500px">'
-          + '<strong>2FA Durumu:</strong> Aktif &check;'
-          + '</div>';
-        document.getElementById('btn-enable-2fa').style.display = 'none';
-        document.getElementById('btn-disable-2fa').style.display = '';
-        document.getElementById('security-setup').style.display = '';
-      } else {
-        el.innerHTML = '<div class="card" style="border-left:4px solid #f0ad4e;max-width:500px">'
-          + '<strong>2FA Durumu:</strong> Devre Dışı'
-          + '</div>';
-        document.getElementById('btn-enable-2fa').style.display = '';
-        document.getElementById('btn-disable-2fa').style.display = 'none';
-        document.getElementById('security-setup').style.display = '';
-      }
-    })
-    .catch(e => {
-      el.innerHTML = '<div class="card" style="border-left:4px solid #d9534f;max-width:500px">Error loading security status</div>';
-    });
+const el = document.getElementById('security-status');
+fetch('/auth/2fa/status', {headers: getAuthHeaders()})
+.then(r => r.json())
+.then(data => {
+if (data.enabled) {
+el.innerHTML = '<div class="card" style="border-left:4px solid #5cb85c;max-width:500px">'
++ '<strong>2FA Status:</strong> Active &check;'
++ '</div>';
+document.getElementById('btn-enable-2fa').style.display = 'none';
+document.getElementById('btn-disable-2fa').style.display = '';
+document.getElementById('security-setup').style.display = '';
+} else {
+el.innerHTML = '<div class="card" style="border-left:4px solid #f0ad4e;max-width:500px">'
++ '<strong>2FA Status:</strong> Disabled'
++ '</div>';
+document.getElementById('btn-enable-2fa').style.display = '';
+document.getElementById('btn-disable-2fa').style.display = 'none';
+document.getElementById('security-setup').style.display = '';
+}
+})
+.catch(e => {
+el.innerHTML = '<div class="card" style="border-left:4px solid #d9534f;max-width:500px">Error loading security status</div>';
+});
 }
 
 function enable2FA() {
-  const btn = document.getElementById('btn-enable-2fa');
-  btn.disabled = true;
-  btn.textContent = 'Etkinleştiriliyor...';
-  fetch('/auth/2fa/enable', {
-    method: 'POST',
-    headers: Object.assign({'Content-Type': 'application/json'}, getAuthHeaders()),
-    body: JSON.stringify({issuer: 'IntelGraph'}),
-  })
-    .then(r => r.json().then(data => ({status: r.status, data})))
-    .then(({status, data}) => {
-      if (status === 401) {
-        alert('Lütfen önce giriş yapın. (API key kullanın)');
-        btn.disabled = false;
-        btn.textContent = '2FA Etkinleştir';
-        return;
-      }
-      if (status !== 200 || data.detail) {
-        alert('2FA etkinleştirme hatası: ' + (data.detail || 'Unknown error'));
-        btn.disabled = false;
-        btn.textContent = '2FA Etkinleştir';
-        return;
-      }
-      const details = document.getElementById('2fa-setup-details');
-      details.innerHTML = '<div class="card" style="max-width:500px;margin-top:10px">'
-        + '<p><strong>Secret:</strong> <code>' + data.secret + '</code></p>'
-        + '<p><strong>QR URI (Google Authenticator/Authy):</strong></p>'
-        + '<p style="word-break:break-all;font-size:12px">' + data.provisioning_uri + '</p>'
-        + '<p><strong>Recovery Codes (save these!):</strong></p>'
-        + '<pre style="background:#222;padding:10px;border-radius:4px">'
-        + (data.recovery_codes || []).join('\n') + '</pre>'
-        + '</div>';
-      loadSecurityStatus();
-    })
-    .catch(e => {
-      btn.disabled = false;
-      btn.textContent = '2FA Etkinleştir';
-      alert('2FA enable failed: ' + e.message);
-    });
+const btn = document.getElementById('btn-enable-2fa');
+btn.disabled = true;
+btn.textContent = 'Enabling...';
+fetch('/auth/2fa/enable', {
+method: 'POST',
+headers: Object.assign({'Content-Type': 'application/json'}, getAuthHeaders()),
+body: JSON.stringify({issuer: 'IntelGraph'}),
+})
+.then(r => r.json().then(data => ({status: r.status, data})))
+.then(({status, data}) => {
+if (status === 401) {
+alert('Please login first. (Use API key)');
+btn.disabled = false;
+btn.textContent = 'Enable 2FA';
+return;
+}
+if (status !== 200 || data.detail) {
+alert('2FA enable error: ' + (data.detail || 'Unknown error'));
+btn.disabled = false;
+btn.textContent = 'Enable 2FA';
+return;
+}
+const details = document.getElementById('2fa-setup-details');
+details.innerHTML = '<div class="card" style="max-width:500px;margin-top:10px">'
++ '<p><strong>Secret:</strong> <code>' + data.secret + '</code></p>'
++ '<p><strong>QR URI (Google Authenticator/Authy):</strong></p>'
++ '<p style="word-break:break-all;font-size:12px">' + data.provisioning_uri + '</p>'
++ '<p><strong>Recovery Codes (save these!):</strong></p>'
++ '<pre style="background:#222;padding:10px;border-radius:4px">'
++ (data.recovery_codes || []).join('\n') + '</pre>'
++ '</div>';
+loadSecurityStatus();
+})
+.catch(e => {
+btn.disabled = false;
+btn.textContent = 'Enable 2FA';
+alert('2FA enable failed: ' + e.message);
+});
 }
 
 function disable2FA() {
-  if (!confirm('2FA devre dışı bırakılacak. Emin misiniz?')) return;
-  fetch('/auth/2fa/disable', {
-    method: 'POST',
-    headers: getAuthHeaders(),
-  })
-    .then(r => r.json())
-    .then(data => {
-      document.getElementById('2fa-setup-details').innerHTML = '';
-      loadSecurityStatus();
-    })
-    .catch(e => alert('2FA disable failed: ' + e));
+if (!confirm('2FA will be disabled. Are you sure?')) return;
+fetch('/auth/2fa/disable', {
+method: 'POST',
+headers: getAuthHeaders(),
+})
+.then(r => r.json())
+.then(data => {
+document.getElementById('2fa-setup-details').innerHTML = '';
+loadSecurityStatus();
+})
+.catch(e => alert('2FA disable failed: ' + e));
 }
 
 function getAuthHeaders() {
@@ -1958,70 +1959,70 @@ function loadPerformance() {
 }
 
 function loadPipelineHistory() {
-  fetch('/metrics/pipeline')
-    .then(r => r.json())
-    .then(data => {
-      const runs = data.runs || [];
-      const stats = data.stats || {};
-      const el = document.getElementById('pipeline-history-table');
-      if (runs.length === 0) {
-        el.innerHTML = '<div style="color:#8b949e;text-align:center;padding:20px">Henüz pipeline çalıştırılmamış.</div>';
-        return;
-      }
-      let html = '<table class="incident-table"><thead><tr><th>#</th><th>Süre (ms)</th><th>Entity</th><th>Alert</th><th>Incident</th><th>Hata</th><th>Kaynak</th></tr></thead><tbody>';
-      for (let i = runs.length - 1; i >= 0; i--) {
-        const r = runs[i];
-        html += '<tr><td>' + (i + 1) + '</td>'
-          + '<td>' + r.duration_ms + '</td>'
-          + '<td>' + r.entity_count + '</td>'
-          + '<td>' + r.alert_count + '</td>'
-          + '<td>' + r.incident_count + '</td>'
-          + '<td>' + r.error_count + '</td>'
-          + '<td>' + (r.source_count || '-') + '</td></tr>';
-      }
-      html += '</tbody></table>';
-      el.innerHTML = html;
+fetch('/metrics/pipeline')
+.then(r => r.json())
+.then(data => {
+const runs = data.runs || [];
+const stats = data.stats || {};
+const el = document.getElementById('pipeline-history-table');
+if (runs.length === 0) {
+el.innerHTML = '<div style="color:#8b949e;text-align:center;padding:20px">No pipeline runs yet.</div>';
+return;
+}
+let html = '<table class="incident-table"><thead><tr><th>#</th><th>Duration (ms)</th><th>Entity</th><th>Alert</th><th>Incident</th><th>Error</th><th>Source</th></tr></thead><tbody>';
+for (let i = runs.length - 1; i >= 0; i--) {
+const r = runs[i];
+html += '<tr><td>' + (i + 1) + '</td>'
++ '<td>' + r.duration_ms + '</td>'
++ '<td>' + r.entity_count + '</td>'
++ '<td>' + r.alert_count + '</td>'
++ '<td>' + r.incident_count + '</td>'
++ '<td>' + r.error_count + '</td>'
++ '<td>' + (r.source_count || '-') + '</td></tr>';
+}
+html += '</tbody></table>';
+el.innerHTML = html;
 
-      // Stats cards
-      document.getElementById('pipeline-last-dur').textContent = (stats.last_duration_ms || '-') + ' ms';
-      document.getElementById('pipeline-last-detail').textContent = stats.run_count + ' çalıştırma';
-      document.getElementById('pipeline-avg-dur').textContent = (stats.avg_duration_ms || '-') + ' ms';
+// Stats cards
+document.getElementById('pipeline-last-dur').textContent = (stats.last_duration_ms || '-') + ' ms';
+document.getElementById('pipeline-last-detail').textContent = stats.run_count + ' runs';
+document.getElementById('pipeline-avg-dur').textContent = (stats.avg_duration_ms || '-') + ' ms';
 
-      // Pipeline chart
-      drawPipelineChart(runs);
-    })
-    .catch(e => {
-      document.getElementById('pipeline-history-table').innerHTML = '<div style="color:#d9534f">Yüklenemedi: ' + e + '</div>';
-    });
+// Pipeline chart
+drawPipelineChart(runs);
+})
+.catch(e => {
+document.getElementById('pipeline-history-table').innerHTML = '<div style="color:#d9534f">Failed to load: ' + e + '</div>';
+});
 }
 
 function drawPipelineChart(runs) {
-  const ctx = document.getElementById('pipeline-chart');
-  if (!ctx) return;
-  if (pipelineChart) pipelineChart.destroy();
-  pipelineChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: runs.map((_, i) => '#' + (i + 1)),
-      datasets: [{
-        label: 'Süre (ms)',
-        data: runs.map(r => r.duration_ms),
-        borderColor: '#58a6ff',
-        backgroundColor: 'rgba(88,166,255,0.1)',
-        fill: true,
-        tension: 0.3,
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { labels: { color: '#c9d1d9' } } },
-      scales: {
-        x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
-        y: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' }, beginAtZero: true }
-      }
-    }
-  });
+const ctx = document.getElementById('pipeline-chart');
+if (!ctx) return;
+if (pipelineChart) pipelineChart.destroy();
+pipelineChart = new Chart(ctx, {
+type: 'line',
+data: {
+labels: runs.map((_, i) => '#' + (i + 1)),
+datasets: [{
+label: 'Duration (ms)',
+data: runs.map(r => r.duration_ms),
+borderColor: '#58a6ff',
+backgroundColor: 'rgba(88,166,255,0.1)',
+fill: true,
+tension: 0.3,
+}]
+},
+options: {
+responsive: true,
+maintainAspectRatio: false,
+plugins: { legend: { labels: { color: '#c9d1d9' } } },
+scales: {
+x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
+y: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' }, beginAtZero: true }
+}
+}
+});
 }
 
 function loadPerfData() {
@@ -2102,26 +2103,26 @@ function drawSystemChart(sys) {
 }
 
 function drawComponentHealth(health) {
-  const el = document.getElementById('component-health-grid');
-  if (!el) return;
-  const components = health.components || [];
-  let html = '';
-  for (const comp of components) {
-    const color = comp.status === 'healthy' ? '#3fb950' : comp.status === 'degraded' ? '#f0883e' : '#d9534f';
-    html += '<div style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:6px 10px;font-size:11px;min-width:130px;flex:1">'
-      + '<div style="display:flex;align-items:center;gap:6px">'
-      + '<span style="width:8px;height:8px;border-radius:50%;background:' + color + ';display:inline-block"></span>'
-      + '<strong style="color:#c9d1d9">' + comp.name + '</strong>'
-      + '</div>'
-      + '<div style="color:#8b949e;margin-top:2px">' + comp.status
-      + (comp.last_error ? ' — ' + comp.last_error.substring(0, 40) : '')
-      + '</div>'
-      + '</div>';
-  }
-  if (components.length === 0) {
-    html = '<div style="color:#8b949e;font-size:12px">Henüz komponent kaydı yok. Pipeline çalıştırın.</div>';
-  }
-  el.innerHTML = html;
+const el = document.getElementById('component-health-grid');
+if (!el) return;
+const components = health.components || [];
+let html = '';
+for (const comp of components) {
+const color = comp.status === 'healthy' ? '#3fb950' : comp.status === 'degraded' ? '#f0883e' : '#d9534f';
+html += '<div style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:6px 10px;font-size:11px;min-width:130px;flex:1">'
++ '<div style="display:flex;align-items:center;gap:6px">'
++ '<span style="width:8px;height:8px;border-radius:50%;background:' + color + ';display:inline-block"></span>'
++ '<strong style="color:#c9d1d9">' + comp.name + '</strong>'
++ '</div>'
++ '<div style="color:#8b949e;margin-top:2px">' + comp.status
++ (comp.last_error ? ' — ' + comp.last_error.substring(0, 40) : '')
++ '</div>'
++ '</div>';
+}
+if (components.length === 0) {
+html = '<div style="color:#8b949e;font-size:12px">No component records yet. Run the pipeline.</div>';
+}
+el.innerHTML = html;
 }
 
 function startPerfSSE() {
@@ -2151,82 +2152,82 @@ function startPerfSSE() {
   });
 }
 
-// ── Auth: Kullanıcı Adı / Şifre ile Giriş ──
+// ── Auth: Login with Username / Password ──
 function setLoggedIn(token) {
-  localStorage.setItem('access_token', token);
-  document.getElementById('auth-status').textContent = 'Bağlı';
-  document.getElementById('auth-status').style.color = '#3fb950';
-  document.getElementById('login-user').style.display = 'none';
-  document.getElementById('login-pass').style.display = 'none';
-  document.querySelector('button[onclick*="loginWithUserPass"]').style.display = 'none';
-  document.querySelector('button[onclick*="registerAndLogin"]').style.display = 'none';
-  document.getElementById('logout-btn').style.display = '';
-  load();
+localStorage.setItem('access_token', token);
+document.getElementById('auth-status').textContent = 'Connected';
+document.getElementById('auth-status').style.color = '#3fb950';
+document.getElementById('login-user').style.display = 'none';
+document.getElementById('login-pass').style.display = 'none';
+document.querySelector('button[onclick*="loginWithUserPass"]').style.display = 'none';
+document.querySelector('button[onclick*="registerAndLogin"]').style.display = 'none';
+document.getElementById('logout-btn').style.display = '';
+load();
 }
 
 function loginWithUserPass() {
-  const user = document.getElementById('login-user').value.trim();
-  const pass = document.getElementById('login-pass').value.trim();
-  if (!user || !pass) { alert('Kullanıcı adı ve şifre girin'); return; }
-  fetch('/auth/login', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({username: user, password: pass}),
-  })
-    .then(r => r.json().then(d => ({status: r.status, data: d})))
-    .then(({status, data}) => {
-      if (status !== 200 || !data.access_token) {
-        alert('Giriş hatası: ' + (data.detail || 'Bilinmeyen hata'));
-        return;
-      }
-      setLoggedIn(data.access_token);
-    })
-    .catch(e => alert('Giriş hatası: ' + e.message));
+const user = document.getElementById('login-user').value.trim();
+const pass = document.getElementById('login-pass').value.trim();
+if (!user || !pass) { alert('Please enter username and password'); return; }
+fetch('/auth/login', {
+method: 'POST',
+headers: {'Content-Type': 'application/json'},
+body: JSON.stringify({username: user, password: pass}),
+})
+.then(r => r.json().then(d => ({status: r.status, data: d})))
+.then(({status, data}) => {
+if (status !== 200 || !data.access_token) {
+alert('Login error: ' + (data.detail || 'Unknown error'));
+return;
+}
+setLoggedIn(data.access_token);
+})
+.catch(e => alert('Login error: ' + e.message));
 }
 
 function registerAndLogin() {
-  const user = document.getElementById('login-user').value.trim() || 'admin';
-  const pass = document.getElementById('login-pass').value.trim() || 'admin';
-  fetch('/auth/register', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({username: user, password: pass, role: 'admin'}),
-  })
-    .then(r => r.json().then(d => ({status: r.status, data: d})))
-    .then(({status, data}) => {
-      if (status !== 200 || !data.access_token) {
-        alert('Kayıt hatası: ' + (data.detail || data.message || 'Bilinmeyen hata'));
-        return;
-      }
-      setLoggedIn(data.access_token);
-    })
-    .catch(e => alert('Kayıt hatası: ' + e.message));
+const user = document.getElementById('login-user').value.trim() || 'admin';
+const pass = document.getElementById('login-pass').value.trim() || 'admin';
+fetch('/auth/register', {
+method: 'POST',
+headers: {'Content-Type': 'application/json'},
+body: JSON.stringify({username: user, password: pass, role: 'admin'}),
+})
+.then(r => r.json().then(d => ({status: r.status, data: d})))
+.then(({status, data}) => {
+if (status !== 200 || !data.access_token) {
+alert('Registration error: ' + (data.detail || data.message || 'Unknown error'));
+return;
+}
+setLoggedIn(data.access_token);
+})
+.catch(e => alert('Registration error: ' + e.message));
 }
 
 function logout() {
-  localStorage.removeItem('access_token');
-  document.getElementById('auth-status').textContent = 'Bağlı değil';
-  document.getElementById('auth-status').style.color = '#8b949e';
-  document.getElementById('login-user').style.display = '';
-  document.getElementById('login-pass').style.display = '';
-  document.querySelector('button[onclick*="loginWithUserPass"]').style.display = '';
-  document.querySelector('button[onclick*="registerAndLogin"]').style.display = '';
-  document.getElementById('logout-btn').style.display = 'none';
-  load();
+localStorage.removeItem('access_token');
+document.getElementById('auth-status').textContent = 'Not connected';
+document.getElementById('auth-status').style.color = '#8b949e';
+document.getElementById('login-user').style.display = '';
+document.getElementById('login-pass').style.display = '';
+document.querySelector('button[onclick*="loginWithUserPass"]').style.display = '';
+document.querySelector('button[onclick*="registerAndLogin"]').style.display = '';
+document.getElementById('logout-btn').style.display = 'none';
+load();
 }
 
 // Auto-restore token on page load
 (function() {
-  const token = localStorage.getItem('access_token');
-  if (token) {
-    document.getElementById('auth-status').textContent = 'Bağlı';
-    document.getElementById('auth-status').style.color = '#3fb950';
-    document.getElementById('login-user').style.display = 'none';
-    document.getElementById('login-pass').style.display = 'none';
-    document.querySelector('button[onclick*="loginWithUserPass"]').style.display = 'none';
-    document.querySelector('button[onclick*="registerAndLogin"]').style.display = 'none';
-    document.getElementById('logout-btn').style.display = '';
-  }
+const token = localStorage.getItem('access_token');
+if (token) {
+document.getElementById('auth-status').textContent = 'Connected';
+document.getElementById('auth-status').style.color = '#3fb950';
+document.getElementById('login-user').style.display = 'none';
+document.getElementById('login-pass').style.display = 'none';
+document.querySelector('button[onclick*="loginWithUserPass"]').style.display = 'none';
+document.querySelector('button[onclick*="registerAndLogin"]').style.display = 'none';
+document.getElementById('logout-btn').style.display = '';
+}
 })();
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2246,7 +2247,7 @@ function initAIAnalyst() {
 }
 
 function formatAITime() {
-  return new Date().toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' });
+return new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
 }
 
 function appendUserMsg(text) {
@@ -2302,68 +2303,68 @@ async function sendAIChat() {
 
   aiMessages.push({ role: 'user', content: text });
 
-  // Build system context from dashboard data
-  const systemPrompt = `Sen IntelGraph Tehdit İstihbarat Platformu'nun AI Analyst'ısın. Siber güvenlik analistlerine tehdit verilerini analiz etmede, varlıkları araştırmada ve güvenlik olaylarını yorumlamada yardımcı oluyorsun.
+// Build system context from dashboard data
+const systemPrompt = `You are the AI Analyst for IntelGraph Threat Intelligence Platform. You assist security analysts in analyzing threat data, investigating entities, and interpreting security incidents.
 
-Uzmanlık alanların:
-- Tehdit istihbaratı analizi (IOC enrichment, TTP analizi)
-- MITRE ATT&CK framework yorumlama
-- Ağ anomalisi tespiti
-- Malware davranış analizi
-- Olay müdahale rehberliği
-- Saldırı zinciri (kill chain) analizi
+Your areas of expertise:
+- Threat intelligence analysis (IOC enrichment, TTP analysis)
+- MITRE ATT&CK framework interpretation
+- Network anomaly detection
+- Malware behavior analysis
+- Incident response guidance
+- Attack chain (kill chain) analysis
 
-Yanıtların kısa, teknik ve eyleme dönük olsun. Türkçe ve İngilizce karışık kullanabilirsin. Tehdit skorları, MITRE teknik ID'leri (T1xxx), CVE numaraları ve IOC'ler hakkında spesifik bilgi ver.
+Keep your responses concise, technical, and actionable. Provide specific information about threat scores, MITRE technique IDs (T1xxx), CVE numbers, and IOCs.
 
-Önemli: Bu bir simülasyon ortamı, gerçek backend bağlantısı olmadan çalışıyorsun. Makul ve profesyonel yanıtlar üret.`;
+Important: This is a simulation environment running without real backend connectivity. Generate reasonable and professional responses.`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: aiMessages.slice(-12) // keep last 12 messages for context
-      })
-    });
-    const data = await response.json();
-    const assistantText = data.content?.map(b => b.text || '').join('\n') || 'Yanıt alınamadı.';
-    aiMessages.push({ role: 'assistant', content: assistantText });
+const response = await fetch('https://api.anthropic.com/v1/messages', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({
+model: 'claude-sonnet-4-6',
+max_tokens: 1000,
+system: systemPrompt,
+messages: aiMessages.slice(-12) // keep last 12 messages for context
+})
+});
+const data = await response.json();
+const assistantText = data.content?.map(b => b.text || '').join('\n') || 'No response received.';
+aiMessages.push({ role: 'assistant', content: assistantText });
 
-    // Check for threats in response
-    if (/critical|kritik|high threat|yüksek tehdit/i.test(assistantText)) {
-      aiThreatCount++;
-      document.getElementById('ai-threat-count').textContent = aiThreatCount;
-    }
-    replaceTypingWithResponse(assistantText);
-  } catch (e) {
-    replaceTypingWithResponse('AI servisine bağlanılamadı. Lütfen bağlantınızı kontrol edin.\n\nHata: ' + e.message);
-  }
+// Check for threats in response
+if (/critical|high threat/i.test(assistantText)) {
+aiThreatCount++;
+document.getElementById('ai-threat-count').textContent = aiThreatCount;
+}
+replaceTypingWithResponse(assistantText);
+} catch (e) {
+replaceTypingWithResponse('Could not connect to AI service. Please check your connection.\n\nError: ' + e.message);
+}
 }
 
 async function quickAnalysis(type) {
-  const prompts = {
-    top_threats: 'Mevcut tehdit ortamındaki en kritik tehditleri listele. Her biri için tehdit skoru tahmini, etkilenen varlık tipi ve önerilen önlemleri ver.',
-    anomaly_summary: 'Tespit edilen anomalileri analiz et. Hangi anomaliler gerçek bir saldırıya işaret ediyor, hangiler false positive olabilir? Açıkla.',
-    attack_patterns: 'Gözlemlenen saldırı desenlerini MITRE ATT&CK framework\'üne göre sınıflandır. Hangi taktikler ve teknikler kullanılmış?',
-    ioc_enrichment: 'Tehdit istihbarat veritabanlarında tespit edilen IOC\'ler (IP, domain, hash) için enrichment analizi yap. Hangi tehdit aktörleriyle ilişkili olabilirler?',
-    executive_brief: 'Yöneticiye sunmak için kısa bir tehdit durumu özeti hazırla. İş etkisi, kritik riskler ve önerilen aksiyonları içersin. Maksimum 5 madde.',
-    kill_chain: 'Mevcut olayları Cyber Kill Chain modeliyle analiz et. Saldırganın hangi aşamada olduğunu ve bir sonraki muhtemel hareketini tahmin et.',
-  };
-  document.getElementById('ai-chat-input').value = prompts[type] || '';
-  await sendAIChat();
+const prompts = {
+top_threats: 'List the most critical threats in the current threat landscape. For each, provide estimated threat score, affected entity type, and recommended countermeasures.',
+anomaly_summary: 'Analyze the detected anomalies. Which anomalies indicate a real attack vs false positives? Explain.',
+attack_patterns: 'Classify observed attack patterns according to MITRE ATT&CK framework. Which tactics and techniques were used?',
+ioc_enrichment: 'Perform enrichment analysis on IOCs (IP, domain, hash) detected in threat intelligence databases. Which threat actors might they be associated with?',
+executive_brief: 'Prepare a brief threat status summary for executives. Include business impact, critical risks, and recommended actions. Maximum 5 bullet points.',
+kill_chain: 'Analyze current events using the Cyber Kill Chain model. What stage is the attacker at, and what is their likely next move?',
+};
+document.getElementById('ai-chat-input').value = prompts[type] || '';
+await sendAIChat();
 }
 
 async function analyzeEntity() {
-  const entity = document.getElementById('ai-entity-input').value.trim();
-  if (!entity) return;
-  aiEntityCount++;
-  document.getElementById('ai-entity-count').textContent = aiEntityCount;
-  document.getElementById('ai-chat-input').value = `Bu varlığı analiz et: "${entity}". Tehdit profili, ilişkili saldırı grupları, MITRE teknikler ve önerilen aksiyonları açıkla.`;
-  document.getElementById('ai-entity-input').value = '';
-  await sendAIChat();
+const entity = document.getElementById('ai-entity-input').value.trim();
+if (!entity) return;
+aiEntityCount++;
+document.getElementById('ai-entity-count').textContent = aiEntityCount;
+document.getElementById('ai-chat-input').value = `Analyze this entity: "${entity}". Explain threat profile, associated attack groups, MITRE techniques, and recommended actions.`;
+document.getElementById('ai-entity-input').value = '';
+await sendAIChat();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2378,40 +2379,40 @@ function saveInvestigations() {
 }
 
 function newInvestigation() {
-  const title = prompt('Investigation başlığı:', 'Investigation ' + (investigations.length + 1));
-  if (!title) return;
-  const inv = {
-    id: 'inv-' + Date.now(),
-    title,
-    status: 'active',
-    created: new Date().toISOString(),
-    updated: new Date().toISOString(),
-    notes: [],
-    entities: [],
-    tags: []
-  };
-  investigations.unshift(inv);
-  saveInvestigations();
-  loadInvestigations();
-  openInvestigation(inv.id);
+const title = prompt('Investigation title:', 'Investigation ' + (investigations.length + 1));
+if (!title) return;
+const inv = {
+id: 'inv-' + Date.now(),
+title,
+status: 'active',
+created: new Date().toISOString(),
+updated: new Date().toISOString(),
+notes: [],
+entities: [],
+tags: []
+};
+investigations.unshift(inv);
+saveInvestigations();
+loadInvestigations();
+openInvestigation(inv.id);
 }
 
 function loadInvestigations() {
-  const list = document.getElementById('inv-list');
-  const countEl = document.getElementById('inv-count');
-  if (!investigations.length) {
-    list.innerHTML = '<div class="tl-empty" style="margin:16px">Henüz soruşturma yok.<br>Yeni bir tane başlatın.</div>';
-    countEl.textContent = '0';
-    return;
-  }
-  countEl.textContent = investigations.length;
-  list.innerHTML = investigations.map(inv => `
-    <div class="inv-item ${inv.id === currentInvId ? 'active' : ''}" onclick="openInvestigation('${inv.id}')">
-      <div class="inv-item-title">${escapeHtml(inv.title)}</div>
-      <div class="inv-item-meta">${inv.entities.length} entities · ${inv.notes.length} notes</div>
-      <div style="margin-top:4px"><span class="inv-status-badge inv-status-${inv.status}">${inv.status}</span></div>
-    </div>
-  `).join('');
+const list = document.getElementById('inv-list');
+const countEl = document.getElementById('inv-count');
+if (!investigations.length) {
+list.innerHTML = '<div class="tl-empty" style="margin:16px">No investigations yet.<br>Start a new one.</div>';
+countEl.textContent = '0';
+return;
+}
+countEl.textContent = investigations.length;
+list.innerHTML = investigations.map(inv => `
+<div class="inv-item ${inv.id === currentInvId ? 'active' : ''}" onclick="openInvestigation('${inv.id}')">
+<div class="inv-item-title">${escapeHtml(inv.title)}</div>
+<div class="inv-item-meta">${inv.entities.length} entities · ${inv.notes.length} notes</div>
+<div style="margin-top:4px"><span class="inv-status-badge inv-status-${inv.status}">${inv.status}</span></div>
+</div>
+`).join('');
 }
 
 function openInvestigation(id) {
@@ -2439,28 +2440,28 @@ function openInvestigation(id) {
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <div>
-          <h4>Notes & Observations</h4>
-          <div id="inv-notes-${id}" style="margin-bottom:10px;max-height:280px;overflow-y:auto">
-            ${inv.notes.map((n,i) => `<div class="inv-note" onclick="editNote('${id}',${i})"><div>${escapeHtml(n.text)}</div><div class="inv-note-author">— ${n.author || 'Analyst'} · ${new Date(n.time).toLocaleString('tr-TR')}</div></div>`).join('') || '<div style="color:var(--ink-700);font-size:12px;padding:8px 0">Henüz not yok.</div>'}
-          </div>
-          <div style="display:flex;gap:8px">
-            <input id="inv-note-input-${id}" type="text" placeholder="Gözlem ekle..." style="flex:1">
-            <button onclick="addNote('${id}')" class="btn btn-ghost btn-sm">Add Note</button>
-          </div>
-        </div>
-        <div>
-          <h4>Tracked Entities (${inv.entities.length})</h4>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;max-height:200px;overflow-y:auto;margin-bottom:10px">
-            ${inv.entities.length ? inv.entities.map((e,i) => `<span style="background:var(--bg-700);border:1px solid var(--line);border-radius:5px;padding:3px 9px;font-size:11px;font-family:var(--font-mono);color:var(--ink-300);cursor:pointer;display:flex;align-items:center;gap:5px">${escapeHtml(e)}<span onclick="removeEntity('${id}',${i})" style="color:var(--sev-critical);font-size:13px;line-height:1">&times;</span></span>`).join('') : '<div style="color:var(--ink-700);font-size:12px">Henüz varlık eklenmemiş.</div>'}
-          </div>
-          <div style="display:flex;gap:8px">
-            <input id="inv-entity-input-${id}" type="text" placeholder="IP, domain, hash ekle..." style="flex:1">
-            <button onclick="addEntityToInv('${id}')" class="btn btn-ghost btn-sm">Track</button>
-          </div>
-        </div>
-      </div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+<div>
+<h4>Notes & Observations</h4>
+<div id="inv-notes-${id}" style="margin-bottom:10px;max-height:280px;overflow-y:auto">
+${inv.notes.map((n,i) => `<div class="inv-note" onclick="editNote('${id}',${i})"><div>${escapeHtml(n.text)}</div><div class="inv-note-author">— ${n.author || 'Analyst'} · ${new Date(n.time).toLocaleString()}</div></div>`).join('') || '<div style="color:var(--ink-700);font-size:12px;padding:8px 0">No notes yet.</div>'}
+</div>
+<div style="display:flex;gap:8px">
+<input id="inv-note-input-${id}" type="text" placeholder="Add observation..." style="flex:1">
+<button onclick="addNote('${id}')" class="btn btn-ghost btn-sm">Add Note</button>
+</div>
+</div>
+<div>
+<h4>Tracked Entities (${inv.entities.length})</h4>
+<div style="display:flex;flex-wrap:wrap;gap:6px;max-height:200px;overflow-y:auto;margin-bottom:10px">
+${inv.entities.length ? inv.entities.map((e,i) => `<span style="background:var(--bg-700);border:1px solid var(--line);border-radius:5px;padding:3px 9px;font-size:11px;font-family:var(--font-mono);color:var(--ink-300);cursor:pointer;display:flex;align-items:center;gap:5px">${escapeHtml(e)}<span onclick="removeEntity('${id}',${i})" style="color:var(--sev-critical);font-size:13px;line-height:1">&times;</span></span>`).join('') : '<div style="color:var(--ink-700);font-size:12px">No entities tracked yet.</div>'}
+</div>
+<div style="display:flex;gap:8px">
+<input id="inv-entity-input-${id}" type="text" placeholder="Add IP, domain, hash..." style="flex:1">
+<button onclick="addEntityToInv('${id}')" class="btn btn-ghost btn-sm">Track</button>
+</div>
+</div>
+</div>
     </div>
 
     <div class="card">
@@ -2524,45 +2525,45 @@ function removeEntity(id, idx) {
 }
 
 function addToInvestigation(entityId) {
-  if (!currentInvId) { alert('Önce bir investigation seçin veya oluşturun.'); return; }
-  addEntityToInv(currentInvId);
+if (!currentInvId) { alert('Please select or create an investigation first.'); return; }
+addEntityToInv(currentInvId);
 }
 
 function deleteInvestigation(id) {
-  if (!confirm('Bu soruşturmayı silmek istediğinizden emin misiniz?')) return;
-  investigations = investigations.filter(i => i.id !== id);
-  if (currentInvId === id) currentInvId = null;
-  saveInvestigations();
-  loadInvestigations();
-  document.getElementById('inv-detail-panel').innerHTML = '<div class="card" style="padding:40px;text-align:center;color:var(--ink-700)"><div style="font-size:48px;margin-bottom:16px;opacity:.3">🔍</div><div>Bir soruşturma seçin</div></div>';
+if (!confirm('Are you sure you want to delete this investigation?')) return;
+investigations = investigations.filter(i => i.id !== id);
+if (currentInvId === id) currentInvId = null;
+saveInvestigations();
+loadInvestigations();
+document.getElementById('inv-detail-panel').innerHTML = '<div class="card" style="padding:40px;text-align:center;color:var(--ink-700)"><div style="font-size:48px;margin-bottom:16px;opacity:.3">🔍</div><div>Select an investigation</div></div>';
 }
 
 async function runInvAnalysis(id) {
-  const inv = investigations.find(i => i.id === id);
-  if (!inv) return;
-  const out = document.getElementById('inv-ai-output-' + id);
-  out.innerHTML = '<div class="ai-typing" style="padding:12px 0"><span></span><span></span><span></span></div>';
+const inv = investigations.find(i => i.id === id);
+if (!inv) return;
+const out = document.getElementById('inv-ai-output-' + id);
+out.innerHTML = '<div class="ai-typing" style="padding:12px 0"><span></span><span></span><span></span></div>';
 
-  const prompt = `Investigation analizi yap:
+const prompt = `Investigation analysis:
 Title: ${inv.title}
-Tracked entities: ${inv.entities.join(', ') || 'yok'}
-Notes: ${inv.notes.map(n => n.text).join(' | ') || 'yok'}
+Tracked entities: ${inv.entities.join(', ') || 'none'}
+Notes: ${inv.notes.map(n => n.text).join(' | ') || 'none'}
 Status: ${inv.status}
 
-Bu soruşturma için: 1) En olası tehdit senaryosu nedir? 2) Hangi ek varlıklar araştırılmalı? 3) Bir sonraki adım ne olmalı? Kısa ve eyleme dönük yanıt ver.`;
+For this investigation: 1) What is the most likely threat scenario? 2) What additional entities should be investigated? 3) What should be the next step? Keep it short and actionable.`;
 
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
-    });
-    const data = await response.json();
-    const text = data.content?.map(b => b.text || '').join('\n') || 'Analiz tamamlanamadı.';
-    out.innerHTML = `<div class="ai-msg ai-msg-assistant" style="margin:0">${formatAIResponse(text)}</div>`;
-  } catch(e) {
-    out.innerHTML = `<div style="color:var(--sev-critical)">AI analizi başarısız: ${e.message}</div>`;
-  }
+try {
+const response = await fetch('https://api.anthropic.com/v1/messages', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+});
+const data = await response.json();
+const text = data.content?.map(b => b.text || '').join('\n') || 'Analysis could not be completed.';
+out.innerHTML = `<div class="ai-msg ai-msg-assistant" style="margin:0">${formatAIResponse(text)}</div>`;
+} catch(e) {
+out.innerHTML = `<div style="color:var(--sev-critical)">AI analysis failed: ${e.message}</div>`;
+}
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
