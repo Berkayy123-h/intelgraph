@@ -290,45 +290,6 @@ def get_incidents(request: Request) -> list[dict[str, Any]]:
     return result
 
 
-@router.get("/graph")
-def get_graph(request: Request, limit: int = 200, since: str | None = None) -> dict[str, Any]:
-    tenant_id = _get_tenant(request)
-    r = dashboard_state.result_for(tenant_id) if tenant_id else dashboard_state.result
-    if not r:
-        return {"nodes": [], "edges": []}
-
-    nodes: list[dict[str, Any]] = r.get("graph_nodes_summary", [])
-    edges: list[dict[str, Any]] = r.get("graph_edges_summary", [])
-
-    # Temporal filter
-    if since:
-        from datetime import datetime, timedelta
-
-        if since.endswith("d"):
-            cutoff = datetime.now(UTC) - timedelta(days=int(since[:-1]))
-        else:
-            try:
-                cutoff = datetime.fromisoformat(since)
-            except ValueError:
-                cutoff = None
-        if cutoff:
-            nodes = [
-                n
-                for n in nodes
-                if _parse_iso(n.get("last_seen")) and _parse_iso(n["last_seen"]) >= cutoff
-            ]
-
-    if len(nodes) > limit:
-        # Sort by confidence descending, take top *limit*
-        nodes_sorted = sorted(nodes, key=lambda n: n.get("confidence", 0), reverse=True)
-        kept = nodes_sorted[:limit]
-        kept_ids = {n["node_id"] for n in kept}
-        edges = [e for e in edges if e["source"] in kept_ids and e["target"] in kept_ids]
-        nodes = kept
-
-    return {"nodes": nodes, "edges": edges}
-
-
 @router.get("/sources")
 def get_sources(request: Request) -> dict[str, Any]:
     return {
@@ -404,8 +365,34 @@ def get_graph(request: Request, limit: int = 200, since: str | None = None) -> d
     if not r:
         return {"nodes": [], "edges": []}
     
-    nodes = r.get("graph_nodes_summary", [])[:limit]
-    edges = r.get("relationships", [])[:limit]
+    nodes: list[dict[str, Any]] = r.get("graph_nodes_summary", [])
+    edges: list[dict[str, Any]] = r.get("graph_edges_summary", [])
+    
+    # Temporal filter
+    if since:
+        from datetime import datetime, timedelta
+        
+        if since.endswith("d"):
+            cutoff = datetime.now(UTC) - timedelta(days=int(since[:-1]))
+        else:
+            try:
+                cutoff = datetime.fromisoformat(since)
+            except ValueError:
+                cutoff = None
+        if cutoff:
+            nodes = [
+                n
+                for n in nodes
+                if _parse_iso(n.get("last_seen")) and _parse_iso(n["last_seen"]) >= cutoff
+            ]
+    
+    if len(nodes) > limit:
+        # Sort by confidence descending, take top *limit*
+        nodes_sorted = sorted(nodes, key=lambda n: n.get("confidence", 0), reverse=True)
+        kept = nodes_sorted[:limit]
+        kept_ids = {n["node_id"] for n in kept}
+        edges = [e for e in edges if e.get("source_id") in kept_ids and e.get("target_id") in kept_ids]
+        nodes = kept
     
     # Transform to D3 format
     d3_nodes = [

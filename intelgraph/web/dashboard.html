@@ -6,6 +6,7 @@
 <title>IntelGraph Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <style>
 /* ============================================================
    IntelGraph — Operational Intelligence Shell
@@ -739,11 +740,11 @@ td .label{ display:inline-block; padding:2px 9px; border-radius:999px; font-size
 
         <div class="control-row" style="align-items:stretch;margin-top:12px">
           <div class="card" style="flex:2;min-width:300px;max-height:220px;overflow:hidden">
-            <h4>Pipeline Süre Trendi (son 10)</h4>
+            <h4>Pipeline Duration Trend (last 10)</h4>
             <canvas id="pipeline-chart" height="150"></canvas>
           </div>
           <div class="card" style="flex:1;min-width:200px;max-height:220px;overflow:hidden">
-            <h4>API Response Süresi (ms)</h4>
+            <h4>API Response Time (ms)</h4>
             <canvas id="api-chart" height="150"></canvas>
           </div>
         </div>
@@ -1170,6 +1171,11 @@ async function loadHistory() {
 async function addWebhookChannel() {
 const url = document.getElementById('notif-webhook-url').value.trim();
 if (!url) { alert('Enter Webhook URL'); return; }
+// Validate URL - must start with https://
+if (!url.startsWith('https://')) {
+alert('Webhook URL must start with https:// for security');
+return;
+}
 const secret = document.getElementById('notif-secret').value.trim();
 const minSeverity = document.getElementById('notif-severity').value;
 const config = { webhook_url: url };
@@ -1585,7 +1591,7 @@ async function load() {
           srcHtml += `<span id="${id}-short">${items.slice(0, showCount).map(s => `<span class="sample-tag">${s}</span>`).join(' ')}</span>`;
           if (items.length > showCount) {
             srcHtml += `<span id="${id}-full" style="display:none">${items.map(s => `<span class="sample-tag">${s}</span>`).join(' ')}</span>`;
-            srcHtml += ` <a href="#" onclick="event.preventDefault();document.getElementById('${id}-short').style.display='none';document.getElementById('${id}-full').style.display='inline';this.style.display='none'" style="color:#58a6ff;font-size:11px">tümünü göster (${items.length})</a>`;
+            srcHtml += ` <a href="#" onclick="event.preventDefault();document.getElementById('${id}-short').style.display='none';document.getElementById('${id}-full').style.display='inline';this.style.display='none'" style="color:#58a6ff;font-size:11px">show all (${items.length})</a>`;
           }
           srcHtml += '</div>';
         }
@@ -2012,13 +2018,33 @@ return;
 }
 const details = document.getElementById('2fa-setup-details');
 details.innerHTML = '<div class="card" style="max-width:500px;margin-top:10px">'
-+ '<p><strong>Secret:</strong> <code>' + data.secret + '</code></p>'
-+ '<p><strong>QR URI (Google Authenticator/Authy):</strong></p>'
-+ '<p style="word-break:break-all;font-size:12px">' + data.provisioning_uri + '</p>'
++ '<p><strong>Step 1:</strong> Scan this QR code with Google Authenticator or Authy</p>'
++ '<div id="totp-qr" style="margin:15px 0;padding:15px;background:#fff;border-radius:8px;display:inline-block"></div>'
++ '<p><strong>Secret:</strong> <code style="background:#222;padding:2px 6px;border-radius:3px">' + data.secret + '</code></p>'
 + '<p><strong>Recovery Codes (save these!):</strong></p>'
-+ '<pre style="background:#222;padding:10px;border-radius:4px">'
++ '<pre style="background:#222;padding:10px;border-radius:4px;font-size:11px">'
 + (data.recovery_codes || []).join('\n') + '</pre>'
++ '<p style="font-size:11.5px;color:#8b949e;margin-top:12px">After scanning, enter the 6-digit code from your app to verify:</p>'
++ '<div style="display:flex;gap:8px;margin-top:8px">'
++ '<input id="totp-verify-code" type="text" placeholder="000000" maxlength="6" style="padding:6px 10px;background:var(--bg-700);border:1px solid var(--line);border-radius:6px;color:var(--ink-100);font-size:13px;width:120px">'
++ '<button onclick="verify2FA()" class="btn btn-primary btn-sm">Verify & Enable</button>'
++ '</div>'
 + '</div>';
+
+// Render QR code
+setTimeout(() => {
+if (typeof QRCode !== 'undefined' && data.provisioning_uri) {
+new QRCode(document.getElementById('totp-qr'), {
+text: data.provisioning_uri,
+width: 180,
+height: 180,
+colorDark: '#000000',
+colorLight: '#ffffff',
+correctLevel: QRCode.CorrectLevel.M
+});
+}
+}, 100);
+
 loadSecurityStatus();
 })
 .catch(e => {
@@ -2026,6 +2052,26 @@ btn.disabled = false;
 btn.textContent = 'Enable 2FA';
 alert('2FA enable failed: ' + e.message);
 });
+}
+
+function verify2FA() {
+const code = document.getElementById('totp-verify-code').value.trim();
+if (!code || code.length !== 6) { alert('Enter 6-digit code'); return; }
+fetch('/auth/2fa/verify', {
+method: 'POST',
+headers: Object.assign({'Content-Type': 'application/json'}, getAuthHeaders()),
+body: JSON.stringify({code}),
+})
+.then(r => r.json())
+.then(data => {
+if (data.valid) {
+alert('2FA enabled successfully!');
+loadSecurityStatus();
+} else {
+alert('Invalid code. Please try again.');
+}
+})
+.catch(e => alert('Verification error: ' + e.message));
 }
 
 function disable2FA() {
@@ -2347,110 +2393,58 @@ return new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit'
 }
 
 function appendUserMsg(text) {
-  const container = document.getElementById('ai-chat-messages');
-  const div = document.createElement('div');
-  div.className = 'ai-msg ai-msg-user';
-  div.innerHTML = `<div class="ai-msg-header"><span class="ai-badge" style="background:var(--signal-dim);color:#7fabff">👤 Analyst</span><span class="ai-msg-time">${formatAITime()}</span></div><div class="ai-msg-body">${escapeHtml(text)}</div>`;
-  container.appendChild(div);
-  container.scrollTop = container.scrollHeight;
-}
-
-function appendTyping() {
-  const container = document.getElementById('ai-chat-messages');
-  const div = document.createElement('div');
-  div.className = 'ai-msg ai-msg-assistant';
-  div.id = 'ai-typing-indicator';
-  div.innerHTML = `<div class="ai-msg-header"><span class="ai-badge">🤖 AI Analyst</span></div><div class="ai-typing"><span></span><span></span><span></span></div>`;
-  container.appendChild(div);
-  container.scrollTop = container.scrollHeight;
-  return div;
-}
-
-function replaceTypingWithResponse(text) {
-  const typing = document.getElementById('ai-typing-indicator');
-  if (typing) {
-    typing.innerHTML = `<div class="ai-msg-header"><span class="ai-badge">🤖 AI Analyst</span><span class="ai-msg-time">${formatAITime()}</span></div><div class="ai-msg-body">${formatAIResponse(text)}</div>`;
-    typing.id = '';
-  }
-  const container = document.getElementById('ai-chat-messages');
-  container.scrollTop = container.scrollHeight;
-}
-
-function formatAIResponse(text) {
-  // Simple markdown-like formatting
-  return escapeHtml(text)
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`(.+?)`/g, '<code>$1</code>')
-    .replace(/^• (.+)$/gm, '&bull; $1')
-    .replace(/\n/g, '<br>');
+const container = document.getElementById('ai-chat-messages');
+const div = document.createElement('div');
+div.className = 'ai-msg ai-msg-user';
+div.innerHTML = `<div class="ai-msg-header"><span class="ai-badge" style="background:var(--signal-dim);color:#7fabff">👤 Analyst</span><span class="ai-msg-time">${formatAITime()}</span></div><div class="ai-msg-body">${escapeHtml(text)}</div>`;
+container.appendChild(div);
+container.scrollTop = container.scrollHeight;
 }
 
 async function sendAIChat() {
-  const input = document.getElementById('ai-chat-input');
-  const text = input.value.trim();
-  if (!text) return;
-  input.value = '';
-  input.style.height = '72px';
+const input = document.getElementById('ai-chat-input');
+const text = input.value.trim();
+if (!text) return;
+input.value = '';
+input.style.height = '72px';
 
-  appendUserMsg(text);
-  appendTyping();
-  aiQueryCount++;
-  document.getElementById('ai-query-count').textContent = aiQueryCount;
+appendUserMsg(text);
+aiQueryCount++;
+document.getElementById('ai-query-count').textContent = aiQueryCount;
+aiMessages.push({ role: 'user', content: text });
 
-  aiMessages.push({ role: 'user', content: text });
-
-// Build system context from dashboard data
-const systemPrompt = `You are the AI Analyst for IntelGraph Threat Intelligence Platform. You assist security analysts in analyzing threat data, investigating entities, and interpreting security incidents.
-
-Your areas of expertise:
-- Threat intelligence analysis (IOC enrichment, TTP analysis)
-- MITRE ATT&CK framework interpretation
-- Network anomaly detection
-- Malware behavior analysis
-- Incident response guidance
-- Attack chain (kill chain) analysis
-
-Keep your responses concise, technical, and actionable. Provide specific information about threat scores, MITRE technique IDs (T1xxx), CVE numbers, and IOCs.
-
-Important: This is a simulation environment running without real backend connectivity. Generate reasonable and professional responses.`;
-
-  try {
-const response = await fetch('https://api.anthropic.com/v1/messages', {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({
-model: 'claude-sonnet-4-6',
-max_tokens: 1000,
-system: systemPrompt,
-messages: aiMessages.slice(-12) // keep last 12 messages for context
-})
-});
-const data = await response.json();
-const assistantText = data.content?.map(b => b.text || '').join('\n') || 'No response received.';
-aiMessages.push({ role: 'assistant', content: assistantText });
-
-// Check for threats in response
-if (/critical|high threat/i.test(assistantText)) {
-aiThreatCount++;
-document.getElementById('ai-threat-count').textContent = aiThreatCount;
+// Show placeholder response
+setTimeout(() => {
+appendAssistantMsg('AI analysis coming soon. This feature will provide automated threat analysis, MITRE ATT&CK mapping, and investigative recommendations when enabled.');
+}, 500);
 }
-replaceTypingWithResponse(assistantText);
-} catch (e) {
-replaceTypingWithResponse('Could not connect to AI service. Please check your connection.\n\nError: ' + e.message);
-}
+
+function appendAssistantMsg(text) {
+const container = document.getElementById('ai-chat-messages');
+const div = document.createElement('div');
+div.className = 'ai-msg ai-msg-assistant';
+div.innerHTML = `<div class="ai-msg-header"><span class="ai-badge">🤖 AI Analyst</span><span class="ai-msg-time">${formatAITime()}</span></div><div class="ai-msg-body">${escapeHtml(text)}</div>`;
+container.appendChild(div);
+container.scrollTop = container.scrollHeight;
 }
 
 async function quickAnalysis(type) {
 const prompts = {
-top_threats: 'List the most critical threats in the current threat landscape. For each, provide estimated threat score, affected entity type, and recommended countermeasures.',
-anomaly_summary: 'Analyze the detected anomalies. Which anomalies indicate a real attack vs false positives? Explain.',
-attack_patterns: 'Classify observed attack patterns according to MITRE ATT&CK framework. Which tactics and techniques were used?',
-ioc_enrichment: 'Perform enrichment analysis on IOCs (IP, domain, hash) detected in threat intelligence databases. Which threat actors might they be associated with?',
-executive_brief: 'Prepare a brief threat status summary for executives. Include business impact, critical risks, and recommended actions. Maximum 5 bullet points.',
-kill_chain: 'Analyze current events using the Cyber Kill Chain model. What stage is the attacker at, and what is their likely next move?',
+top_threats: 'List the most critical threats',
+anomaly_summary: 'Analyze detected anomalies',
+attack_patterns: 'Classify attack patterns per MITRE ATT&CK',
+ioc_enrichment: 'Enrich IOCs with threat intelligence',
+executive_brief: 'Prepare executive brief',
+kill_chain: 'Analyze via Cyber Kill Chain',
 };
-document.getElementById('ai-chat-input').value = prompts[type] || '';
-await sendAIChat();
+const text = prompts[type] || 'Analyze';
+document.getElementById('ai-chat-input').value = text;
+appendUserMsg(text);
+aiQueryCount++;
+document.getElementById('ai-query-count').textContent = aiQueryCount;
+setTimeout(() => {
+appendAssistantMsg('AI analysis coming soon. This feature will provide automated threat analysis when enabled.');
+}, 500);
 }
 
 async function analyzeEntity() {
@@ -2458,9 +2452,11 @@ const entity = document.getElementById('ai-entity-input').value.trim();
 if (!entity) return;
 aiEntityCount++;
 document.getElementById('ai-entity-count').textContent = aiEntityCount;
-document.getElementById('ai-chat-input').value = `Analyze this entity: "${entity}". Explain threat profile, associated attack groups, MITRE techniques, and recommended actions.`;
+appendUserMsg(`Analyze entity: ${entity}`);
+setTimeout(() => {
+appendAssistantMsg('AI entity analysis coming soon. This feature will provide threat profiling and MITRE technique mapping when enabled.');
+}, 500);
 document.getElementById('ai-entity-input').value = '';
-await sendAIChat();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2700,7 +2696,7 @@ Kısa ve teknik yanıt ver.`;
       body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 800, messages: [{ role:'user', content: prompt }] })
     });
     const d = await r.json();
-    const text = d.content?.map(b => b.text||'').join('\n') || 'Detay yüklenemedi.';
+    const text = d.content?.map(b => b.text||'').join('\n') || 'AI analysis coming soon.';
 
     document.getElementById('entity-drawer-body').innerHTML = `
       <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
@@ -3015,11 +3011,11 @@ ${det ? `Tespit Durumu: ${det.level} seviyede, ${det.count} kez tespit edildi, s
       body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:600, messages:[{role:'user',content:prompt}] })
     });
     const d = await r.json();
-    const text = d.content?.map(b=>b.text||'').join('\n') || 'Detay yüklenemedi.';
+    const text = d.content?.map(b=>b.text||'').join('\n') || 'AI analysis coming soon.';
     body.innerHTML = (det ? `<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"><span class="label label-${det.level==='critical'?'filename':det.level==='high'?'unknown':'domain'}">${det.level.toUpperCase()}</span><span style="font-size:11px;color:var(--ink-500);font-family:var(--font-mono)">${det.count} detections · last seen ${new Date(det.lastSeen).toLocaleDateString('tr-TR')}</span></div>` : `<div style="margin-bottom:12px"><span class="label" style="background:var(--panel-raised);color:var(--ink-500)">NOT OBSERVED</span></div>`) +
       `<div style="font-size:13px;line-height:1.65;color:var(--ink-300)">${formatAIResponse(text)}</div>`;
   } catch(e) {
-    body.innerHTML = `<div class="tl-error">Yüklenemedi: ${e.message}</div>`;
+    body.innerHTML = `<div class="tl-error">Failed to load: ${e.message}</div>`;
   }
 }
 
