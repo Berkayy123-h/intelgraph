@@ -559,15 +559,16 @@ td .label{ display:inline-block; padding:2px 9px; border-radius:999px; font-size
         <div id="sse-status" class="sse-status connecting">Connecting…</div>
       </div>
 
-      <div class="command-bar-row command-bar-row-secondary">
-        <div class="auth-cluster">
+<div class="command-bar-row command-bar-row-secondary">
+<div class="auth-cluster">
 <span id="auth-status" class="status-text">Not connected</span>
 <input id="login-user" type="text" placeholder="Username" value="admin" class="field-sm">
 <input id="login-pass" type="password" placeholder="Password" value="admin" class="field-sm">
 <button onclick="loginWithUserPass()" class="btn btn-primary btn-sm">Login</button>
 <button onclick="registerAndLogin()" class="btn btn-success btn-sm">Register</button>
 <button onclick="logout()" id="logout-btn" class="btn btn-ghost btn-sm" style="display:none">Logout</button>
-        </div>
+<button onclick="loadDashboardMetrics(); load();" class="btn btn-ghost btn-sm" title="Refresh dashboard data">⟳ Refresh</button>
+</div>
 
         <div class="export-cluster">
           <button onclick="downloadStix()" class="btn btn-primary btn-sm">Download STIX 2.1 Bundle</button>
@@ -1798,16 +1799,30 @@ function startRestPolling() {
 
 async function loadDashboardMetrics() {
   try {
-    const summary = await fetchJSON('/dashboard/summary');
+    const resp = await fetch('/dashboard/summary', {
+      headers: getAuthHeaders()
+    });
+    if (!resp.ok) {
+      console.log('REST metrics fetch failed:', resp.status);
+      return;
+    }
+    const summary = await resp.json();
     if (summary && !summary.error) {
-      setText('m-nodes', summary.node_count);
-      setText('m-contradictions', summary.contradiction_count);
-      setText('m-alerts', summary.alert_count);
-      setText('m-incidents', summary.incident_count);
-      setText('m-entities', summary.entity_count);
+      setText('m-nodes', summary.node_count ?? 0);
+      setText('m-entities', summary.entity_count ?? 0);
+      setText('m-domains', summary.domain_count ?? 0);
+      setText('m-filenames', summary.filename_count ?? 0);
+      setText('m-alerts', summary.alert_count ?? 0);
+      setText('m-incidents', summary.incident_count ?? 0);
+      setText('m-contradictions', summary.contradiction_count ?? 0);
+      setText('m-chains', summary.chain_count ?? 0);
+      setText('m-max-threat', summary.max_threat_score ?? 0);
+      console.log('Dashboard metrics updated:', summary.node_count, 'nodes');
+    } else {
+      console.log('Dashboard summary returned error:', summary?.error);
     }
   } catch (e) {
-    console.log('REST metrics fetch failed:', e);
+    console.error('REST metrics fetch error:', e);
   }
 }
 

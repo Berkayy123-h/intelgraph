@@ -378,6 +378,61 @@ def get_incident_playbook(request: Request, incident_id: str) -> dict[str, Any]:
     return {"incident_id": incident_id, "playbook": pb}
 
 
+@router.post("/feed")
+def feed_dashboard_data(request: Request, data: dict[str, Any]) -> dict[str, Any]:
+    """Feed pipeline results to the dashboard state. Call this after running a pipeline."""
+    tenant_id = _get_tenant(request)
+    result = data.get("result", data)
+    sources = data.get("sources", {})
+    ner_counts = data.get("ner_counts", {})
+    ner_samples = data.get("ner_samples", {})
+    
+    dashboard_state.feed(result, tenant_id)
+    if sources:
+        dashboard_state.feed_sources(sources, tenant_id)
+    if ner_counts and ner_samples:
+        dashboard_state.feed_ner(ner_counts, ner_samples, tenant_id)
+    
+    return {"status": "ok", "message": "Dashboard data updated"}
+
+
+@router.get("/graph")
+def get_graph(request: Request, limit: int = 200, since: str | None = None) -> dict[str, Any]:
+    """Get graph data for D3 visualization."""
+    tenant_id = _get_tenant(request)
+    r = dashboard_state.result_for(tenant_id) if tenant_id else dashboard_state.result
+    if not r:
+        return {"nodes": [], "edges": []}
+    
+    nodes = r.get("graph_nodes_summary", [])[:limit]
+    edges = r.get("relationships", [])[:limit]
+    
+    # Transform to D3 format
+    d3_nodes = [
+        {
+            "id": n.get("node_id", ""),
+            "entity_type": n.get("entity_type", "unknown"),
+            "entity_identifier": n.get("entity_identifier", ""),
+            "threat_score": n.get("threat_score", 0),
+            "evidence_count": n.get("evidence_count", 0),
+            "confidence": n.get("confidence", 0),
+        }
+        for n in nodes
+    ]
+    
+    d3_edges = [
+        {
+            "source": e.get("source_id", ""),
+            "target": e.get("target_id", ""),
+            "type": e.get("relationship_type", "related"),
+            "confidence": e.get("confidence", 0),
+        }
+        for e in edges
+    ]
+    
+    return {"nodes": d3_nodes, "edges": d3_edges}
+
+
 @router.post("/incidents/{incident_id}/playbook/steps/{step_id}/complete")
 def complete_playbook_step(
     request: Request,
