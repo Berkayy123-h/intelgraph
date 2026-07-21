@@ -318,3 +318,6 @@ def _deep_merge(base: dict, overlay: dict) -> None:
             _deep_merge(base[key], value)
         else:
             base[key] = value
+
+
+app = create_app()
