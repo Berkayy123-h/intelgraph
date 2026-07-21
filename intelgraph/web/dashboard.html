@@ -1089,6 +1089,40 @@ let nerChart = null;
 let perfSseSource = null;
 let graphLoaded = false;
 
+// ── REST polling for dashboard metrics (global scope for button access) ──
+let sseReconnectTimer = null;
+let sseConnected = false;
+let restPollTimer = null;
+
+async function loadDashboardMetrics() {
+  try {
+    const resp = await fetch('/dashboard/summary', {
+      headers: getAuthHeaders()
+    });
+    if (!resp.ok) {
+      console.log('REST metrics fetch failed:', resp.status);
+      return;
+    }
+    const summary = await resp.json();
+    if (summary && !summary.error) {
+      setText('m-nodes', summary.node_count ?? 0);
+      setText('m-entities', summary.entity_count ?? 0);
+      setText('m-domains', summary.domain_count ?? 0);
+      setText('m-filenames', summary.filename_count ?? 0);
+      setText('m-alerts', summary.alert_count ?? 0);
+      setText('m-incidents', summary.incident_count ?? 0);
+      setText('m-contradictions', summary.contradiction_count ?? 0);
+      setText('m-chains', summary.chain_count ?? 0);
+      setText('m-max-threat', summary.max_threat_score ?? 0);
+      console.log('Dashboard metrics updated:', summary.node_count, 'nodes');
+    } else {
+      console.log('Dashboard summary returned error:', summary?.error);
+    }
+  } catch (e) {
+    console.error('REST metrics fetch error:', e);
+  }
+}
+
 // ── Tab navigation (extended at bottom of file) ──
 function switchTab(name) {
   // Will be fully replaced by the extended version below
@@ -1729,9 +1763,6 @@ async function completePlaybookStep(incidentId, stepId) {
 load();
 
 // ── SSE: real-time metric updates (every 5s) with REST fallback ──
-let sseReconnectTimer = null;
-let sseConnected = false;
-let restPollTimer = null;
 
 function connectSSE() {
   const statusEl = document.getElementById('sse-status');
@@ -2807,7 +2838,6 @@ function openCaseDetail(id) {
 // ═══════════════════════════════════════════════════════════════════════════
 // MODULE 5: TIMELINE VIEW 2
 // ═══════════════════════════════════════════════════════════════════════════
-let tl2Chart = null, tlTrendChart = null;
 
 function initTimeline2() {
   // Generate synthetic timeline events
