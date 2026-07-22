@@ -393,7 +393,7 @@ def get_graph(request: Request, limit: int = 200, since: str | None = None) -> d
         nodes_sorted = sorted(nodes, key=lambda n: n.get("confidence", 0), reverse=True)
         kept = nodes_sorted[:limit]
         kept_ids = {n["node_id"] for n in kept}
-        edges = [e for e in edges if e.get("source_id") in kept_ids and e.get("target_id") in kept_ids]
+        edges = [e for e in edges if (e.get("source_id") or e.get("source", "")) in kept_ids and (e.get("target_id") or e.get("target", "")) in kept_ids]
         nodes = kept
     
     # Transform to D3 format
@@ -412,10 +412,10 @@ def get_graph(request: Request, limit: int = 200, since: str | None = None) -> d
     
     d3_edges = [
         {
-            "source": e.get("source_id", ""),
-            "target": e.get("target_id", ""),
-            "source_id": e.get("source_id", ""),
-            "target_id": e.get("target_id", ""),
+            "source": e.get("source_id") or e.get("source", ""),
+            "target": e.get("target_id") or e.get("target", ""),
+            "source_id": e.get("source_id") or e.get("source", ""),
+            "target_id": e.get("target_id") or e.get("target", ""),
             "relationship_type": e.get("relationship_type", "related"),
             "type": e.get("relationship_type", "related"),
             "confidence": e.get("confidence", 0),
