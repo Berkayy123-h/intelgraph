@@ -1516,7 +1516,7 @@ async function load() {
         const score = Math.round(a.anomaly_score);
         const sevColor = score >= 80 ? '#ff7b72' : score >= 50 ? '#d29922' : '#58a6ff';
         const typeLabel = a.anomaly_type === 'multi_factor' ? 'hash' : 'url';
-        anomHtml += `<tr><td><span class="label label-${typeLabel}">${a.anomaly_type}</span></td>`;
+        anomHtml += `<tr class="incident-row" style="cursor:pointer" onclick='showAnomalyDetail(${JSON.stringify(a).replace(/'/g,"&#39;")})'><td><span class="label label-${typeLabel}">${a.anomaly_type}</span></td>`;
         anomHtml += `<td class="mono">${a.entity_identifier || a.node_id}</td>`;
         anomHtml += `<td style="color:${sevColor};font-weight:600">${score}</td>`;
         anomHtml += `<td style="font-size:11px;color:#8b949e;max-width:300px">${a.explanation}</td></tr>`;
@@ -1643,6 +1643,25 @@ async function load() {
 
 function closeModal() {
   document.getElementById('explain-modal').style.display = 'none';
+}
+
+function showAnomalyDetail(a) {
+  const modal = document.getElementById('explain-modal');
+  document.getElementById('modal-title').textContent = 'Anomaly: ' + (a.anomaly_type || 'Unknown');
+  document.getElementById('modal-subtitle').textContent = a.entity_identifier || a.node_id || '';
+  const score = Math.round(a.anomaly_score || 0);
+  const sevColor = score >= 80 ? '#ff7b72' : score >= 50 ? '#d29922' : '#58a6ff';
+  let html = '<div class="tl-summary">';
+  html += `<span class="tag"><strong>Score:</strong> <span style="color:${sevColor}">${score}</span></span>`;
+  html += `<span class="tag"><strong>Type:</strong> ${a.anomaly_type || '?'}</span></span>`;
+  html += `<span class="tag"><strong>Entity:</strong> ${a.entity_identifier || a.node_id || '?'}</span></span>`;
+  html += '</div>';
+  html += '<div style="margin-top:16px;font-size:13px;color:#c9d1d9;line-height:1.6">';
+  html += `<p><strong>Explanation:</strong> ${a.explanation || 'No explanation available'}</p>`;
+  if (a.node_id) html += `<p><strong>Node ID:</strong> <code>${a.node_id}</code></p>`;
+  html += '</div>';
+  document.getElementById('modal-body').innerHTML = html;
+  modal.style.display = 'flex';
 }
 
 function renderTimeline(steps) {

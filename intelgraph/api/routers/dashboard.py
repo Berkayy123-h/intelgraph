@@ -397,6 +397,7 @@ def get_graph(request: Request, limit: int = 200, since: str | None = None) -> d
     # Transform to D3 format
     d3_nodes = [
         {
+            "node_id": n.get("node_id", ""),
             "id": n.get("node_id", ""),
             "entity_type": n.get("entity_type", "unknown"),
             "entity_identifier": n.get("entity_identifier", ""),
@@ -411,6 +412,9 @@ def get_graph(request: Request, limit: int = 200, since: str | None = None) -> d
         {
             "source": e.get("source_id", ""),
             "target": e.get("target_id", ""),
+            "source_id": e.get("source_id", ""),
+            "target_id": e.get("target_id", ""),
+            "relationship_type": e.get("relationship_type", "related"),
             "type": e.get("relationship_type", "related"),
             "confidence": e.get("confidence", 0),
         }
