@@ -34,6 +34,8 @@ class DashboardState:
         self._ner_counts_map: dict[str, dict[str, int]] = {}
         self._ner_samples_map: dict[str, dict[str, list[str]]] = {}
         self._tenant_results: dict[str, dict[str, Any] | None] = {}
+        # Auto-load persisted state on init so pipeline data survives restarts
+        self._load("")
 
     def _state_path(self, tenant_id: str = "") -> Path:
         suffix = f"_{tenant_id}" if tenant_id else ""
