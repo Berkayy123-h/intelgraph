@@ -1287,31 +1287,66 @@ async function loadGraph(limit = 200, since = null) {
   try {
     let url = '/dashboard/graph?limit=' + limit;
     if (since) url += '&since=' + since;
+    console.log('[graph] fetching', url);
     const data = await fetchJSON(url);
     const nodes = data.nodes || [];
     const edges = data.edges || [];
+    console.log('[graph] received', nodes.length, 'nodes,', edges.length, 'edges');
+    if (nodes.length > 0) console.log('[graph] first node:', JSON.stringify(nodes[0]).slice(0, 200));
+    if (edges.length > 0) console.log('[graph] first edge:', JSON.stringify(edges[0]).slice(0, 200));
     if (!nodes.length) {
-      svg.select('text').text('No graph data for selected time range.');
+      svg.select('text').text('No graph data. Run the pipeline first.');
       return;
     }
+
+    // Check SVG dimensions — if tab was just switched, layout may not be ready
+    const svgEl = document.getElementById('graph-svg');
+    let w = svgEl.clientWidth, h = svgEl.clientHeight;
+    console.log('[graph] SVG dimensions:', w, 'x', h);
+    if (w === 0 || h === 0) {
+      // Force layout by waiting one frame
+      console.log('[graph] SVG has zero dimensions, waiting for layout...');
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      w = svgEl.clientWidth;
+      h = svgEl.clientHeight;
+      console.log('[graph] SVG dimensions after RAF:', w, 'x', h);
+    }
+    if (w === 0) w = 800;  // fallback
+    if (h === 0) h = 520;  // fallback
+
     graphLoaded = true;
     renderGraph(nodes, edges);
   } catch (e) {
+    console.error('[graph] render error:', e);
     svg.select('text').text('Error: ' + e.message);
   }
 }
 
 function renderGraph(rawNodes, rawEdges) {
+  // Normalize node IDs — backend sends both 'node_id' and 'id'
+  rawNodes = rawNodes.map(n => ({
+    ...n,
+    node_id: n.node_id || n.id || n.entity_identifier || ''
+  }));
+
   if (_connectedOnly) {
-    const edgeIds = new Set();
-    rawEdges.forEach(e => { edgeIds.add(e.source); edgeIds.add(e.target); });
-    rawNodes = rawNodes.filter(n => edgeIds.has(n.node_id));
+    const edgeNodeIds = new Set();
+    rawEdges.forEach(e => {
+      edgeNodeIds.add(e.source || e.source_id || '');
+      edgeNodeIds.add(e.target || e.target_id || '');
+    });
+    rawNodes = rawNodes.filter(n => edgeNodeIds.has(n.node_id));
   }
+
   const svgEl = document.getElementById('graph-svg');
-  const w = svgEl.clientWidth, h = svgEl.clientHeight;
+  let w = svgEl.clientWidth, h = svgEl.clientHeight;
+  if (w === 0) w = 800;
+  if (h === 0) h = 520;
   const svg = d3.select('#graph-svg');
   svg.selectAll('*').remove();
   const tooltip = d3.select('body').append('div').attr('class', 'graph-tooltip').style('opacity', 0);
+
+  console.log('[graph] renderGraph:', rawNodes.length, 'nodes,', rawEdges.length, 'edges, SVG:', w, 'x', h);
 
   const types = [...new Set(rawNodes.map(n => n.entity_type))];
   const legend = d3.select('#graph-legend');
@@ -1324,8 +1359,17 @@ function renderGraph(rawNodes, rawEdges) {
 
   const nodes = rawNodes.map(n => ({ ...n }));
   const nodeMap = new Map(nodes.map(n => [n.node_id, n]));
-  const links = rawEdges.filter(e => nodeMap.has(e.source) && nodeMap.has(e.target))
-    .map(e => ({ source: e.source, target: e.target, type: e.relationship_type, confidence: e.confidence }));
+
+  // Normalize edge source/target to use node_id strings
+  const links = rawEdges
+    .map(e => {
+      const src = e.source || e.source_id || '';
+      const tgt = e.target || e.target_id || '';
+      return { source: src, target: tgt, type: e.relationship_type || e.type || 'related', confidence: e.confidence || 0 };
+    })
+    .filter(l => nodeMap.has(l.source) && nodeMap.has(l.target));
+
+  console.log('[graph] valid links after filter:', links.length);
 
   // Find connected components
   const adj = new Map();
