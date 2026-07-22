@@ -276,9 +276,10 @@ def create_app(config: dict[str, Any] | None = None) -> FastAPI:
     _DASHBOARD_CSP = (
         "default-src 'self'; "
         "script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
-        "style-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
         "img-src 'self' data:; "
-        "connect-src 'self'"
+        "connect-src 'self' https://cdn.jsdelivr.net"
     )
 
     @app.middleware("http")
