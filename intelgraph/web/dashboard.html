@@ -782,7 +782,7 @@ td .label{ display:inline-block; padding:2px 9px; border-radius:999px; font-size
             <div id="ai-chat-messages" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-right:4px;margin-bottom:12px">
               <div class="ai-msg ai-msg-system">
                 <div class="ai-msg-header"><span class="ai-badge">🤖 AI Analyst</span><span class="ai-msg-time">System</span></div>
-                <div class="ai-msg-body">Merhaba! Ben IntelGraph AI Analyst'ım. Tehdit verilerinizi analiz edebilir, varlıklar hakkında derinlemesine soruşturma yapabilir, MITRE ATT&CK teknikleri hakkında bilgi verebilir ve anomalileri yorumlayabilirim. Ne öğrenmek istersiniz?</div>
+                <div class="ai-msg-body">Hello! I am the IntelGraph AI Analyst. I can analyze threat data, investigate entities, explain MITRE ATT&amp;CK techniques, and interpret anomalies. What would you like to know?</div>
               </div>
             </div>
             <div style="display:flex;gap:8px;align-items:flex-end">
@@ -797,17 +797,17 @@ td .label{ display:inline-block; padding:2px 9px; border-radius:999px; font-size
               <h2>Quick Analysis</h2>
               <div style="display:flex;flex-direction:column;gap:8px">
                 <button class="ai-quick-btn" onclick="quickAnalysis('top_threats')">⚡ Kritik Tehditler</button>
-                <button class="ai-quick-btn" onclick="quickAnalysis('anomaly_summary')">🔍 Anomali Özeti</button>
-                <button class="ai-quick-btn" onclick="quickAnalysis('attack_patterns')">🛡 Saldırı Desenleri</button>
+<button class="ai-quick-btn" onclick="quickAnalysis('anomaly_summary')">🔍 Anomaly Summary</button>
+<button class="ai-quick-btn" onclick="quickAnalysis('attack_patterns')">🛡 Attack Patterns</button>
                 <button class="ai-quick-btn" onclick="quickAnalysis('ioc_enrichment')">📊 IOC Enrichment</button>
-                <button class="ai-quick-btn" onclick="quickAnalysis('executive_brief')">📋 Yönetici Özeti</button>
+                <button class="ai-quick-btn" onclick="quickAnalysis('executive_brief')">📋 Executive Brief</button>
                 <button class="ai-quick-btn" onclick="quickAnalysis('kill_chain')">🔗 Kill Chain Analizi</button>
               </div>
             </div>
             <div class="card">
               <h2>Entity Lookup</h2>
               <input id="ai-entity-input" type="text" placeholder="IP, domain, hash..." style="width:100%;margin-bottom:8px">
-              <button onclick="analyzeEntity()" class="btn btn-primary" style="width:100%">Varlık Analiz Et</button>
+              <button onclick="analyzeEntity()" class="btn btn-primary" style="width:100%">Analyze Entity</button>
             </div>
             <div class="card" id="ai-stats-card">
               <h2>Session Stats</h2>
@@ -1660,10 +1660,10 @@ function renderTimeline(steps) {
     const hasClass = s.phase === 'alert' ? 'alert' : s.phase === 'safety_governor' ? 'safety' : s.phase === 'human_review' ? 'review' : (s.evidence ? 'has-evidence' : '');
     return `<div class="tl-step ${hasClass}">
       <span class="tl-icon">${icon}</span>
-      <span class="tl-label">Adım ${s.order}: ${s.label}</span>
+      <span class="tl-label">Step ${s.order}: ${s.label}</span>
       <div class="tl-detail">${s.detail}</div>
       ${s.evidence ? `<div class="tl-evidence">${s.evidence}</div>` : ''}
-      ${s.confidence ? `<div class="tl-conf">Güven: ${s.confidence > 1 ? s.confidence.toFixed(0) : (s.confidence * 100).toFixed(0)}%</div>` : ''}
+      ${s.confidence ? `<div class="tl-conf">Confidence: ${s.confidence > 1 ? s.confidence.toFixed(0) : (s.confidence * 100).toFixed(0)}%</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -2520,7 +2520,7 @@ function openInvestigation(id) {
         <div>
           <div class="workspace-eyebrow">Investigation</div>
           <h1 style="font-size:18px;margin:0">${escapeHtml(inv.title)}</h1>
-          <div style="font-size:11px;color:var(--ink-700);font-family:var(--font-mono);margin-top:4px">Created: ${new Date(inv.created).toLocaleString('tr-TR')}</div>
+          <div style="font-size:11px;color:var(--ink-700);font-family:var(--font-mono);margin-top:4px">Created: ${new Date(inv.created).toLocaleString('en-US')}</div>
         </div>
         <div style="display:flex;gap:8px">
           <select onchange="updateInvStatus('${id}',this.value)" style="padding:5px 10px;background:var(--bg-700);border:1px solid var(--line);border-radius:6px;color:var(--ink-300);font-size:12px">
@@ -2559,9 +2559,9 @@ ${inv.entities.length ? inv.entities.map((e,i) => `<span style="background:var(-
     <div class="card">
       <h2>AI-Assisted Analysis</h2>
       <div id="inv-ai-output-${id}" style="font-size:13px;color:var(--ink-500);margin-bottom:12px">
-        Investigation için AI analizi başlatmak için aşağıdaki butona tıklayın.
+        Click the button below to start AI analysis for this investigation.
       </div>
-      <button onclick="runInvAnalysis('${id}')" class="btn btn-primary">🤖 AI ile Analiz Et</button>
+      <button onclick="runInvAnalysis('${id}')" class="btn btn-primary">🤖 Analyze with AI</button>
     </div>
   `;
 }
@@ -2587,7 +2587,7 @@ function addNote(id) {
 function editNote(id, idx) {
   const inv = investigations.find(i => i.id === id);
   if (!inv) return;
-  const newText = prompt('Notu düzenle:', inv.notes[idx].text);
+  const newText = prompt('Edit note:', inv.notes[idx].text);
   if (newText === null) return;
   if (newText.trim() === '') { inv.notes.splice(idx, 1); }
   else { inv.notes[idx].text = newText.trim(); }
@@ -2644,18 +2644,8 @@ Status: ${inv.status}
 
 For this investigation: 1) What is the most likely threat scenario? 2) What additional entities should be investigated? 3) What should be the next step? Keep it short and actionable.`;
 
-try {
-const response = await fetch('https://api.anthropic.com/v1/messages', {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
-});
-const data = await response.json();
-const text = data.content?.map(b => b.text || '').join('\n') || 'Analysis could not be completed.';
-out.innerHTML = `<div class="ai-msg ai-msg-assistant" style="margin:0">${formatAIResponse(text)}</div>`;
-} catch(e) {
-out.innerHTML = `<div style="color:var(--sev-critical)">AI analysis failed: ${e.message}</div>`;
-}
+const text = 'AI analysis coming soon. This feature will provide threat scenario analysis, recommended investigations, and next steps when enabled.';
+out.innerHTML = `<div class="ai-msg ai-msg-assistant" style="margin:0">${escapeHtml(text)}</div>`;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2675,37 +2665,17 @@ async function openEntityDrawer(entityId, entityType, identifier) {
   document.getElementById('entity-drawer-body').innerHTML = '<div class="tl-loading">Loading entity details...</div>';
   drawer.style.display = 'flex';
 
-  // Build rich entity view via AI
-  const prompt = `Bu tehdit istihbarat varlığı hakkında detaylı analiz yap:
-Varlık: ${identifier}
-Tip: ${entityType}
-
-Şunları ver:
-1. **Tehdit Profili**: Bu varlığın tehdit düzeyi ve kategorisi
-2. **İlgili TTPs**: MITRE ATT&CK teknikleri (T-ID ile)
-3. **IOC Bağlamı**: Bilinen kötücül faaliyetler
-4. **Önerilen Aksiyonlar**: 2-3 somut adım
-5. **Risk Skoru**: 0-100 arası tahmini skor
-
-Kısa ve teknik yanıt ver.`;
-
-  try {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 800, messages: [{ role:'user', content: prompt }] })
-    });
-    const d = await r.json();
-    const text = d.content?.map(b => b.text||'').join('\n') || 'AI analysis coming soon.';
+  // Build rich entity view — AI placeholder
+  const text = 'AI analysis coming soon. This feature will provide threat profiling, MITRE ATT&CK mapping, and recommended actions when enabled.';
 
     document.getElementById('entity-drawer-body').innerHTML = `
       <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
         <span class="label label-${(entityType||'unknown').toLowerCase()}">${entityType}</span>
         <span class="label" style="background:var(--ai-dim);color:var(--ai-cyan)">AI Analyzed</span>
-        <button onclick="addEntityToCurrentInv('${identifier}')" class="btn btn-ghost btn-sm">+ Investigation'a Ekle</button>
+        <button onclick="addEntityToCurrentInv('${identifier}')" class="btn btn-ghost btn-sm">+ Add to Investigation</button>
       </div>
       <div style="background:var(--bg-700);border:1px solid var(--line);border-radius:8px;padding:14px;font-size:13px;line-height:1.65;color:var(--ink-300);white-space:pre-wrap;font-family:var(--font-body)">
-        ${formatAIResponse(text)}
+        ${escapeHtml(text)}
       </div>
       <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
         <h4>Quick Actions</h4>
@@ -2717,27 +2687,24 @@ Kısa ve teknik yanıt ver.`;
         </div>
       </div>
     `;
-  } catch(e) {
-    document.getElementById('entity-drawer-body').innerHTML = `<div class="tl-error">Entity detayları yüklenemedi: ${e.message}</div>`;
-  }
 }
 
 function addEntityToCurrentInv(identifier) {
   if (!currentInvId) {
-    alert('Önce Investigation sekmesinden bir soruşturma açın.');
+    alert('Please open an investigation first from the Investigation tab.');
     return;
   }
   const inv = investigations.find(i => i.id === currentInvId);
   if (inv && !inv.entities.includes(identifier)) {
     inv.entities.push(identifier);
     saveInvestigations();
-    alert(identifier + ' soruşturmaya eklendi.');
+    alert(identifier + ' added to investigation.');
   }
 }
 
-function blockEntity(id) { alert('Engellendi (simüle): ' + id + '\nGerçek ortamda firewall kuralı oluşturulur.'); }
-function watchlistEntity(id) { alert('Watchlist\'e eklendi (simüle): ' + id); }
-function reportEntity(id) { alert('Rapor oluşturuluyor (simüle): ' + id); }
+function blockEntity(id) { alert('Blocked (simulated): ' + id + '\nIn a real environment, a firewall rule would be created.'); }
+function watchlistEntity(id) { alert('Added to watchlist (simulated): ' + id); }
+function reportEntity(id) { alert('Generating report (simulated): ' + id); }
 function pivotEntity(id) {
   document.getElementById('search-input').value = id;
   closeEntityDrawer();
@@ -2760,7 +2727,7 @@ function closeCreateCaseModal() {
 
 function createCase() {
   const title = document.getElementById('new-case-title').value.trim();
-  if (!title) { alert('Case başlığı girin.'); return; }
+  if (!title) { alert('Enter a case title.'); return; }
   const c = {
     id: 'case-' + Date.now(),
     title,
@@ -2805,7 +2772,7 @@ function renderCases() {
         <div class="case-card-meta">
           <span>${c.severity.toUpperCase()}</span>
           <span>${c.assignee}</span>
-          <span>${new Date(c.created).toLocaleDateString('tr-TR')}</span>
+          <span>${new Date(c.created).toLocaleDateString('en-US')}</span>
         </div>
         <div class="case-card-tags">
           ${c.tags.slice(0,3).map(t => `<span class="case-tag">${escapeHtml(t)}</span>`).join('')}
@@ -2827,7 +2794,7 @@ function moveCaseStatus(id, status) {
 function openCaseDetail(id) {
   const c = cases.find(x => x.id === id);
   if (!c) return;
-  const detail = `Case: ${c.title}\nSeverity: ${c.severity}\nAssignee: ${c.assignee}\nStatus: ${c.status}\nCreated: ${new Date(c.created).toLocaleString('tr-TR')}\nDescription: ${c.description || '(yok)'}\nTags: ${c.tags.join(', ') || '(yok)'}`;
+  const detail = `Case: ${c.title}\nSeverity: ${c.severity}\nAssignee: ${c.assignee}\nStatus: ${c.status}\nCreated: ${new Date(c.created).toLocaleString('en-US')}\nDescription: ${c.description || '(none)'}\nTags: ${c.tags.join(', ') || '(none)'}`;
   alert(detail);
 }
 
@@ -2886,7 +2853,7 @@ function renderTimeline2() {
     <div class="tl2-event type-${ev.type}" onclick="openEntityDrawer('${ev.id}','${ev.type}','${ev.detail}')">
       <div class="tl2-event-header">
         <span class="tl2-event-type" style="color:${typeColors[ev.type]}">${ev.type}</span>
-        <span class="tl2-event-time">${new Date(ev.timestamp).toLocaleString('tr-TR')}</span>
+        <span class="tl2-event-time">${new Date(ev.timestamp).toLocaleString('en-US')}</span>
       </div>
       <div class="tl2-event-title">${escapeHtml(ev.title)}</div>
       ${density === 'comfortable' ? `<div class="tl2-event-detail">${escapeHtml(ev.detail)}</div>` : ''}
@@ -2998,25 +2965,9 @@ async function showMitreTechnique(techId, techName, tactic) {
   body.innerHTML = '<div class="ai-typing"><span></span><span></span><span></span></div>';
   detail.scrollIntoView({ behavior:'smooth', block:'start' });
 
-  const prompt = `MITRE ATT&CK tekniği hakkında kısa analiz yap:
-Teknik: ${techId} — ${techName}
-Taktik: ${tactic}
-${det ? `Tespit Durumu: ${det.level} seviyede, ${det.count} kez tespit edildi, son: ${new Date(det.lastSeen).toLocaleString('tr-TR')}` : 'Tespit edilmedi'}
-
-Şunları ver: 1) Teknik açıklama (2 cümle) 2) Nasıl tespit edilir 3) Mitigation önerisi 4) Gerçek dünya örneği. Kısa tut.`;
-
-  try {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:600, messages:[{role:'user',content:prompt}] })
-    });
-    const d = await r.json();
-    const text = d.content?.map(b=>b.text||'').join('\n') || 'AI analysis coming soon.';
-    body.innerHTML = (det ? `<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"><span class="label label-${det.level==='critical'?'filename':det.level==='high'?'unknown':'domain'}">${det.level.toUpperCase()}</span><span style="font-size:11px;color:var(--ink-500);font-family:var(--font-mono)">${det.count} detections · last seen ${new Date(det.lastSeen).toLocaleDateString('tr-TR')}</span></div>` : `<div style="margin-bottom:12px"><span class="label" style="background:var(--panel-raised);color:var(--ink-500)">NOT OBSERVED</span></div>`) +
-      `<div style="font-size:13px;line-height:1.65;color:var(--ink-300)">${formatAIResponse(text)}</div>`;
-  } catch(e) {
-    body.innerHTML = `<div class="tl-error">Failed to load: ${e.message}</div>`;
-  }
+  const text = 'AI analysis coming soon. This feature will provide technique analysis, detection guidance, and mitigation recommendations when enabled.';
+    body.innerHTML = (det ? `<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"><span class="label label-${det.level==='critical'?'filename':det.level==='high'?'unknown':'domain'}">${det.level.toUpperCase()}</span><span style="font-size:11px;color:var(--ink-500);font-family:var(--font-mono)">${det.count} detections · last seen ${new Date(det.lastSeen).toLocaleDateString()}</span></div>` : `<div style="margin-bottom:12px"><span class="label" style="background:var(--panel-raised);color:var(--ink-500)">NOT OBSERVED</span></div>`) +
+      `<div style="font-size:13px;line-height:1.65;color:var(--ink-300)">${escapeHtml(text)}</div>`;
 }
 
 function exportMitreReport() {
