@@ -44,6 +44,8 @@ _PUBLIC_PREFIXES: tuple[str, ...] = (
     "/metrics/",
     "/export/",
     "/reports/",
+    "/search",
+    "/notifications/",
 )
 
 

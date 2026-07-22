@@ -42,6 +42,19 @@ def verify_2fa(body: Auth2FAVerify):
     return result
 
 
+@router.post("/verify-setup")
+def verify_setup_2fa(request: Request, body: dict):
+    """Verify TOTP code after enabling 2FA (setup verification)."""
+    user_id = _require_user(request)
+    code = body.get("code", "")
+    if not code or len(code) != 6:
+        raise HTTPException(status_code=400, detail="6-digit code required")
+    totp_manager = get_totp_manager()
+    if totp_manager.verify(user_id, code):
+        return {"valid": True, "message": "2FA verified successfully"}
+    return {"valid": False, "message": "Invalid code"}
+
+
 @router.post("/disable")
 def disable_2fa(request: Request):
     user_id = _require_user(request)

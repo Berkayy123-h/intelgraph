@@ -2057,10 +2057,10 @@ alert('2FA enable failed: ' + e.message);
 function verify2FA() {
 const code = document.getElementById('totp-verify-code').value.trim();
 if (!code || code.length !== 6) { alert('Enter 6-digit code'); return; }
-fetch('/auth/2fa/verify', {
+fetch('/auth/2fa/verify-setup', {
 method: 'POST',
 headers: Object.assign({'Content-Type': 'application/json'}, getAuthHeaders()),
-body: JSON.stringify({code}),
+body: JSON.stringify({code: code}),
 })
 .then(r => r.json())
 .then(data => {
